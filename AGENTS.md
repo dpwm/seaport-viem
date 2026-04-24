@@ -1,0 +1,56 @@
+# AGENTS.md — seaport-viem
+
+## What this is
+
+Lightweight viem-based toolkit for Seaport NFT marketplace orders. Single runtime dependency: `viem`.
+
+## Commands
+
+```sh
+bun test              # run all tests (bun:test, not vitest/jest)
+bun run typecheck     # tsc --noEmit
+bun run build         # tsup → dist/
+```
+
+Run a single test by name: `bun test -t "test name substring"`.
+
+All three must pass before committing. There is no lint or format script.
+
+## Source layout
+
+All source files are at the project root — there is no `src/` directory.
+
+| File | Purpose |
+|------|---------|
+| `types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`) |
+| `constants.ts` | ABI (JSON format), EIP-712 types, address constants |
+| `encode.ts` | `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfillBasicOrder` |
+| `signature.ts` | `verifyOrderSignature`, `hashOrderComponents` |
+| `counter.ts` | `getCounter` (on-chain call via `PublicClient`) |
+| `validate.ts` | `validateOrderComponents` (client-side checks) |
+| `order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType` |
+| `index.ts` | Barrel re-export only — no logic lives here |
+| `index.test.ts` | All tests, using `bun:test` fixtures |
+
+Subpath imports work: `import { ... } from "seaport-viem/order"`.
+
+## TypeScript quirks
+
+- `noUncheckedIndexedAccess` is enabled — array index access returns `T | undefined`. Use `!` non-null assertions after length guards, with `// biome-ignore lint/style/noNonNullAssertion:` comments.
+- `allowImportingTsExtensions` + `noEmit` means `.ts` import extensions are required in source but `tsc` cannot emit. tsup handles the build.
+- The ABI in `constants.ts` uses **JSON format** (`satisfies Abi`), not human-readable `parseAbi()` strings. This is because `abitype`'s parser doesn't support nested tuples.
+
+## Testing
+
+- Tests import from `./index` (the barrel), not individual modules.
+- Fixtures use `makeOrder()`, `makeOrderComponents()`, `makeOfferItem()`, `makeConsiderationItem()` — all accept partial overrides.
+- Addresses in fixtures must be valid 20-byte hex (40 hex chars after `0x`). viem rejects fake addresses like `0xAlice...`.
+- `verifyOrderSignature` and `getCounter` are not unit-tested (they need mocking or a live client).
+
+## What the library does NOT cover
+
+Only `fulfillBasicOrder` is supported. There is no `fulfillOrder`, `fulfillAdvancedOrder`, `cancel`, `incrementCounter`, `getOrderStatus`, or event parsing. This is intentional scope, not a gap.
+
+## Build output
+
+tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 8 subpath entry points, one per source module.
