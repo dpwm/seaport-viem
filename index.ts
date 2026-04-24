@@ -330,7 +330,12 @@ export async function getCounter(
     to: ctx.address,
     data,
   });
-  return BigInt(result.data ?? "0");
+  if (result.data === undefined || result.data === "0x") {
+    throw new Error(
+      `getCounter call returned no data for offerer ${offerer}`,
+    );
+  }
+  return BigInt(result.data);
 }
 
 // ── Validation ─────────────────────────────────────────────────────
