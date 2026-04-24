@@ -1,6 +1,5 @@
-import type { TypedDataDomain, PublicClient } from "viem";
+import type { TypedDataDomain, PublicClient, Abi } from "viem";
 import {
-  parseAbi,
   encodeFunctionData,
   verifyTypedData,
   hashTypedData,
@@ -123,11 +122,100 @@ const NATIVE_TOKEN =
 
 // ── ABI ────────────────────────────────────────────────────────────
 
-export const seaportAbi = parseAbi([
-  "function getCounter(address offerer) view returns (uint256)",
-  "function getOrderHash(tuple(address offerer,address zone,tuple(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)[] offer,tuple(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter) orderComponents) view returns (bytes32)",
-  "function fulfillBasicOrder(tuple(address considerationToken,uint256 considerationIdentifier,uint256 considerationAmount,address offerer,address zone,address offerToken,uint256 offerIdentifier,uint256 offerAmount,uint8 basicOrderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 offererConduitKey,bytes32 fulfillerConduitKey,uint256 totalOriginalAdditionalRecipients,tuple(uint256 amount,address recipient)[] additionalRecipients,bytes signature)) payable returns (bool)",
-] as const);
+export const seaportAbi = [
+  {
+    type: "function",
+    name: "getCounter",
+    stateMutability: "view",
+    inputs: [{ name: "offerer", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "getOrderHash",
+    stateMutability: "view",
+    inputs: [
+      {
+        name: "orderComponents",
+        type: "tuple",
+        components: [
+          { name: "offerer", type: "address" },
+          { name: "zone", type: "address" },
+          {
+            name: "offer",
+            type: "tuple[]",
+            components: [
+              { name: "itemType", type: "uint8" },
+              { name: "token", type: "address" },
+              { name: "identifierOrCriteria", type: "uint256" },
+              { name: "startAmount", type: "uint256" },
+              { name: "endAmount", type: "uint256" },
+            ],
+          },
+          {
+            name: "consideration",
+            type: "tuple[]",
+            components: [
+              { name: "itemType", type: "uint8" },
+              { name: "token", type: "address" },
+              { name: "identifierOrCriteria", type: "uint256" },
+              { name: "startAmount", type: "uint256" },
+              { name: "endAmount", type: "uint256" },
+              { name: "recipient", type: "address" },
+            ],
+          },
+          { name: "orderType", type: "uint8" },
+          { name: "startTime", type: "uint256" },
+          { name: "endTime", type: "uint256" },
+          { name: "zoneHash", type: "bytes32" },
+          { name: "salt", type: "uint256" },
+          { name: "conduitKey", type: "bytes32" },
+          { name: "counter", type: "uint256" },
+        ],
+      },
+    ],
+    outputs: [{ name: "", type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "fulfillBasicOrder",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "parameters",
+        type: "tuple",
+        components: [
+          { name: "considerationToken", type: "address" },
+          { name: "considerationIdentifier", type: "uint256" },
+          { name: "considerationAmount", type: "uint256" },
+          { name: "offerer", type: "address" },
+          { name: "zone", type: "address" },
+          { name: "offerToken", type: "address" },
+          { name: "offerIdentifier", type: "uint256" },
+          { name: "offerAmount", type: "uint256" },
+          { name: "basicOrderType", type: "uint8" },
+          { name: "startTime", type: "uint256" },
+          { name: "endTime", type: "uint256" },
+          { name: "zoneHash", type: "bytes32" },
+          { name: "salt", type: "uint256" },
+          { name: "offererConduitKey", type: "bytes32" },
+          { name: "fulfillerConduitKey", type: "bytes32" },
+          { name: "totalOriginalAdditionalRecipients", type: "uint256" },
+          {
+            name: "additionalRecipients",
+            type: "tuple[]",
+            components: [
+              { name: "amount", type: "uint256" },
+              { name: "recipient", type: "address" },
+            ],
+          },
+          { name: "signature", type: "bytes" },
+        ],
+      },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+] as const satisfies Abi;
 
 // ── Encoders ───────────────────────────────────────────────────────
 
