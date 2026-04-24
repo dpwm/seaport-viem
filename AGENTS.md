@@ -18,19 +18,19 @@ All three must pass before committing. There is no lint or format script.
 
 ## Source layout
 
-All source files are at the project root — there is no `src/` directory.
+All source files live in `src/`.
 
 | File | Purpose |
 |------|---------|
-| `types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`) |
-| `constants.ts` | ABI (JSON format), EIP-712 types, address constants |
-| `encode.ts` | `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfillBasicOrder` |
-| `signature.ts` | `verifyOrderSignature`, `hashOrderComponents` |
-| `counter.ts` | `getCounter` (on-chain call via `PublicClient`) |
-| `validate.ts` | `validateOrderComponents` (client-side checks) |
-| `order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType` |
-| `index.ts` | Barrel re-export only — no logic lives here |
-| `index.test.ts` | All tests, using `bun:test` fixtures |
+| `src/types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`) |
+| `src/constants.ts` | ABI (JSON format), EIP-712 types, address constants |
+| `src/encode.ts` | `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfillBasicOrder` |
+| `src/signature.ts` | `verifyOrderSignature`, `hashOrderComponents` |
+| `src/counter.ts` | `getCounter` (on-chain call via `PublicClient`) |
+| `src/validate.ts` | `validateOrderComponents` (client-side checks) |
+| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType` |
+| `src/index.ts` | Barrel re-export only — no logic lives here |
+| `src/index.test.ts` | All tests, using `bun:test` fixtures |
 
 Subpath imports work: `import { ... } from "seaport-viem/order"`.
 

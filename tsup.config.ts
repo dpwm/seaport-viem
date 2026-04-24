@@ -2,14 +2,14 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: [
-    "index.ts",
-    "types.ts",
-    "constants.ts",
-    "encode.ts",
-    "signature.ts",
-    "counter.ts",
-    "validate.ts",
-    "order.ts",
+    "src/index.ts",
+    "src/types.ts",
+    "src/constants.ts",
+    "src/encode.ts",
+    "src/signature.ts",
+    "src/counter.ts",
+    "src/validate.ts",
+    "src/order.ts",
   ],
   format: ["esm"],
   dts: true,
