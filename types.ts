@@ -16,6 +16,7 @@ export const ItemType = {
   ERC1155_WITH_CRITERIA: 5,
 } as const;
 
+/** Numeric value of an {@link ItemType} member. */
 export type ItemTypeValue = (typeof ItemType)[keyof typeof ItemType];
 
 /** Seaport order type enum values. */
@@ -27,6 +28,7 @@ export const OrderType = {
   CONTRACT: 4,
 } as const;
 
+/** Numeric value of an {@link OrderType} member. */
 export type OrderTypeValue = (typeof OrderType)[keyof typeof OrderType];
 
 /** Basic order route type enum values. */
@@ -39,6 +41,7 @@ export const BasicOrderRouteType = {
   ERC1155_TO_ERC20: 5,
 } as const;
 
+/** Numeric value of a {@link BasicOrderRouteType} member. */
 export type BasicOrderRouteTypeValue =
   (typeof BasicOrderRouteType)[keyof typeof BasicOrderRouteType];
 
