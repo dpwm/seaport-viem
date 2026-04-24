@@ -131,11 +131,7 @@ export function canFulfillAsBasicOrder(order: Order): boolean {
     return false;
   }
 
-  if (
-    order.parameters.orderType === OrderType.CONTRACT ||
-    order.parameters.orderType === OrderType.FULL_RESTRICTED ||
-    order.parameters.orderType === OrderType.PARTIAL_RESTRICTED
-  ) {
+  if (order.parameters.orderType === OrderType.CONTRACT) {
     return false;
   }
 

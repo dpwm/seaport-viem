@@ -332,19 +332,39 @@ describe("canFulfillAsBasicOrder", () => {
     expect(canFulfillAsBasicOrder(order)).toBe(false);
   });
 
-  test("rejects FULL_RESTRICTED order type", () => {
+  test("accepts FULL_RESTRICTED order type with zero zone", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         orderType: OrderType.FULL_RESTRICTED,
       }),
     });
-    expect(canFulfillAsBasicOrder(order)).toBe(false);
+    expect(canFulfillAsBasicOrder(order)).toBe(true);
   });
 
-  test("rejects PARTIAL_RESTRICTED order type", () => {
+  test("accepts PARTIAL_RESTRICTED order type with zero zone", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         orderType: OrderType.PARTIAL_RESTRICTED,
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(true);
+  });
+
+  test("rejects FULL_RESTRICTED with non-zero zone", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        orderType: OrderType.FULL_RESTRICTED,
+        zone: ALICE,
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("rejects PARTIAL_RESTRICTED with non-zero zone", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        orderType: OrderType.PARTIAL_RESTRICTED,
+        zone: ALICE,
       }),
     });
     expect(canFulfillAsBasicOrder(order)).toBe(false);
@@ -537,10 +557,21 @@ describe("detectBasicOrderRouteType", () => {
   test("returns null for non-basic order", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
-        orderType: OrderType.FULL_RESTRICTED,
+        orderType: OrderType.CONTRACT,
       }),
     });
     expect(detectBasicOrderRouteType(order)).toBeNull();
+  });
+
+  test("detects route for FULL_RESTRICTED with zero zone", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        orderType: OrderType.FULL_RESTRICTED,
+      }),
+    });
+    expect(detectBasicOrderRouteType(order)).toBe(
+      BasicOrderRouteType.ETH_TO_ERC721,
+    );
   });
 });
 
@@ -712,7 +743,7 @@ describe("buildBasicOrderFulfillment", () => {
   test("throws for non-basic order", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
-        orderType: OrderType.FULL_RESTRICTED,
+        orderType: OrderType.CONTRACT,
       }),
     });
     expect(() => buildBasicOrderFulfillment(ctx, order)).toThrow(
