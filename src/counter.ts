@@ -1,8 +1,16 @@
 import type { PublicClient } from "viem";
+import { decodeFunctionResult } from "viem";
 import type { SeaportContext } from "./types";
+import { seaportAbi } from "./constants";
 import { encodeGetCounter } from "./encode";
 
-/** Fetch an offerer's current order counter from the Seaport contract. */
+/**
+ * Fetch an offerer's current order counter from the Seaport contract.
+ * @param client - A viem PublicClient for on-chain reads.
+ * @param ctx - Seaport deployment context (address and EIP-712 domain).
+ * @param offerer - The offerer address to query.
+ * @returns The offerer's current counter value.
+ */
 export async function getCounter(
   client: PublicClient,
   ctx: SeaportContext,
@@ -18,5 +26,9 @@ export async function getCounter(
       `getCounter call returned no data for offerer ${offerer}`,
     );
   }
-  return BigInt(result.data);
+  return decodeFunctionResult({
+    abi: seaportAbi,
+    functionName: "getCounter",
+    data: result.data,
+  });
 }

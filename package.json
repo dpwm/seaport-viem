@@ -73,9 +73,7 @@
     "tsup": "^8.5.1"
   },
   "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
+    "typescript": "^5",
     "viem": "^2.48.4"
   }
 }

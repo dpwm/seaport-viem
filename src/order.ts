@@ -22,6 +22,13 @@ import { encodeFulfillBasicOrder } from "./encode";
 /**
  * Convert a high-level Order into the flat BasicOrderParameters needed by
  * Seaport's fulfillBasicOrder.
+ *
+ * @param order - The order to convert.
+ * @param routeType - The basic order route type (e.g. ETH_TO_ERC721).
+ * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
+ * @param tips - Additional tip recipients to append.
+ * @returns Flat parameters suitable for fulfillBasicOrder.
+ * @throws If the order has != 1 offer item or 0 consideration items.
  */
 export function toBasicOrderParameters(
   order: Order,
@@ -50,6 +57,7 @@ export function toBasicOrderParameters(
     ...tips,
   ];
 
+  // Seaport encodes basicOrderType as: routeType * 4 + orderType
   const basicOrderType = order.parameters.orderType + routeType * 4;
 
   return {
@@ -78,7 +86,12 @@ export function toBasicOrderParameters(
 
 /**
  * Build a ready-to-send transaction for fulfilling a Seaport basic order.
- * Returns { to, data, value } suitable for passing to wallet_sendTransaction.
+ *
+ * @param ctx - Seaport deployment context (address and EIP-712 domain).
+ * @param order - The order to fulfill.
+ * @param options - Optional route type, conduit key, and tips.
+ * @returns Transaction data ({@link FulfillmentData}) for wallet_sendTransaction.
+ * @throws If the order cannot be fulfilled as a basic order and no explicit routeType is given.
  */
 export function buildBasicOrderFulfillment(
   ctx: SeaportContext,
@@ -121,6 +134,9 @@ export function buildBasicOrderFulfillment(
 /**
  * Check whether an order can be fulfilled via the simpler fulfillBasicOrder
  * path (vs. the more complex fulfillOrder/fulfillAdvancedOrder).
+ *
+ * @param order - The order to check.
+ * @returns `true` if the order qualifies for basic order fulfillment.
  */
 export function canFulfillAsBasicOrder(order: Order): boolean {
   if (order.parameters.offer.length !== 1) {
@@ -201,6 +217,9 @@ export function canFulfillAsBasicOrder(order: Order): boolean {
 /**
  * Detect the BasicOrderRouteType for an order, or null if it cannot be
  * fulfilled as a basic order.
+ *
+ * @param order - The order to detect the route type for.
+ * @returns The detected route type, or `null` if not a basic order.
  */
 export function detectBasicOrderRouteType(
   order: Order,

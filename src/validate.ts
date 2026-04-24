@@ -1,6 +1,15 @@
 import type { OrderComponents, ValidationResult } from "./types";
 
-/** Validate order components client-side before submission. */
+/**
+ * Validate order components client-side before submission.
+ *
+ * NOTE: This performs structural validation only (amounts, timing, required
+ * fields). It does not validate address fields — callers are responsible for
+ * ensuring offerer, zone, token, and recipient addresses are well-formed.
+ *
+ * @param components - The order components to validate.
+ * @returns A result indicating validity, with a reason string on failure.
+ */
 export function validateOrderComponents(
   components: OrderComponents,
 ): ValidationResult {
