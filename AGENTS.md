@@ -30,7 +30,12 @@ All source files live in `src/`.
 | `src/validate.ts` | `validateOrderComponents` (client-side checks) |
 | `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType` |
 | `src/index.ts` | Barrel re-export only — no logic lives here |
-| `src/index.test.ts` | All tests, using `bun:test` fixtures |
+| `src/test-fixtures.ts` | Shared test fixtures (`makeOrder`, `makeOrderComponents`, etc.) |
+| `src/constants.test.ts` | Tests for enum values, ABI, EIP-712 types |
+| `src/encode.test.ts` | Tests for calldata encoders |
+| `src/validate.test.ts` | Tests for `validateOrderComponents` |
+| `src/order.test.ts` | Tests for `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toBasicOrderParameters`, `buildBasicOrderFulfillment` |
+| `src/signature.test.ts` | Tests for `hashOrderComponents` |
 
 Subpath imports work: `import { ... } from "seaport-viem/order"`.
 
@@ -43,7 +48,7 @@ Subpath imports work: `import { ... } from "seaport-viem/order"`.
 ## Testing
 
 - Tests import from `./index` (the barrel), not individual modules.
-- Fixtures use `makeOrder()`, `makeOrderComponents()`, `makeOfferItem()`, `makeConsiderationItem()` — all accept partial overrides.
+- Shared fixtures live in `src/test-fixtures.ts`: `makeOrder()`, `makeOrderComponents()`, `makeOfferItem()`, `makeConsiderationItem()` — all accept partial overrides.
 - Addresses in fixtures must be valid 20-byte hex (40 hex chars after `0x`). viem rejects fake addresses like `0xAlice...`.
 - `verifyOrderSignature` and `getCounter` are not unit-tested (they need mocking or a live client).
 
