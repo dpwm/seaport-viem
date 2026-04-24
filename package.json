@@ -13,6 +13,48 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
+    },
+    "./types": {
+      "import": {
+        "types": "./dist/types.d.ts",
+        "default": "./dist/types.js"
+      }
+    },
+    "./constants": {
+      "import": {
+        "types": "./dist/constants.d.ts",
+        "default": "./dist/constants.js"
+      }
+    },
+    "./encode": {
+      "import": {
+        "types": "./dist/encode.d.ts",
+        "default": "./dist/encode.js"
+      }
+    },
+    "./signature": {
+      "import": {
+        "types": "./dist/signature.d.ts",
+        "default": "./dist/signature.js"
+      }
+    },
+    "./counter": {
+      "import": {
+        "types": "./dist/counter.d.ts",
+        "default": "./dist/counter.js"
+      }
+    },
+    "./validate": {
+      "import": {
+        "types": "./dist/validate.d.ts",
+        "default": "./dist/validate.js"
+      }
+    },
+    "./order": {
+      "import": {
+        "types": "./dist/order.d.ts",
+        "default": "./dist/order.js"
+      }
     }
   },
   "files": [
