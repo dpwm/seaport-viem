@@ -9,12 +9,12 @@ import {
   toHex,
 } from "viem";
 import type { TypedDataDomain } from "viem";
-import type { SeaportContext, OrderComponents } from "./types";
+import type { SeaportContext } from "./types";
 import {
   BULK_ORDER_HEIGHT_MIN,
   BULK_ORDER_HEIGHT_MAX,
 } from "./constants";
-import { hashOrderComponents } from "./signature";
+import { hashOrderComponentsStruct } from "./signature";
 import { getEmptyOrderComponents } from "./order";
 
 /**
@@ -32,19 +32,16 @@ export function computeHeight(orderCount: number): number {
 
 /**
  * Pad an array of leaf hashes to the next power of 2 using the hash of an
- * empty OrderComponents struct. Requires the Seaport context because the
- * empty order hash is domain-dependent.
+ * empty OrderComponents struct.
  *
- * @param ctx - Seaport deployment context.
  * @param leaves - The leaf hashes to pad.
  * @returns A new array padded to the required capacity.
  */
 export function padLeaves(
-  ctx: SeaportContext,
   leaves: `0x${string}`[],
 ): `0x${string}`[] {
   const padded = [...leaves];
-  const emptyHash = hashOrderComponents(ctx, getEmptyOrderComponents());
+  const emptyHash = hashOrderComponentsStruct(getEmptyOrderComponents());
   const height = computeHeight(padded.length);
   const capacity = 2 ** height;
   while (padded.length < capacity) {
@@ -250,23 +247,26 @@ export function unpackBulkSignature(packed: `0x${string}`): {
  * Encode an EIP-712 domain separator as bytes32.
  */
 function encodeDomainSeparator(domain: TypedDataDomain): `0x${string}` {
-  const types = ["bytes32", "bytes32", "bytes32", "address"];
-  const values: [`0x${string}`, `0x${string}`, `0x${string}`, `0x${string}`] = [
-    keccak256(stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")),
-    keccak256(stringToHex(domain.name as string)),
-    keccak256(stringToHex(domain.version as string)),
-    domain.verifyingContract as `0x${string}`,
-  ];
-
   return keccak256(
     encodeAbiParameters(
       [
         { type: "bytes32" },
         { type: "bytes32" },
         { type: "bytes32" },
+        { type: "uint256" },
         { type: "address" },
       ],
-      values,
+      [
+        keccak256(
+          stringToHex(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+          ),
+        ),
+        keccak256(stringToHex(domain.name as string)),
+        keccak256(stringToHex(domain.version as string)),
+        BigInt(domain.chainId ?? 0),
+        domain.verifyingContract as `0x${string}`,
+      ],
     ),
   );
 }

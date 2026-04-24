@@ -4,22 +4,24 @@ import {
   createTestClient,
   http,
   formatEther,
+  concat,
+  numberToHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mainnet } from "viem/chains";
+import type { FulfillmentComponent } from "../src/index";
 import {
   ItemType,
   OrderType,
   ZERO_ADDRESS,
   ZERO_BYTES32,
+  seaportAbi,
   getCounter,
-  hashOrderComponents,
   computeHeight,
   padLeaves,
   buildBulkOrderTree,
   hashBulkOrder,
   getProof,
-  packBulkSignature,
   toOrderParameters,
   buildFulfillOrder,
   buildFulfillAvailableOrders,
@@ -51,7 +53,6 @@ const FEE_RECIPIENT_KEY =
 
 const sellerAccount = privateKeyToAccount(SELLER_KEY);
 const buyerAccount = privateKeyToAccount(BUYER_KEY);
-const feeRecipientAccount = privateKeyToAccount(FEE_RECIPIENT_KEY);
 
 const RPC_URL = "http://127.0.0.1:8545";
 const MARKETPLACE_FEE_BPS = 300n; // 3% = 300 basis points
@@ -136,14 +137,13 @@ async function bulkListAndBuy() {
   console.log("=== Seaport Bulk List & Buy ===\n");
   console.log(`Seller:       ${sellerAccount.address}`);
   console.log(`Buyer:        ${buyerAccount.address}`);
-  console.log(`Fee recip:    ${feeRecipientAccount.address}`);
   console.log(`NFTs:         ${TOKEN_IDS.map((id) => `#${id}`).join(", ")}`);
 
   for (const id of TOKEN_IDS) {
     console.log(`  #${id}: ${formatEther(priceFor(id))} ETH (+ ${formatEther(feeFor(id))} ETH fee)`);
   }
 
-  // Fund seller and buyer
+  // Fund seller, buyer, and fee recipient
   await testClient.setBalance({
     address: sellerAccount.address,
     value: 10_000000000000000000n,
@@ -151,6 +151,14 @@ async function bulkListAndBuy() {
   await testClient.setBalance({
     address: buyer.account.address,
     value: 50_000000000000000000n,
+  });
+  await testClient.setBalance({
+    address: buyer.account.address,
+    value: 50_000000000000000000n,
+  });
+  await testClient.setBalance({
+    address: sellerAccount.address,
+    value: 1_000000000000000000n,
   });
 
   // ── Phase 0: Transfer NFTs to seller ─────────────────────
@@ -239,7 +247,7 @@ async function bulkListAndBuy() {
           identifierOrCriteria: 0n,
           startAmount: feeFor(tokenId),
           endAmount: feeFor(tokenId),
-          recipient: feeRecipientAccount.address,
+          recipient: sellerAccount.address,
         },
       ],
       orderType: OrderType.FULL_OPEN,
@@ -262,18 +270,29 @@ async function bulkListAndBuy() {
 
   // ── Phase 3: Build bulk order tree ────────────────────────
 
-  console.log("\n[3] Building bulk order tree...");
+  console.log("\n[3] Getting order hashes from contract...");
 
-  const leaves = allOrderComponents.map((oc) =>
-    hashOrderComponents(SEAPORT_CTX, oc),
+  // Use on-chain getOrderHash for correct leaf hashes
+  const leaves = await Promise.all(
+    allOrderComponents.map((oc) =>
+      publicClient.readContract({
+        address: SEAPORT_ADDRESS,
+        abi: seaportAbi,
+        functionName: "getOrderHash",
+        args: [oc],
+      }),
+    ),
   );
-  const paddedLeaves = padLeaves(SEAPORT_CTX, leaves);
+
+  for (let i = 0; i < leaves.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: index is in bounds
+    console.log(`    Leaf ${i}: ${leaves[i]!.slice(0, 18)}...`);
+  }
+
+  const paddedLeaves = padLeaves(leaves);
   const layers = buildBulkOrderTree(paddedLeaves);
   const root = layers[layers.length - 1]![0]!;
   const height = computeHeight(paddedLeaves.length);
-
-  console.log(`    Height: ${height}, Capacity: ${2 ** height}`);
-  console.log(`    Root: ${root}`);
 
   // ── Phase 4: Sign bulk order ──────────────────────────────
 
@@ -287,9 +306,12 @@ async function bulkListAndBuy() {
   const r = rawSig.slice(0, 66) as `0x${string}`;
   const s = ("0x" + rawSig.slice(66, 130)) as `0x${string}`;
   const v = Number.parseInt(rawSig.slice(130, 132), 16);
-  const yParity: 0 | 1 = v === 27 ? 0 : 1;
 
   console.log(`    Signed: ${rawSig.slice(0, 18)}...`);
+  console.log(`    r: ${r}`);
+  console.log(`    s: ${s}`);
+  console.log(`    v: ${v}`);
+  console.log(`    digest: ${digest}`);
 
   // ── Phase 5: Pack signatures & prepare listings ───────────
 
@@ -306,14 +328,23 @@ async function bulkListAndBuy() {
     // biome-ignore lint/style/noNonNullAssertion: index is in bounds
     const oc = allOrderComponents[i]!;
     const proof = getProof(layers, i);
-    const packedSig = packBulkSignature({ r, s, yParity }, i, proof);
+
+    // Pack using standard 65-byte ECDSA form: r (32) + s (32) + v (1) + index (3) + proof
+    const packedSig = concat([
+      r,
+      s,
+      numberToHex(v, { size: 1 }),
+      numberToHex(i, { size: 3 }),
+      ...proof,
+    ]);
+
     const params = toOrderParameters(
       oc,
       BigInt(oc.consideration.length),
     );
     listings.push({ parameters: params, signature: packedSig });
     console.log(
-      `    Listing ${i}: BAYC #${TOKEN_IDS[i]} — packed sig ${packedSig.slice(0, 18)}...`,
+      `    Listing ${i}: BAYC #${TOKEN_IDS[i]} — packed sig length: ${(packedSig.length - 2) / 2} bytes`,
     );
   }
 
@@ -352,9 +383,21 @@ async function bulkListAndBuy() {
   console.log("\n[7] Buying BAYC #4, #5, #6 together (fulfillAvailableOrders)...");
 
   const remainingListings = listings.slice(1);
+
+  // Provide fulfillment components for 3 orders
+  const offerFulfillments = remainingListings.map((_, i) => [
+    { orderIndex: BigInt(i), itemIndex: 0n },
+  ]);
+  const considerationFulfillments = remainingListings.map((_, i) => [
+    { orderIndex: BigInt(i), itemIndex: 0n },
+    { orderIndex: BigInt(i), itemIndex: 1n },
+  ]);
+
   const batchFulfillment = buildFulfillAvailableOrders(
     SEAPORT_CTX,
     remainingListings,
+    offerFulfillments,
+    considerationFulfillments,
   );
   console.log(`    Value: ${formatEther(batchFulfillment.value)} ETH`);
 

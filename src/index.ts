@@ -48,7 +48,7 @@ export {
 } from "./encode";
 
 // Signature
-export { verifyOrderSignature, hashOrderComponents } from "./signature";
+export { verifyOrderSignature, hashOrderComponents, hashOrderComponentsStruct } from "./signature";
 
 // Counter
 export { getCounter } from "./counter";

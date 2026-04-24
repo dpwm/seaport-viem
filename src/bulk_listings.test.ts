@@ -8,7 +8,7 @@ import {
   getProof,
   packBulkSignature,
   unpackBulkSignature,
-  hashOrderComponents,
+  hashOrderComponentsStruct,
   getEmptyOrderComponents,
 } from "./index";
 import { ctx, makeOrderComponents } from "./test-fixtures";
@@ -102,34 +102,34 @@ describe("getBulkOrderTypeString", () => {
 
 describe("padLeaves", () => {
   test("pads 1 leaf to 2 (capacity of height 1)", () => {
-    const leaf = hashOrderComponents(ctx, makeOrderComponents());
-    const padded = padLeaves(ctx, [leaf]);
+    const leaf = hashOrderComponentsStruct(makeOrderComponents());
+    const padded = padLeaves( [leaf]);
     expect(padded.length).toBe(2);
   });
 
   test("pads 3 leaves to 4 (capacity of height 2)", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 3n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 3n })),
     ];
-    const padded = padLeaves(ctx, leaves);
+    const padded = padLeaves( leaves);
     expect(padded.length).toBe(4);
   });
 
   test("leaves 2 leaves unchanged (already power of 2)", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
-    const padded = padLeaves(ctx, leaves);
+    const padded = padLeaves( leaves);
     expect(padded.length).toBe(2);
   });
 
   test("padded leaves use the empty order hash", () => {
-    const leaf = hashOrderComponents(ctx, makeOrderComponents());
-    const padded = padLeaves(ctx, [leaf]);
-    const emptyHash = hashOrderComponents(ctx, getEmptyOrderComponents());
+    const leaf = hashOrderComponentsStruct(makeOrderComponents());
+    const padded = padLeaves([leaf]);
+    const emptyHash = hashOrderComponentsStruct(getEmptyOrderComponents());
     expect(padded[1]).toBe(emptyHash);
   });
 });
@@ -138,8 +138,8 @@ describe("padLeaves", () => {
 
 describe("buildBulkOrderTree", () => {
   test("single leaf padded to 2 produces two layers", () => {
-    const leaf = hashOrderComponents(ctx, makeOrderComponents());
-    const padded = padLeaves(ctx, [leaf]);
+    const leaf = hashOrderComponentsStruct(makeOrderComponents());
+    const padded = padLeaves( [leaf]);
     const layers = buildBulkOrderTree(padded);
     expect(layers.length).toBe(2);
     expect(layers[0]).toHaveLength(2);
@@ -148,8 +148,8 @@ describe("buildBulkOrderTree", () => {
 
   test("two leaves produce two layers with root", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     expect(layers.length).toBe(2);
@@ -159,10 +159,10 @@ describe("buildBulkOrderTree", () => {
 
   test("four leaves produce three layers", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 3n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 4n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 3n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 4n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     expect(layers.length).toBe(3);
@@ -171,8 +171,8 @@ describe("buildBulkOrderTree", () => {
 
   test("root is bytes32", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     const root = layers[layers.length - 1]![0]!;
@@ -185,9 +185,9 @@ describe("buildBulkOrderTree", () => {
 
   test("throws on non-power-of-2 leaves", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 3n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 3n })),
     ];
     expect(() => buildBulkOrderTree(leaves)).toThrow("power of 2");
   });
@@ -197,8 +197,8 @@ describe("buildBulkOrderTree", () => {
 
 describe("getProof", () => {
   test("single leaf padded to 2 yields proof of length 1", () => {
-    const leaf = hashOrderComponents(ctx, makeOrderComponents());
-    const padded = padLeaves(ctx, [leaf]);
+    const leaf = hashOrderComponentsStruct(makeOrderComponents());
+    const padded = padLeaves( [leaf]);
     const layers = buildBulkOrderTree(padded);
     const proof = getProof(layers, 0);
     expect(proof).toHaveLength(1);
@@ -206,8 +206,8 @@ describe("getProof", () => {
 
   test("two-leaf tree yields proof of length 1", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     const proof0 = getProof(layers, 0);
@@ -219,10 +219,10 @@ describe("getProof", () => {
   });
 
   test("four-leaf tree yields proof of length 2", () => {
-    const leaves = padLeaves(ctx, [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 3n })),
+    const leaves = padLeaves( [
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 3n })),
     ]);
     const layers = buildBulkOrderTree(leaves);
     const proof = getProof(layers, 0);
@@ -231,8 +231,8 @@ describe("getProof", () => {
 
   test("proof for index 0 has sibling hash at position 0", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     const proof = getProof(layers, 0);
@@ -241,8 +241,8 @@ describe("getProof", () => {
 
   test("proof for index 1 has sibling hash at position 0", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     const proof = getProof(layers, 1);
@@ -251,8 +251,8 @@ describe("getProof", () => {
 
   test("throws for negative index", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     expect(() => getProof(layers, -1)).toThrow("out of range");
@@ -260,8 +260,8 @@ describe("getProof", () => {
 
   test("throws for index >= leaf count", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const layers = buildBulkOrderTree(leaves);
     expect(() => getProof(layers, 2)).toThrow("out of range");
@@ -272,8 +272,8 @@ describe("getProof", () => {
 
 describe("hashBulkOrder", () => {
   test("returns a bytes32 hash", () => {
-    const leaf = hashOrderComponents(ctx, makeOrderComponents());
-    const padded = padLeaves(ctx, [leaf]);
+    const leaf = hashOrderComponentsStruct(makeOrderComponents());
+    const padded = padLeaves( [leaf]);
     const layers = buildBulkOrderTree(padded);
     const root = layers[layers.length - 1]![0]!;
     const hash = hashBulkOrder(ctx, root, 1);
@@ -281,8 +281,8 @@ describe("hashBulkOrder", () => {
   });
 
   test("same root and height produce same hash", () => {
-    const leaf = hashOrderComponents(ctx, makeOrderComponents());
-    const padded = padLeaves(ctx, [leaf]);
+    const leaf = hashOrderComponentsStruct(makeOrderComponents());
+    const padded = padLeaves( [leaf]);
     const layers = buildBulkOrderTree(padded);
     const root = layers[layers.length - 1]![0]!;
     const h1 = hashBulkOrder(ctx, root, 1);
@@ -292,12 +292,12 @@ describe("hashBulkOrder", () => {
 
   test("different roots produce different hashes", () => {
     const leaves1 = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
     const leaves2 = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 3n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 4n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 3n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 4n })),
     ];
     const layers1 = buildBulkOrderTree(leaves1);
     const layers2 = buildBulkOrderTree(leaves2);
@@ -310,10 +310,10 @@ describe("hashBulkOrder", () => {
 
   test("different heights produce different hashes", () => {
     const leaves = [
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 1n })),
-      hashOrderComponents(ctx, makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
     ];
-    const padded4 = padLeaves(ctx, leaves);
+    const padded4 = padLeaves( leaves);
     const layers = buildBulkOrderTree(padded4);
     const root = layers[layers.length - 1]![0]!;
     // Use height 1 vs height 2 with same root
