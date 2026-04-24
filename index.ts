@@ -114,10 +114,16 @@ export type FulfillmentData = {
 
 // ── Constants ──────────────────────────────────────────────────────
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
-const ZERO_BYTES32 =
+/** The zero address (0x0000...0000). */
+export const ZERO_ADDRESS =
+  "0x0000000000000000000000000000000000000000" as const;
+
+/** A 32-byte zero value (0x0000...0000). */
+export const ZERO_BYTES32 =
   "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
-const NATIVE_TOKEN =
+
+/** Sentinel address used by Seaport to represent native ETH. */
+export const NATIVE_TOKEN =
   "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as const;
 
 // ── ABI ────────────────────────────────────────────────────────────

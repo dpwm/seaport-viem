@@ -3,6 +3,9 @@ import {
   ItemType,
   OrderType,
   BasicOrderRouteType,
+  ZERO_ADDRESS,
+  ZERO_BYTES32,
+  NATIVE_TOKEN,
   validateOrderComponents,
   canFulfillAsBasicOrder,
   detectBasicOrderRouteType,
@@ -25,9 +28,6 @@ import type {
 
 // ── Fixtures ─────────────────────────────────────────────────────
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
-const ZERO_BYTES32 =
-  "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 const ALICE =
   "0xaaaa000000000000000000000000000000000001" as `0x${string}`;
 const BOB =
@@ -130,6 +130,20 @@ describe("constants", () => {
     expect(BasicOrderRouteType.ERC20_TO_ERC1155).toBe(3);
     expect(BasicOrderRouteType.ERC721_TO_ERC20).toBe(4);
     expect(BasicOrderRouteType.ERC1155_TO_ERC20).toBe(5);
+  });
+
+  test("ZERO_ADDRESS is a valid 20-byte hex address", () => {
+    expect(ZERO_ADDRESS).toBe("0x0000000000000000000000000000000000000000");
+    expect(ZERO_ADDRESS).toHaveLength(42);
+  });
+
+  test("ZERO_BYTES32 is a valid 32-byte hex value", () => {
+    expect(ZERO_BYTES32).toHaveLength(66);
+    expect(ZERO_BYTES32).toMatch(/^0x0{64}$/);
+  });
+
+  test("NATIVE_TOKEN is a valid address", () => {
+    expect(NATIVE_TOKEN).toMatch(/^0x[0-9a-fA-F]{40}$/);
   });
 });
 
