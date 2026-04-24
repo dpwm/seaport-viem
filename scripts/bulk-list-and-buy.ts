@@ -4,8 +4,6 @@ import {
   createTestClient,
   http,
   formatEther,
-  concat,
-  numberToHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mainnet } from "viem/chains";
@@ -22,6 +20,7 @@ import {
   buildBulkOrderTree,
   hashBulkOrder,
   getProof,
+  packBulkSignature,
   toOrderParameters,
   buildFulfillOrder,
   buildFulfillAvailableOrders,
@@ -53,6 +52,7 @@ const FEE_RECIPIENT_KEY =
 
 const sellerAccount = privateKeyToAccount(SELLER_KEY);
 const buyerAccount = privateKeyToAccount(BUYER_KEY);
+const feeRecipientAccount = privateKeyToAccount(FEE_RECIPIENT_KEY);
 
 const RPC_URL = "http://127.0.0.1:8545";
 const MARKETPLACE_FEE_BPS = 300n; // 3% = 300 basis points
@@ -143,22 +143,14 @@ async function bulkListAndBuy() {
     console.log(`  #${id}: ${formatEther(priceFor(id))} ETH (+ ${formatEther(feeFor(id))} ETH fee)`);
   }
 
-  // Fund seller, buyer, and fee recipient
-  await testClient.setBalance({
-    address: sellerAccount.address,
-    value: 10_000000000000000000n,
-  });
-  await testClient.setBalance({
-    address: buyer.account.address,
-    value: 50_000000000000000000n,
-  });
-  await testClient.setBalance({
-    address: buyer.account.address,
-    value: 50_000000000000000000n,
-  });
+  // Fund seller and buyer
   await testClient.setBalance({
     address: sellerAccount.address,
     value: 1_000000000000000000n,
+  });
+  await testClient.setBalance({
+    address: buyer.account.address,
+    value: 50_000000000000000000n,
   });
 
   // ── Phase 0: Transfer NFTs to seller ─────────────────────
@@ -247,7 +239,7 @@ async function bulkListAndBuy() {
           identifierOrCriteria: 0n,
           startAmount: feeFor(tokenId),
           endAmount: feeFor(tokenId),
-          recipient: sellerAccount.address,
+          recipient: feeRecipientAccount.address,
         },
       ],
       orderType: OrderType.FULL_OPEN,
@@ -300,44 +292,28 @@ async function bulkListAndBuy() {
 
   const digest = hashBulkOrder(SEAPORT_CTX, root, height);
 
-  // Sign the raw EIP-712 digest (bulk order type is dynamic, so we compute
-  // the digest ourselves and sign it directly).
   const rawSig = await seller.account.sign({ hash: digest });
   const r = rawSig.slice(0, 66) as `0x${string}`;
   const s = ("0x" + rawSig.slice(66, 130)) as `0x${string}`;
-  const v = Number.parseInt(rawSig.slice(130, 132), 16);
+  const yParity = (Number.parseInt(rawSig.slice(130, 132), 16) - 27) as 0 | 1;
 
   console.log(`    Signed: ${rawSig.slice(0, 18)}...`);
   console.log(`    r: ${r}`);
   console.log(`    s: ${s}`);
-  console.log(`    v: ${v}`);
+  console.log(`    yParity: ${yParity}`);
   console.log(`    digest: ${digest}`);
 
   // ── Phase 5: Pack signatures & prepare listings ───────────
 
   console.log("\n[5] Preparing listings...");
 
-  interface Listing {
-    parameters: OrderParameters;
-    signature: `0x${string}`;
-  }
-
-  const listings: Listing[] = [];
+  const listings: { parameters: OrderParameters; signature: `0x${string}` }[] = [];
 
   for (let i = 0; i < allOrderComponents.length; i++) {
     // biome-ignore lint/style/noNonNullAssertion: index is in bounds
     const oc = allOrderComponents[i]!;
     const proof = getProof(layers, i);
-
-    // Pack using standard 65-byte ECDSA form: r (32) + s (32) + v (1) + index (3) + proof
-    const packedSig = concat([
-      r,
-      s,
-      numberToHex(v, { size: 1 }),
-      numberToHex(i, { size: 3 }),
-      ...proof,
-    ]);
-
+    const packedSig = packBulkSignature({ r, s, yParity }, i, proof);
     const params = toOrderParameters(
       oc,
       BigInt(oc.consideration.length),
