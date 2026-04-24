@@ -401,8 +401,10 @@ export function toBasicOrderParameters(
     throw new Error("Order must have at least one consideration item");
   }
 
-  const offerItem = order.parameters.offer[0];
-  const primaryConsideration = order.parameters.consideration[0];
+  // biome-ignore lint/style/noNonNullAssertion: guarded by length checks above
+  const offerItem = order.parameters.offer[0]!;
+  // biome-ignore lint/style/noNonNullAssertion: guarded by length check above
+  const primaryConsideration = order.parameters.consideration[0]!;
 
   const additionalRecipients: AdditionalRecipient[] = [
     ...order.parameters.consideration.slice(1).map((item) => ({
@@ -497,8 +499,10 @@ export function canFulfillAsBasicOrder(order: Order): boolean {
     return false;
   }
 
-  const offerItem = order.parameters.offer[0];
-  const primaryConsideration = order.parameters.consideration[0];
+  // biome-ignore lint/style/noNonNullAssertion: guarded by length checks above
+  const offerItem = order.parameters.offer[0]!;
+  // biome-ignore lint/style/noNonNullAssertion: guarded by length check above
+  const primaryConsideration = order.parameters.consideration[0]!;
 
   if (
     offerItem.itemType === ItemType.ERC721_WITH_CRITERIA ||
@@ -561,8 +565,10 @@ export function detectBasicOrderRouteType(
     return null;
   }
 
-  const offerItem = order.parameters.offer[0];
-  const primaryConsideration = order.parameters.consideration[0];
+  // biome-ignore lint/style/noNonNullAssertion: guarded by canFulfillAsBasicOrder
+  const offerItem = order.parameters.offer[0]!;
+  // biome-ignore lint/style/noNonNullAssertion: guarded by canFulfillAsBasicOrder
+  const primaryConsideration = order.parameters.consideration[0]!;
 
   if (offerItem.itemType === ItemType.ERC721) {
     return primaryConsideration.itemType === ItemType.NATIVE
