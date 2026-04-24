@@ -1,0 +1,272 @@
+import {
+  keccak256,
+  encodeAbiParameters,
+  concat,
+  stringToHex,
+  numberToHex,
+  hexToNumber,
+  toBytes,
+  toHex,
+} from "viem";
+import type { TypedDataDomain } from "viem";
+import type { SeaportContext, OrderComponents } from "./types";
+import {
+  BULK_ORDER_HEIGHT_MIN,
+  BULK_ORDER_HEIGHT_MAX,
+} from "./constants";
+import { hashOrderComponents } from "./signature";
+import { getEmptyOrderComponents } from "./order";
+
+/**
+ * Compute the merkle tree height for a given number of orders.
+ * Height H gives capacity 2^H.
+ * @returns The height (>= 1).
+ */
+export function computeHeight(orderCount: number): number {
+  if (orderCount <= 0) {
+    return BULK_ORDER_HEIGHT_MIN;
+  }
+  const height = Math.ceil(Math.log2(orderCount));
+  return height < BULK_ORDER_HEIGHT_MIN ? BULK_ORDER_HEIGHT_MIN : height;
+}
+
+/**
+ * Pad an array of leaf hashes to the next power of 2 using the hash of an
+ * empty OrderComponents struct. Requires the Seaport context because the
+ * empty order hash is domain-dependent.
+ *
+ * @param ctx - Seaport deployment context.
+ * @param leaves - The leaf hashes to pad.
+ * @returns A new array padded to the required capacity.
+ */
+export function padLeaves(
+  ctx: SeaportContext,
+  leaves: `0x${string}`[],
+): `0x${string}`[] {
+  const padded = [...leaves];
+  const emptyHash = hashOrderComponents(ctx, getEmptyOrderComponents());
+  const height = computeHeight(padded.length);
+  const capacity = 2 ** height;
+  while (padded.length < capacity) {
+    padded.push(emptyHash);
+  }
+  return padded;
+}
+
+/**
+ * Build an unsorted merkle tree from leaf hashes.
+ * Seaport does NOT sort pairs — it always hashes keccak256(left || right)
+ * in index order.
+ *
+ * @param leaves - The leaf hashes (length must be a power of 2).
+ * @returns All layers of the tree, from leaves to root. `layers[0]` is the
+ *   leaves, `layers[layers.length - 1][0]` is the root.
+ */
+export function buildBulkOrderTree(leaves: `0x${string}`[]): `0x${string}`[][] {
+  if (leaves.length === 0) {
+    throw new Error("Cannot build a tree from zero leaves");
+  }
+
+  const height = computeHeight(leaves.length);
+  const capacity = 2 ** height;
+  if (leaves.length !== capacity) {
+    throw new Error(
+      `Leaves must be padded to a power of 2. Expected ${capacity}, got ${leaves.length}. Use padLeaves() first.`,
+    );
+  }
+
+  const layers: `0x${string}`[][] = [leaves];
+  let current = leaves;
+
+  while (current.length > 1) {
+    const next: `0x${string}`[] = [];
+    for (let i = 0; i < current.length; i += 2) {
+      const left = current[i]!;
+      const right = current[i + 1]!;
+      next.push(keccak256(concat([left, right])));
+    }
+    layers.push(next);
+    current = next;
+  }
+
+  return layers;
+}
+
+/**
+ * Generate the EIP-712 type string for a BulkOrder at the given height.
+ * The type includes the full OrderComponents definition and all its sub-types.
+ */
+export function getBulkOrderTypeString(height: number): string {
+  if (height < BULK_ORDER_HEIGHT_MIN || height > BULK_ORDER_HEIGHT_MAX) {
+    throw new Error(
+      `Height must be between ${BULK_ORDER_HEIGHT_MIN} and ${BULK_ORDER_HEIGHT_MAX}, got ${height}`,
+    );
+  }
+
+  const brackets = "[2]".repeat(height);
+  return (
+    `BulkOrder(OrderComponents${brackets} tree)` +
+    `ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)` +
+    `OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)` +
+    `OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)`
+  );
+}
+
+/**
+ * Compute the EIP-712 digest for a bulk order.
+ *
+ * @param ctx - Seaport deployment context (address and EIP-712 domain).
+ * @param root - The merkle root of the bulk order tree.
+ * @param height - The tree height.
+ * @returns The EIP-712 digest as a 32-byte hex string (ready to sign).
+ */
+export function hashBulkOrder(
+  ctx: SeaportContext,
+  root: `0x${string}`,
+  height: number,
+): `0x${string}` {
+  const typeString = getBulkOrderTypeString(height);
+  const typeHash = keccak256(stringToHex(typeString));
+
+  const structHash = keccak256(
+    encodeAbiParameters(
+      [{ type: "bytes32" }, { type: "bytes32" }],
+      [typeHash, root],
+    ),
+  );
+
+  return keccak256(
+    concat(["0x1901", encodeDomainSeparator(ctx.domain), structHash]),
+  );
+}
+
+/**
+ * Extract a merkle proof for a leaf at the given index.
+ *
+ * @param layers - All layers of the tree (as returned by buildBulkOrderTree).
+ * @param index - The leaf index (0-based).
+ * @returns The proof as an array of sibling hashes.
+ */
+export function getProof(
+  layers: `0x${string}`[][],
+  index: number,
+): `0x${string}`[] {
+  if (index < 0 || index >= (layers[0]?.length ?? 0)) {
+    throw new Error(`Index ${index} out of range for tree with ${layers[0]?.length ?? 0} leaves`);
+  }
+
+  const proof: `0x${string}`[] = [];
+  let idx = index;
+
+  for (let layer = 0; layer < layers.length - 1; layer++) {
+    const siblingIndex = idx ^ 1;
+    // biome-ignore lint/style/noNonNullAssertion: siblingIndex is always within bounds for a complete binary tree
+    proof.push(layers[layer]![siblingIndex]!);
+    idx = Math.floor(idx / 2);
+  }
+
+  return proof;
+}
+
+/**
+ * Pack a bulk order signature using EIP-2098 compact form.
+ *
+ * Format (67 + height * 32 bytes):
+ *   r (32 bytes) ‖ sCompact (32 bytes) ‖ orderIndex (3 bytes) ‖ proof (height * 32 bytes)
+ *
+ * sCompact encodes yParity in the high bit (bit 255) of s.
+ */
+export function packBulkSignature(
+  signature: { r: `0x${string}`; s: `0x${string}`; yParity: 0 | 1 },
+  orderIndex: number,
+  proof: `0x${string}`[],
+): `0x${string}` {
+  if (orderIndex < 0 || orderIndex > 0xffffff) {
+    throw new Error(
+      `orderIndex must fit in 3 bytes (0–16777215), got ${orderIndex}`,
+    );
+  }
+
+  const sBigInt = BigInt(signature.s);
+  const yParityBit = signature.yParity === 1 ? 1n << 255n : 0n;
+  const sCompact = yParityBit | sBigInt;
+
+  return concat([
+    signature.r,
+    numberToHex(sCompact, { size: 32 }),
+    numberToHex(orderIndex, { size: 3 }),
+    ...proof,
+  ]);
+}
+
+/**
+ * Unpack a bulk order signature from EIP-2098 compact form.
+ *
+ * @param packed - The packed bulk signature.
+ * @returns The signature components, order index, and merkle proof.
+ */
+export function unpackBulkSignature(packed: `0x${string}`): {
+  signature: { r: `0x${string}`; s: `0x${string}`; yParity: 0 | 1 };
+  orderIndex: number;
+  proof: `0x${string}`[];
+} {
+  const bytes = toBytes(packed);
+
+  if (bytes.length < 67) {
+    throw new Error(
+      `Packed signature too short: expected at least 67 bytes, got ${bytes.length}`,
+    );
+  }
+
+  const remainder = (bytes.length - 67) % 32;
+  if (remainder !== 0) {
+    throw new Error(
+      `Packed signature has invalid length: proof must be a multiple of 32 bytes`,
+    );
+  }
+
+  const height = (bytes.length - 67) / 32;
+
+  const r = toHex(bytes.slice(0, 32));
+  const sCompact = BigInt(toHex(bytes.slice(32, 64)));
+  const yParity: 0 | 1 = sCompact >> 255n === 1n ? 1 : 0;
+  const s = sCompact & ((1n << 255n) - 1n);
+  const orderIndex = hexToNumber(toHex(bytes.slice(64, 67)));
+
+  const proof: `0x${string}`[] = [];
+  for (let i = 0; i < height; i++) {
+    const start = 67 + i * 32;
+    proof.push(toHex(bytes.slice(start, start + 32)));
+  }
+
+  return {
+    signature: { r, s: numberToHex(s, { size: 32 }), yParity },
+    orderIndex,
+    proof,
+  };
+}
+
+/**
+ * Encode an EIP-712 domain separator as bytes32.
+ */
+function encodeDomainSeparator(domain: TypedDataDomain): `0x${string}` {
+  const types = ["bytes32", "bytes32", "bytes32", "address"];
+  const values: [`0x${string}`, `0x${string}`, `0x${string}`, `0x${string}`] = [
+    keccak256(stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")),
+    keccak256(stringToHex(domain.name as string)),
+    keccak256(stringToHex(domain.version as string)),
+    domain.verifyingContract as `0x${string}`,
+  ];
+
+  return keccak256(
+    encodeAbiParameters(
+      [
+        { type: "bytes32" },
+        { type: "bytes32" },
+        { type: "bytes32" },
+        { type: "address" },
+      ],
+      values,
+    ),
+  );
+}

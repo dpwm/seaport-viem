@@ -126,3 +126,21 @@ export type FulfillmentOptions = {
   fulfillerConduitKey?: `0x${string}`;
   tips?: AdditionalRecipient[];
 };
+
+/** Order parameters as used by Seaport's on-chain structs (OrderComponents without counter). */
+export type OrderParameters = Omit<OrderComponents, "counter">;
+
+/** An advanced order with numerator/denominator for partial fills. */
+export type AdvancedOrder = {
+  parameters: OrderParameters;
+  numerator: bigint;
+  denominator: bigint;
+  signature: `0x${string}`;
+  extraData: `0x${string}`;
+};
+
+/** A component identifying an item in a fulfillment group. */
+export type FulfillmentComponent = {
+  orderIndex: bigint;
+  itemIndex: bigint;
+};

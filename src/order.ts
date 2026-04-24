@@ -1,5 +1,7 @@
 import type {
   Order,
+  OrderComponents,
+  OrderParameters,
   BasicOrderRouteTypeValue,
   BasicOrderParameters,
   AdditionalRecipient,
@@ -252,4 +254,35 @@ export function detectBasicOrderRouteType(
   }
 
   return null;
+}
+
+/**
+ * Convert OrderComponents to OrderParameters by dropping the counter field.
+ * OrderParameters matches Seaport's on-chain Order struct.
+ */
+export function toOrderParameters(
+  components: OrderComponents,
+): OrderParameters {
+  const { counter: _, ...rest } = components;
+  return rest;
+}
+
+/**
+ * Return a canonical empty OrderComponents struct used to pad bulk order
+ * merkle trees to the required capacity.
+ */
+export function getEmptyOrderComponents(): OrderComponents {
+  return {
+    offerer: ZERO_ADDRESS,
+    zone: ZERO_ADDRESS,
+    offer: [],
+    consideration: [],
+    orderType: OrderType.FULL_OPEN,
+    startTime: 0n,
+    endTime: 0n,
+    zoneHash: ZERO_BYTES32,
+    salt: 0n,
+    conduitKey: ZERO_BYTES32,
+    counter: 0n,
+  };
 }

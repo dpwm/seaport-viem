@@ -8,6 +8,9 @@ export type {
   ConsiderationItem,
   OrderComponents,
   Order,
+  OrderParameters,
+  AdvancedOrder,
+  FulfillmentComponent,
   AdditionalRecipient,
   BasicOrderParameters,
   ValidationResult,
@@ -22,6 +25,8 @@ export {
   ZERO_ADDRESS,
   ZERO_BYTES32,
   NATIVE_TOKEN,
+  BULK_ORDER_HEIGHT_MIN,
+  BULK_ORDER_HEIGHT_MAX,
   seaportAbi,
   EIP712_TYPES,
 } from "./constants";
@@ -48,4 +53,18 @@ export {
   buildBasicOrderFulfillment,
   canFulfillAsBasicOrder,
   detectBasicOrderRouteType,
+  toOrderParameters,
+  getEmptyOrderComponents,
 } from "./order";
+
+// Bulk listings
+export {
+  computeHeight,
+  padLeaves,
+  buildBulkOrderTree,
+  getBulkOrderTypeString,
+  hashBulkOrder,
+  getProof,
+  packBulkSignature,
+  unpackBulkSignature,
+} from "./bulk_listings";

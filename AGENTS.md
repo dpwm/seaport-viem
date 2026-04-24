@@ -23,12 +23,13 @@ All source files live in `src/`.
 | File | Purpose |
 |------|---------|
 | `src/types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`) |
-| `src/constants.ts` | ABI (JSON format), EIP-712 types, address constants |
+| `src/constants.ts` | ABI (JSON format), EIP-712 types, address constants, bulk order height limits |
 | `src/encode.ts` | `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfillBasicOrder` |
 | `src/signature.ts` | `verifyOrderSignature`, `hashOrderComponents` |
 | `src/counter.ts` | `getCounter` (on-chain call via `PublicClient`) |
 | `src/validate.ts` | `validateOrderComponents` (client-side checks) |
-| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType` |
+| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `getEmptyOrderComponents` |
+| `src/bulk_listings.ts` | Bulk order signing: `computeHeight`, `padLeaves`, `buildBulkOrderTree`, `getBulkOrderTypeString`, `hashBulkOrder`, `getProof`, `packBulkSignature`, `unpackBulkSignature` |
 | `src/index.ts` | Barrel re-export only — no logic lives here |
 | `src/test-fixtures.ts` | Shared test fixtures (`makeOrder`, `makeOrderComponents`, etc.) |
 | `src/constants.test.ts` | Tests for enum values, ABI, EIP-712 types |
@@ -36,8 +37,9 @@ All source files live in `src/`.
 | `src/validate.test.ts` | Tests for `validateOrderComponents` |
 | `src/order.test.ts` | Tests for `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toBasicOrderParameters`, `buildBasicOrderFulfillment` |
 | `src/signature.test.ts` | Tests for `hashOrderComponents` |
+| `src/bulk_listings.test.ts` | Tests for bulk order tree building, proofs, type strings, signature packing |
 
-Subpath imports work: `import { ... } from "seaport-viem/order"`.
+Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { ... } from "seaport-viem/bulk-listings"`.
 
 ## TypeScript quirks
 
@@ -58,4 +60,4 @@ Only `fulfillBasicOrder` is supported. There is no `fulfillOrder`, `fulfillAdvan
 
 ## Build output
 
-tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 8 subpath entry points, one per source module.
+tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 9 subpath entry points, one per source module.

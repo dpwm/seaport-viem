@@ -108,6 +108,12 @@ export const seaportAbi = [
   },
 ] as const satisfies Abi;
 
+/** Minimum merkle tree height for bulk orders. */
+export const BULK_ORDER_HEIGHT_MIN = 1;
+
+/** Maximum merkle tree height for bulk orders. */
+export const BULK_ORDER_HEIGHT_MAX = 24;
+
 /** EIP-712 type definitions for Seaport order signing. */
 export const EIP712_TYPES = {
   OrderComponents: [

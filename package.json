@@ -55,6 +55,12 @@
         "types": "./dist/order.d.ts",
         "default": "./dist/order.js"
       }
+    },
+    "./bulk-listings": {
+      "import": {
+        "types": "./dist/bulk_listings.d.ts",
+        "default": "./dist/bulk_listings.js"
+      }
     }
   },
   "files": [

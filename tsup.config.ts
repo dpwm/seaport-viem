@@ -10,6 +10,7 @@ export default defineConfig({
     "src/counter.ts",
     "src/validate.ts",
     "src/order.ts",
+    "src/bulk_listings.ts",
   ],
   format: ["esm"],
   dts: true,
