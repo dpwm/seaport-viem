@@ -2,9 +2,12 @@ import type {
   Order,
   OrderComponents,
   OrderParameters,
+  AdvancedOrder,
   BasicOrderRouteTypeValue,
   BasicOrderParameters,
   AdditionalRecipient,
+  CriteriaResolver,
+  FulfillmentComponent,
   FulfillmentData,
   FulfillmentOptions,
   SeaportContext,
@@ -19,7 +22,13 @@ import {
   ZERO_BYTES32,
   NATIVE_TOKEN,
 } from "./constants";
-import { encodeFulfillBasicOrder } from "./encode";
+import {
+  encodeFulfillBasicOrder,
+  encodeFulfillOrder,
+  encodeFulfillAdvancedOrder,
+  encodeFulfillAvailableOrders,
+  encodeFulfillAvailableAdvancedOrders,
+} from "./encode";
 
 /**
  * Convert a high-level Order into the flat BasicOrderParameters needed by
@@ -257,14 +266,20 @@ export function detectBasicOrderRouteType(
 }
 
 /**
- * Convert OrderComponents to OrderParameters by dropping the counter field.
- * OrderParameters matches Seaport's on-chain Order struct.
+ * Convert OrderComponents to OrderParameters by replacing the counter field
+ * with totalOriginalConsiderationItems. This produces the on-chain struct
+ * expected by fulfillOrder and fulfillAdvancedOrder.
+ *
+ * @param components - The order components (from signing).
+ * @param totalOriginalConsiderationItems - The number of original consideration
+ *   items (before any tips). Usually `components.consideration.length`.
  */
 export function toOrderParameters(
   components: OrderComponents,
+  totalOriginalConsiderationItems: bigint,
 ): OrderParameters {
   const { counter: _, ...rest } = components;
-  return rest;
+  return { ...rest, totalOriginalConsiderationItems };
 }
 
 /**
@@ -284,5 +299,147 @@ export function getEmptyOrderComponents(): OrderComponents {
     salt: 0n,
     conduitKey: ZERO_BYTES32,
     counter: 0n,
+  };
+}
+
+// ── Fulfillment builders ────────────────────────────────────
+
+/**
+ * Sum all NATIVE consideration items to compute msg.value.
+ */
+function computeNativeValue(consideration: { itemType: number; endAmount: bigint }[]): bigint {
+  let value = 0n;
+  for (const item of consideration) {
+    if (item.itemType === ItemType.NATIVE) {
+      value += item.endAmount;
+    }
+  }
+  return value;
+}
+
+/**
+ * Build a transaction for fulfillOrder.
+ *
+ * @param ctx - Seaport deployment context.
+ * @param order - The order with OrderParameters and signature.
+ * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
+ * @returns Transaction data ready to send.
+ */
+export function buildFulfillOrder(
+  ctx: SeaportContext,
+  order: { parameters: OrderParameters; signature: `0x${string}` },
+  fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
+): FulfillmentData {
+  return {
+    to: ctx.address,
+    data: encodeFulfillOrder(order, fulfillerConduitKey),
+    value: computeNativeValue(order.parameters.consideration),
+  };
+}
+
+/**
+ * Build a transaction for fulfillAdvancedOrder.
+ *
+ * @param ctx - Seaport deployment context.
+ * @param advancedOrder - The advanced order with partial fill params.
+ * @param criteriaResolvers - Resolutions for criteria-based items.
+ * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
+ * @param recipient - Address to receive the items. Defaults to zero (msg.sender).
+ * @returns Transaction data ready to send.
+ */
+export function buildFulfillAdvancedOrder(
+  ctx: SeaportContext,
+  advancedOrder: AdvancedOrder,
+  criteriaResolvers: CriteriaResolver[] = [],
+  fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
+  recipient: `0x${string}` = ZERO_ADDRESS,
+): FulfillmentData {
+  return {
+    to: ctx.address,
+    data: encodeFulfillAdvancedOrder(
+      advancedOrder,
+      criteriaResolvers,
+      fulfillerConduitKey,
+      recipient,
+    ),
+    value: computeNativeValue(advancedOrder.parameters.consideration),
+  };
+}
+
+/**
+ * Build a transaction for fulfillAvailableOrders.
+ *
+ * @param ctx - Seaport deployment context.
+ * @param orders - Array of orders to attempt fulfillment on.
+ * @param offerFulfillments - Groups of offer items to aggregate.
+ * @param considerationFulfillments - Groups of consideration items to aggregate.
+ * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
+ * @param maximumFulfilled - Maximum number of orders to fulfill. Defaults to all.
+ * @returns Transaction data ready to send.
+ */
+export function buildFulfillAvailableOrders(
+  ctx: SeaportContext,
+  orders: { parameters: OrderParameters; signature: `0x${string}` }[],
+  offerFulfillments: FulfillmentComponent[][] = [],
+  considerationFulfillments: FulfillmentComponent[][] = [],
+  fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
+  maximumFulfilled: bigint = BigInt(orders.length),
+): FulfillmentData {
+  let value = 0n;
+  for (const order of orders) {
+    value += computeNativeValue(order.parameters.consideration);
+  }
+  return {
+    to: ctx.address,
+    data: encodeFulfillAvailableOrders(
+      orders,
+      offerFulfillments,
+      considerationFulfillments,
+      fulfillerConduitKey,
+      maximumFulfilled,
+    ),
+    value,
+  };
+}
+
+/**
+ * Build a transaction for fulfillAvailableAdvancedOrders.
+ *
+ * @param ctx - Seaport deployment context.
+ * @param advancedOrders - Array of advanced orders to attempt fulfillment on.
+ * @param criteriaResolvers - Resolutions for criteria-based items.
+ * @param offerFulfillments - Groups of offer items to aggregate.
+ * @param considerationFulfillments - Groups of consideration items to aggregate.
+ * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
+ * @param recipient - Address to receive the items. Defaults to zero (msg.sender).
+ * @param maximumFulfilled - Maximum number of orders to fulfill. Defaults to all.
+ * @returns Transaction data ready to send.
+ */
+export function buildFulfillAvailableAdvancedOrders(
+  ctx: SeaportContext,
+  advancedOrders: AdvancedOrder[],
+  criteriaResolvers: CriteriaResolver[] = [],
+  offerFulfillments: FulfillmentComponent[][] = [],
+  considerationFulfillments: FulfillmentComponent[][] = [],
+  fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
+  recipient: `0x${string}` = ZERO_ADDRESS,
+  maximumFulfilled: bigint = BigInt(advancedOrders.length),
+): FulfillmentData {
+  let value = 0n;
+  for (const order of advancedOrders) {
+    value += computeNativeValue(order.parameters.consideration);
+  }
+  return {
+    to: ctx.address,
+    data: encodeFulfillAvailableAdvancedOrders(
+      advancedOrders,
+      criteriaResolvers,
+      offerFulfillments,
+      considerationFulfillments,
+      fulfillerConduitKey,
+      recipient,
+      maximumFulfilled,
+    ),
+    value,
   };
 }

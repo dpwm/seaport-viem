@@ -127,8 +127,20 @@ export type FulfillmentOptions = {
   tips?: AdditionalRecipient[];
 };
 
-/** Order parameters as used by Seaport's on-chain structs (OrderComponents without counter). */
-export type OrderParameters = Omit<OrderComponents, "counter">;
+/** Seaport's on-chain OrderParameters struct (OrderComponents with totalOriginalConsiderationItems instead of counter). */
+export type OrderParameters = {
+  offerer: `0x${string}`;
+  zone: `0x${string}`;
+  offer: OfferItem[];
+  consideration: ConsiderationItem[];
+  orderType: OrderTypeValue;
+  startTime: bigint;
+  endTime: bigint;
+  zoneHash: `0x${string}`;
+  salt: bigint;
+  conduitKey: `0x${string}`;
+  totalOriginalConsiderationItems: bigint;
+};
 
 /** An advanced order with numerator/denominator for partial fills. */
 export type AdvancedOrder = {
@@ -143,4 +155,44 @@ export type AdvancedOrder = {
 export type FulfillmentComponent = {
   orderIndex: bigint;
   itemIndex: bigint;
+};
+
+/** Side enum for criteria resolution. */
+export const Side = {
+  OFFER: 0,
+  CONSIDERATION: 1,
+} as const;
+
+/** Numeric value of a {@link Side} member. */
+export type SideValue = (typeof Side)[keyof typeof Side];
+
+/** Resolves criteria-based items to specific token identifiers. */
+export type CriteriaResolver = {
+  orderIndex: bigint;
+  side: SideValue;
+  index: bigint;
+  identifier: bigint;
+  criteriaProof: `0x${string}`[];
+};
+
+/** Pairs offer and consideration fulfillment components for order matching. */
+export type Fulfillment = {
+  offerComponents: FulfillmentComponent[];
+  considerationComponents: FulfillmentComponent[];
+};
+
+/** A received item in a Seaport execution result. */
+export type ReceivedItem = {
+  itemType: ItemTypeValue;
+  token: `0x${string}`;
+  identifier: bigint;
+  amount: bigint;
+  recipient: `0x${string}`;
+};
+
+/** A resolved execution from fulfillAvailable* or match* functions. */
+export type Execution = {
+  item: ReceivedItem;
+  offerer: `0x${string}`;
+  conduitKey: `0x${string}`;
 };

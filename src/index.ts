@@ -4,6 +4,7 @@ export type {
   ItemTypeValue,
   OrderTypeValue,
   BasicOrderRouteTypeValue,
+  SideValue,
   OfferItem,
   ConsiderationItem,
   OrderComponents,
@@ -11,6 +12,10 @@ export type {
   OrderParameters,
   AdvancedOrder,
   FulfillmentComponent,
+  CriteriaResolver,
+  Fulfillment,
+  ReceivedItem,
+  Execution,
   AdditionalRecipient,
   BasicOrderParameters,
   ValidationResult,
@@ -18,7 +23,7 @@ export type {
   FulfillmentOptions,
 } from "./types";
 
-export { ItemType, OrderType, BasicOrderRouteType } from "./types";
+export { ItemType, OrderType, BasicOrderRouteType, Side } from "./types";
 
 // Constants
 export {
@@ -36,6 +41,10 @@ export {
   encodeGetCounter,
   encodeGetOrderHash,
   encodeFulfillBasicOrder,
+  encodeFulfillOrder,
+  encodeFulfillAdvancedOrder,
+  encodeFulfillAvailableOrders,
+  encodeFulfillAvailableAdvancedOrders,
 } from "./encode";
 
 // Signature
@@ -55,6 +64,10 @@ export {
   detectBasicOrderRouteType,
   toOrderParameters,
   getEmptyOrderComponents,
+  buildFulfillOrder,
+  buildFulfillAdvancedOrder,
+  buildFulfillAvailableOrders,
+  buildFulfillAvailableAdvancedOrders,
 } from "./order";
 
 // Bulk listings

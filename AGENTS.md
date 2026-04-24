@@ -22,20 +22,20 @@ All source files live in `src/`.
 
 | File | Purpose |
 |------|---------|
-| `src/types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`) |
+| `src/types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`, `Side`) |
 | `src/constants.ts` | ABI (JSON format), EIP-712 types, address constants, bulk order height limits |
-| `src/encode.ts` | `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfillBasicOrder` |
+| `src/encode.ts` | `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfillBasicOrder`, `encodeFulfillOrder`, `encodeFulfillAdvancedOrder`, `encodeFulfillAvailableOrders`, `encodeFulfillAvailableAdvancedOrders` |
 | `src/signature.ts` | `verifyOrderSignature`, `hashOrderComponents` |
 | `src/counter.ts` | `getCounter` (on-chain call via `PublicClient`) |
 | `src/validate.ts` | `validateOrderComponents` (client-side checks) |
-| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `getEmptyOrderComponents` |
+| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `getEmptyOrderComponents`, `buildFulfillOrder`, `buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders` |
 | `src/bulk_listings.ts` | Bulk order signing: `computeHeight`, `padLeaves`, `buildBulkOrderTree`, `getBulkOrderTypeString`, `hashBulkOrder`, `getProof`, `packBulkSignature`, `unpackBulkSignature` |
 | `src/index.ts` | Barrel re-export only — no logic lives here |
 | `src/test-fixtures.ts` | Shared test fixtures (`makeOrder`, `makeOrderComponents`, etc.) |
 | `src/constants.test.ts` | Tests for enum values, ABI, EIP-712 types |
 | `src/encode.test.ts` | Tests for calldata encoders |
 | `src/validate.test.ts` | Tests for `validateOrderComponents` |
-| `src/order.test.ts` | Tests for `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toBasicOrderParameters`, `buildBasicOrderFulfillment` |
+| `src/order.test.ts` | Tests for `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `toOrderParameters`, builders |
 | `src/signature.test.ts` | Tests for `hashOrderComponents` |
 | `src/bulk_listings.test.ts` | Tests for bulk order tree building, proofs, type strings, signature packing |
 
@@ -56,7 +56,7 @@ Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { .
 
 ## What the library does NOT cover
 
-Only `fulfillBasicOrder` is supported. There is no `fulfillOrder`, `fulfillAdvancedOrder`, `cancel`, `incrementCounter`, `getOrderStatus`, or event parsing. This is intentional scope, not a gap.
+`fulfillOrder`, `fulfillAdvancedOrder`, `fulfillAvailableOrders`, and `fulfillAvailableAdvancedOrders` are supported (encoders + builders). `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`, `matchAdvancedOrders`, and event parsing are not yet implemented.
 
 ## Build output
 

@@ -106,6 +106,328 @@ export const seaportAbi = [
     ],
     outputs: [{ name: "", type: "bool" }],
   },
+  {
+    type: "function",
+    name: "fulfillOrder",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "order",
+        type: "tuple",
+        components: [
+          {
+            name: "parameters",
+            type: "tuple",
+            components: [
+              { name: "offerer", type: "address" },
+              { name: "zone", type: "address" },
+              {
+                name: "offer",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                ],
+              },
+              {
+                name: "consideration",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                  { name: "recipient", type: "address" },
+                ],
+              },
+              { name: "orderType", type: "uint8" },
+              { name: "startTime", type: "uint256" },
+              { name: "endTime", type: "uint256" },
+              { name: "zoneHash", type: "bytes32" },
+              { name: "salt", type: "uint256" },
+              { name: "conduitKey", type: "bytes32" },
+              { name: "totalOriginalConsiderationItems", type: "uint256" },
+            ],
+          },
+          { name: "signature", type: "bytes" },
+        ],
+      },
+      { name: "fulfillerConduitKey", type: "bytes32" },
+    ],
+    outputs: [{ name: "fulfilled", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "fulfillAdvancedOrder",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "advancedOrder",
+        type: "tuple",
+        components: [
+          {
+            name: "parameters",
+            type: "tuple",
+            components: [
+              { name: "offerer", type: "address" },
+              { name: "zone", type: "address" },
+              {
+                name: "offer",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                ],
+              },
+              {
+                name: "consideration",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                  { name: "recipient", type: "address" },
+                ],
+              },
+              { name: "orderType", type: "uint8" },
+              { name: "startTime", type: "uint256" },
+              { name: "endTime", type: "uint256" },
+              { name: "zoneHash", type: "bytes32" },
+              { name: "salt", type: "uint256" },
+              { name: "conduitKey", type: "bytes32" },
+              { name: "totalOriginalConsiderationItems", type: "uint256" },
+            ],
+          },
+          { name: "numerator", type: "uint120" },
+          { name: "denominator", type: "uint120" },
+          { name: "signature", type: "bytes" },
+          { name: "extraData", type: "bytes" },
+        ],
+      },
+      {
+        name: "criteriaResolvers",
+        type: "tuple[]",
+        components: [
+          { name: "orderIndex", type: "uint256" },
+          { name: "side", type: "uint8" },
+          { name: "index", type: "uint256" },
+          { name: "identifier", type: "uint256" },
+          { name: "criteriaProof", type: "bytes32[]" },
+        ],
+      },
+      { name: "fulfillerConduitKey", type: "bytes32" },
+      { name: "recipient", type: "address" },
+    ],
+    outputs: [{ name: "fulfilled", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "fulfillAvailableOrders",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "orders",
+        type: "tuple[]",
+        components: [
+          {
+            name: "parameters",
+            type: "tuple",
+            components: [
+              { name: "offerer", type: "address" },
+              { name: "zone", type: "address" },
+              {
+                name: "offer",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                ],
+              },
+              {
+                name: "consideration",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                  { name: "recipient", type: "address" },
+                ],
+              },
+              { name: "orderType", type: "uint8" },
+              { name: "startTime", type: "uint256" },
+              { name: "endTime", type: "uint256" },
+              { name: "zoneHash", type: "bytes32" },
+              { name: "salt", type: "uint256" },
+              { name: "conduitKey", type: "bytes32" },
+              { name: "totalOriginalConsiderationItems", type: "uint256" },
+            ],
+          },
+          { name: "signature", type: "bytes" },
+        ],
+      },
+      {
+        name: "offerFulfillments",
+        type: "tuple[][]",
+        components: [
+          { name: "orderIndex", type: "uint256" },
+          { name: "itemIndex", type: "uint256" },
+        ],
+      },
+      {
+        name: "considerationFulfillments",
+        type: "tuple[][]",
+        components: [
+          { name: "orderIndex", type: "uint256" },
+          { name: "itemIndex", type: "uint256" },
+        ],
+      },
+      { name: "fulfillerConduitKey", type: "bytes32" },
+      { name: "maximumFulfilled", type: "uint256" },
+    ],
+    outputs: [
+      { name: "availableOrders", type: "bool[]" },
+      {
+        name: "executions",
+        type: "tuple[]",
+        components: [
+          {
+            name: "item",
+            type: "tuple",
+            components: [
+              { name: "itemType", type: "uint8" },
+              { name: "token", type: "address" },
+              { name: "identifier", type: "uint256" },
+              { name: "amount", type: "uint256" },
+              { name: "recipient", type: "address" },
+            ],
+          },
+          { name: "offerer", type: "address" },
+          { name: "conduitKey", type: "bytes32" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "fulfillAvailableAdvancedOrders",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "advancedOrders",
+        type: "tuple[]",
+        components: [
+          {
+            name: "parameters",
+            type: "tuple",
+            components: [
+              { name: "offerer", type: "address" },
+              { name: "zone", type: "address" },
+              {
+                name: "offer",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                ],
+              },
+              {
+                name: "consideration",
+                type: "tuple[]",
+                components: [
+                  { name: "itemType", type: "uint8" },
+                  { name: "token", type: "address" },
+                  { name: "identifierOrCriteria", type: "uint256" },
+                  { name: "startAmount", type: "uint256" },
+                  { name: "endAmount", type: "uint256" },
+                  { name: "recipient", type: "address" },
+                ],
+              },
+              { name: "orderType", type: "uint8" },
+              { name: "startTime", type: "uint256" },
+              { name: "endTime", type: "uint256" },
+              { name: "zoneHash", type: "bytes32" },
+              { name: "salt", type: "uint256" },
+              { name: "conduitKey", type: "bytes32" },
+              { name: "totalOriginalConsiderationItems", type: "uint256" },
+            ],
+          },
+          { name: "numerator", type: "uint120" },
+          { name: "denominator", type: "uint120" },
+          { name: "signature", type: "bytes" },
+          { name: "extraData", type: "bytes" },
+        ],
+      },
+      {
+        name: "criteriaResolvers",
+        type: "tuple[]",
+        components: [
+          { name: "orderIndex", type: "uint256" },
+          { name: "side", type: "uint8" },
+          { name: "index", type: "uint256" },
+          { name: "identifier", type: "uint256" },
+          { name: "criteriaProof", type: "bytes32[]" },
+        ],
+      },
+      {
+        name: "offerFulfillments",
+        type: "tuple[][]",
+        components: [
+          { name: "orderIndex", type: "uint256" },
+          { name: "itemIndex", type: "uint256" },
+        ],
+      },
+      {
+        name: "considerationFulfillments",
+        type: "tuple[][]",
+        components: [
+          { name: "orderIndex", type: "uint256" },
+          { name: "itemIndex", type: "uint256" },
+        ],
+      },
+      { name: "fulfillerConduitKey", type: "bytes32" },
+      { name: "recipient", type: "address" },
+      { name: "maximumFulfilled", type: "uint256" },
+    ],
+    outputs: [
+      { name: "availableOrders", type: "bool[]" },
+      {
+        name: "executions",
+        type: "tuple[]",
+        components: [
+          {
+            name: "item",
+            type: "tuple",
+            components: [
+              { name: "itemType", type: "uint8" },
+              { name: "token", type: "address" },
+              { name: "identifier", type: "uint256" },
+              { name: "amount", type: "uint256" },
+              { name: "recipient", type: "address" },
+            ],
+          },
+          { name: "offerer", type: "address" },
+          { name: "conduitKey", type: "bytes32" },
+        ],
+      },
+    ],
+  },
 ] as const satisfies Abi;
 
 /** Minimum merkle tree height for bulk orders. */

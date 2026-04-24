@@ -9,7 +9,13 @@ import {
   detectBasicOrderRouteType,
   toBasicOrderParameters,
   buildBasicOrderFulfillment,
+  toOrderParameters,
+  buildFulfillOrder,
+  buildFulfillAdvancedOrder,
+  buildFulfillAvailableOrders,
+  buildFulfillAvailableAdvancedOrders,
 } from "./index";
+import type { AdvancedOrder, OrderParameters, FulfillmentComponent } from "./index";
 import {
   ALICE,
   BOB,
@@ -478,5 +484,190 @@ describe("buildBasicOrderFulfillment", () => {
       routeType: BasicOrderRouteType.ETH_TO_ERC721,
     });
     expect(result.to).toBe(ctx.address);
+  });
+});
+
+// ── toOrderParameters ────────────────────────────────────────
+
+describe("toOrderParameters", () => {
+  test("replaces counter with totalOriginalConsiderationItems", () => {
+    const components = makeOrderComponents();
+    const params = toOrderParameters(components, 1n);
+    expect(params.totalOriginalConsiderationItems).toBe(1n);
+    expect("counter" in params).toBe(false);
+  });
+
+  test("preserves all other fields", () => {
+    const components = makeOrderComponents({ salt: 42n });
+    const params = toOrderParameters(components, 1n);
+    expect(params.offerer).toBe(components.offerer);
+    expect(params.zone).toBe(components.zone);
+    expect(params.salt).toBe(42n);
+    expect(params.orderType).toBe(components.orderType);
+    expect(params.startTime).toBe(components.startTime);
+    expect(params.endTime).toBe(components.endTime);
+    expect(params.conduitKey).toBe(components.conduitKey);
+  });
+
+  test("uses provided totalOriginalConsiderationItems", () => {
+    const components = makeOrderComponents({
+      consideration: [
+        makeConsiderationItem(),
+        makeConsiderationItem({ recipient: BOB }),
+        makeConsiderationItem({ recipient: BOB, endAmount: 500n }),
+      ],
+    });
+    const params = toOrderParameters(components, 2n);
+    expect(params.totalOriginalConsiderationItems).toBe(2n);
+    expect(params.consideration).toHaveLength(3);
+  });
+});
+
+// ── buildFulfillOrder ────────────────────────────────────────
+
+describe("buildFulfillOrder", () => {
+  test("returns transaction data with correct to address", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const result = buildFulfillOrder(ctx, { parameters: params, signature: order.signature });
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("computes ETH value for native consideration", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ endAmount: 1000n }),
+          makeConsiderationItem({ recipient: BOB, endAmount: 200n }),
+        ],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const result = buildFulfillOrder(ctx, { parameters: params, signature: order.signature });
+    expect(result.value).toBe(1200n);
+  });
+
+  test("zero value for ERC20-only consideration", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ itemType: ItemType.ERC20, token: TOKEN, endAmount: 1000n }),
+        ],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const result = buildFulfillOrder(ctx, { parameters: params, signature: order.signature });
+    expect(result.value).toBe(0n);
+  });
+});
+
+// ── buildFulfillAdvancedOrder ─────────────────────────────────
+
+describe("buildFulfillAdvancedOrder", () => {
+  test("returns transaction data", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    const result = buildFulfillAdvancedOrder(ctx, advancedOrder);
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("computes ETH value", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [makeConsiderationItem({ endAmount: 500n })],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    const result = buildFulfillAdvancedOrder(ctx, advancedOrder);
+    expect(result.value).toBe(500n);
+  });
+});
+
+// ── buildFulfillAvailableOrders ───────────────────────────────
+
+describe("buildFulfillAvailableOrders", () => {
+  test("returns transaction data", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const orders = [{ parameters: params, signature: order.signature }];
+    const result = buildFulfillAvailableOrders(ctx, orders);
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("sums ETH value across all orders", () => {
+    const order1 = makeOrder({
+      parameters: makeOrderComponents({
+        salt: 1n,
+        consideration: [makeConsiderationItem({ endAmount: 300n })],
+      }),
+    });
+    const order2 = makeOrder({
+      parameters: makeOrderComponents({
+        salt: 2n,
+        consideration: [makeConsiderationItem({ endAmount: 700n })],
+      }),
+    });
+    const params1 = toOrderParameters(order1.parameters, BigInt(order1.parameters.consideration.length));
+    const params2 = toOrderParameters(order2.parameters, BigInt(order2.parameters.consideration.length));
+    const orders = [
+      { parameters: params1, signature: order1.signature },
+      { parameters: params2, signature: order2.signature },
+    ];
+    const result = buildFulfillAvailableOrders(ctx, orders);
+    expect(result.value).toBe(1000n);
+  });
+});
+
+// ── buildFulfillAvailableAdvancedOrders ───────────────────────
+
+describe("buildFulfillAvailableAdvancedOrders", () => {
+  test("returns transaction data", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    const result = buildFulfillAvailableAdvancedOrders(ctx, advancedOrders);
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("computes ETH value", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [makeConsiderationItem({ endAmount: 800n })],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    const result = buildFulfillAvailableAdvancedOrders(ctx, advancedOrders);
+    expect(result.value).toBe(800n);
   });
 });

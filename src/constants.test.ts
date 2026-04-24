@@ -53,8 +53,8 @@ describe("constants", () => {
 });
 
 describe("seaportAbi", () => {
-  test("has 3 functions", () => {
-    expect(seaportAbi).toHaveLength(3);
+  test("has 7 functions", () => {
+    expect(seaportAbi).toHaveLength(7);
   });
 
   test("has expected function names", () => {
@@ -64,6 +64,10 @@ describe("seaportAbi", () => {
     expect(names).toContain("getCounter");
     expect(names).toContain("getOrderHash");
     expect(names).toContain("fulfillBasicOrder");
+    expect(names).toContain("fulfillOrder");
+    expect(names).toContain("fulfillAdvancedOrder");
+    expect(names).toContain("fulfillAvailableOrders");
+    expect(names).toContain("fulfillAvailableAdvancedOrders");
   });
 });
 
