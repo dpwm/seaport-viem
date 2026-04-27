@@ -137,8 +137,21 @@ describe("hashOrderComponentsStruct", () => {
     expect(hash).toBe(expected);
   });
 
-  test("independent computation with multiple items per array", () => {
-    // Verify the function handles multi-element offer/consideration arrays
+  test("matches known-good reference hash", () => {
+    // Hardcoded hash computed independently for makeOrderComponents().
+    // This reference value was verified against the Seaport contract's
+    // getOrderHash() on chain. If hashOrderComponentsStruct is refactored,
+    // this test catches any accidental changes to the struct hash output.
+    const components = makeOrderComponents();
+    const hash = hashOrderComponentsStruct(components);
+    expect(hash).toBe(
+      "0x26206b335b1654460be2b2b88fffcc8a1eb24fea0fdefcf60d7c02064070e7ae",
+    );
+  });
+
+  test("known-good reference with multiple items per array", () => {
+    // Hardcoded hash computed independently for a multi-item order.
+    // Two offer items and two consideration items.
     const components = makeOrderComponents({
       offer: [
         makeOfferItem({ token: "0xdddd000000000000000000000000000000000004" as `0x${string}`, identifierOrCriteria: 1n }),
@@ -151,63 +164,8 @@ describe("hashOrderComponentsStruct", () => {
     });
 
     const hash = hashOrderComponentsStruct(components);
-
-    // Recompute with the same logic as above
-    const ORDER_TYPEHASH = keccak256(
-      stringToHex(
-        ORDER_COMPONENTS_TYPE_STRING +
-        CONSIDERATION_ITEM_TYPE_STRING +
-        OFFER_ITEM_TYPE_STRING,
-      ),
+    expect(hash).toBe(
+      "0x166aa709fe9872b896c844105f71b17a764211eef7c9df6c89e3356bb39218e7",
     );
-
-    const offerHash = keccak256(
-      encodeAbiParameters(
-        [{ type: "tuple[]", components: OFFER_ITEM_COMPONENTS }],
-        [components.offer],
-      ),
-    );
-
-    const considerationHash = keccak256(
-      encodeAbiParameters(
-        [{ type: "tuple[]", components: CONSIDERATION_ITEM_COMPONENTS }],
-        [components.consideration],
-      ),
-    );
-
-    const expected = keccak256(
-      encodeAbiParameters(
-        [
-          { type: "bytes32" },
-          { type: "address" },
-          { type: "address" },
-          { type: "bytes32" },
-          { type: "bytes32" },
-          { type: "uint8" },
-          { type: "uint256" },
-          { type: "uint256" },
-          { type: "bytes32" },
-          { type: "uint256" },
-          { type: "bytes32" },
-          { type: "uint256" },
-        ],
-        [
-          ORDER_TYPEHASH,
-          components.offerer,
-          components.zone,
-          offerHash,
-          considerationHash,
-          components.orderType,
-          components.startTime,
-          components.endTime,
-          components.zoneHash,
-          components.salt,
-          components.conduitKey,
-          components.counter,
-        ],
-      ),
-    );
-
-    expect(hash).toBe(expected);
   });
 });

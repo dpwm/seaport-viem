@@ -177,18 +177,18 @@ field only needs 2 bits with the route type shifted into the upper bits.
 
 ---
 
-### 12. `signature.test.ts` reimplements production logic for verification
+### 12. ~~`signature.test.ts` reimplements production logic for verification~~ ✅ Fixed
 
 **File:** `src/signature.test.ts`
 
-Two tests ("produces correct struct hash demonstrably" and "independent
-computation with multiple items per array") duplicate the entire body of
-`hashOrderComponentsStruct` to verify it. If the production code has a bug
-that's also in the test, the test won't catch it.
-
-**Recommendation:** Replace one of the duplicate tests with a known-good
-reference value (a manually-computed hash for a fixed input) or cross-reference
-against a live Seaport contract's `getOrderHash` via a forked test.
+**Fix:** Replaced the "independent computation with multiple items per array"
+test with two hardcoded reference-value tests: "matches known-good reference
+hash" (single-item order) and "known-good reference with multiple items per
+array" (two offer + two consideration items). These tests compare
+`hashOrderComponentsStruct` output against fixed expected hashes, catching
+regressions without reimplementing the production code. The remaining
+"produces correct struct hash demonstrably" test still validates the
+function's internal steps as a cross-check.
 
 ---
 
@@ -307,7 +307,7 @@ with some dependency patterns.
 | 9 | 🟡 | `encode.test.ts` | ~~Shallow encoder tests~~ ✅ Fixed |
 | 10 | 🟡 | `order.ts` | No fulfillment-component helpers |
 | 11 | 🟡 | `order.ts` | ~~Underdocumented formula~~ ✅ Fixed |
-| 12 | 🟡 | `signature.test.ts` | Test duplicates production logic |
+| 12 | 🟡 | `signature.test.ts` | ~~Test duplicates production logic~~ ✅ Fixed |
 | 13 | 🟢 | `order.ts` | Dead code path |
 | 14 | 🟢 | `order.ts` | Invalid timestamps on padding struct |
 | 15 | 🟢 | `order.ts` | `computeNativeValue` not exported |
