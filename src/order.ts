@@ -12,6 +12,8 @@ import type {
   FulfillmentOptions,
   ItemTypeValue,
   SeaportContext,
+  OfferItem,
+  ConsiderationItem,
 } from "./types";
 import {
   ItemType,
@@ -145,6 +147,28 @@ export function buildBasicOrderFulfillment(
 }
 
 /**
+ * Extract the offer item and primary consideration item from an order,
+ * returning null if the order doesn't have exactly one offer item and
+ * at least one consideration item.
+ */
+function getBasicOrderItems(
+  order: Order,
+): { offerItem: OfferItem; primaryConsideration: ConsiderationItem } | null {
+  if (order.parameters.offer.length !== 1) {
+    return null;
+  }
+  if (order.parameters.consideration.length < 1) {
+    return null;
+  }
+  return {
+    // biome-ignore lint/style/noNonNullAssertion: guarded by length checks above
+    offerItem: order.parameters.offer[0]!,
+    // biome-ignore lint/style/noNonNullAssertion: guarded by length check above
+    primaryConsideration: order.parameters.consideration[0]!,
+  };
+}
+
+/**
  * Check whether an order can be fulfilled via the simpler fulfillBasicOrder
  * path (vs. the more complex fulfillOrder/fulfillAdvancedOrder).
  *
@@ -152,13 +176,12 @@ export function buildBasicOrderFulfillment(
  * @returns `true` if the order qualifies for basic order fulfillment.
  */
 export function canFulfillAsBasicOrder(order: Order): boolean {
-  if (order.parameters.offer.length !== 1) {
+  const items = getBasicOrderItems(order);
+  if (items === null) {
     return false;
   }
 
-  if (order.parameters.consideration.length < 1) {
-    return false;
-  }
+  const { offerItem, primaryConsideration } = items;
 
   if (order.parameters.orderType === OrderType.CONTRACT) {
     return false;
@@ -167,11 +190,6 @@ export function canFulfillAsBasicOrder(order: Order): boolean {
   if (order.parameters.zone !== ZERO_ADDRESS) {
     return false;
   }
-
-  // biome-ignore lint/style/noNonNullAssertion: guarded by length checks above
-  const offerItem = order.parameters.offer[0]!;
-  // biome-ignore lint/style/noNonNullAssertion: guarded by length check above
-  const primaryConsideration = order.parameters.consideration[0]!;
 
   if (
     offerItem.itemType === ItemType.ERC721_WITH_CRITERIA ||
@@ -237,14 +255,37 @@ export function canFulfillAsBasicOrder(order: Order): boolean {
 export function detectBasicOrderRouteType(
   order: Order,
 ): BasicOrderRouteTypeValue | null {
-  if (!canFulfillAsBasicOrder(order)) {
+  const items = getBasicOrderItems(order);
+  if (items === null) {
     return null;
   }
 
-  // biome-ignore lint/style/noNonNullAssertion: guarded by canFulfillAsBasicOrder
-  const offerItem = order.parameters.offer[0]!;
-  // biome-ignore lint/style/noNonNullAssertion: guarded by canFulfillAsBasicOrder
-  const primaryConsideration = order.parameters.consideration[0]!;
+  const { offerItem, primaryConsideration } = items;
+
+  // Re-check the non-structural conditions that canFulfillAsBasicOrder enforces
+  if (order.parameters.orderType === OrderType.CONTRACT) {
+    return null;
+  }
+  if (order.parameters.zone !== ZERO_ADDRESS) {
+    return null;
+  }
+  if (
+    offerItem.itemType === ItemType.ERC721_WITH_CRITERIA ||
+    offerItem.itemType === ItemType.ERC1155_WITH_CRITERIA
+  ) {
+    return null;
+  }
+  for (const item of order.parameters.consideration) {
+    if (
+      item.itemType === ItemType.ERC721_WITH_CRITERIA ||
+      item.itemType === ItemType.ERC1155_WITH_CRITERIA
+    ) {
+      return null;
+    }
+  }
+  if (primaryConsideration.recipient !== order.parameters.offerer) {
+    return null;
+  }
 
   if (offerItem.itemType === ItemType.ERC721) {
     return primaryConsideration.itemType === ItemType.NATIVE

@@ -422,20 +422,20 @@ reject.
 **Fix applied:** Added `proof.length < 1` validation at the top of
 `packBulkSignature` (this commit).
 
-### 3.15 `canFulfillAsBasicOrder` and `detectBasicOrderRouteType` recompute items
+### 3.15 `canFulfillAsBasicOrder` and `detectBasicOrderRouteType` recompute items ✅ FIXED
 
 **File:** `src/order.ts`
 
-`canFulfillAsBasicOrder` accesses `order.parameters.offer[0]` and
-`order.parameters.consideration[0]` to check criteria types and the primary
-recipient. `detectBasicOrderRouteType` then calls `canFulfillAsBasicOrder`
-and immediately accesses `order.parameters.offer[0]!` and
-`order.parameters.consideration[0]!` again with non-null assertions.
+`canFulfillAsBasicOrder` accessed `order.parameters.offer[0]` and
+`order.parameters.consideration[0]` with non-null assertions to check
+criteria types and the primary recipient. `detectBasicOrderRouteType` then
+called `canFulfillAsBasicOrder` and immediately accessed the same array
+indices again with duplicate non-null assertions.
 
-This works correctly but duplicates the array indexing and assertions.
-Consider having `canFulfillAsBasicOrder` return the qualifying items, or
-extract a shared private helper that returns `{ offerItem, primaryConsideration }`
-so both functions reuse the same extraction logic.
+**Fix applied:** Extracted a shared private `getBasicOrderItems()` helper
+that returns `{ offerItem, primaryConsideration }` or null. Both functions
+draw items from this single extraction point, eliminating the duplicated
+non-null assertions (this commit).
 
 ### 3.16 `getCounter` — error handling for network/contract failures ✅ FIXED
 
