@@ -135,20 +135,15 @@ valid values (0–5) are accepted.
 
 ---
 
-### 9. `encodeGetCounter` / `encodeGetOrderHash` tests are shallow
+### 9. ~~`encodeGetCounter` / `encodeGetOrderHash` tests are shallow~~ ✅ Fixed
 
 **File:** `src/encode.test.ts`
 
-These tests only check that output starts with `0x` and has reasonable length.
-They don't verify the encoding is correct. While the correctness of
-`encodeFunctionData` is viem's responsibility, the tests provide false
-confidence — a wrong function name or ABI mismatch would still pass.
-
-**Recommendation:** Either:
-- Add snapshot tests of the encoded calldata against known-good values from
-  a real Seaport interaction.
-- At minimum, decode the output with `decodeFunctionData` and round-trip
-  verify the arguments.
+**Fix:** Replaced the shallow length/format checks with round-trip tests
+using viem's `decodeFunctionData`. Both `encodeGetCounter` and
+`encodeGetOrderHash` now encode calldata, decode it back, and verify that
+the `functionName` and all arguments match. A `normalizeAddresses` helper
+handles checksummed address differences between viem's encoder and decoder.
 
 ---
 
@@ -310,7 +305,7 @@ with some dependency patterns.
 | 6 | 🟡 | `validate.ts` | ~~No `SeaportContext` validation~~ ✅ Fixed |
 | 7 | 🟡 | `order.ts` | ~~Inconsistent ETH detection~~ ✅ Fixed |
 | 8 | 🟡 | `validate.ts` | ~~Missing itemType range check~~ ✅ Fixed |
-| 9 | 🟡 | `encode.test.ts` | Shallow encoder tests |
+| 9 | 🟡 | `encode.test.ts` | ~~Shallow encoder tests~~ ✅ Fixed |
 | 10 | 🟡 | `order.ts` | No fulfillment-component helpers |
 | 11 | 🟡 | `order.ts` | Underdocumented formula |
 | 12 | 🟡 | `signature.test.ts` | Test duplicates production logic |
