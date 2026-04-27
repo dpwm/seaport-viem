@@ -11,6 +11,7 @@ import {
   unpackBulkSignature,
   hashOrderComponentsStruct,
   getEmptyOrderComponents,
+  encodeDomainSeparator,
 } from "./index";
 import { ctx, makeOrderComponents } from "./test-fixtures";
 
@@ -524,31 +525,7 @@ describe("padLeaves", () => {
 
 describe("domain separator cross-check", () => {
   test("manual domain separator produces same EIP-712 digest as viem", () => {
-    // Replicate the manual domain separator from encodeDomainSeparator
-    const domainTypeHash = keccak256(
-      stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-    );
-    const nameHash = keccak256(stringToHex(ctx.domain.name ?? ""));
-    const versionHash = keccak256(stringToHex(ctx.domain.version ?? ""));
-
-    const manualSeparator = keccak256(
-      encodeAbiParameters(
-        [
-          { type: "bytes32" },
-          { type: "bytes32" },
-          { type: "bytes32" },
-          { type: "uint256" },
-          { type: "address" },
-        ],
-        [
-          domainTypeHash,
-          nameHash,
-          versionHash,
-          BigInt(ctx.domain.chainId ?? 0),
-          ctx.domain.verifyingContract as `0x${string}`,
-        ],
-      ),
-    );
+    const manualSeparator = encodeDomainSeparator(ctx.domain);
 
     // Compute structHash for Empty type: keccak256(abi.encode(keccak256("Empty()")))
     const emptyTypeHash = keccak256(stringToHex("Empty()"));
@@ -581,31 +558,7 @@ describe("domain separator cross-check", () => {
 
     const bulkDigest = hashBulkOrder(ctx, root, 1);
 
-    // Compute the same domain separator via encodeDomainSeparator logic
-    const domainTypeHash = keccak256(
-      stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-    );
-    const nameHash = keccak256(stringToHex(ctx.domain.name ?? ""));
-    const versionHash = keccak256(stringToHex(ctx.domain.version ?? ""));
-
-    const manualSeparator = keccak256(
-      encodeAbiParameters(
-        [
-          { type: "bytes32" },
-          { type: "bytes32" },
-          { type: "bytes32" },
-          { type: "uint256" },
-          { type: "address" },
-        ],
-        [
-          domainTypeHash,
-          nameHash,
-          versionHash,
-          BigInt(ctx.domain.chainId ?? 0),
-          ctx.domain.verifyingContract as `0x${string}`,
-        ],
-      ),
-    );
+    const manualSeparator = encodeDomainSeparator(ctx.domain);
 
     // hashBulkOrder = keccak256(0x1901 || domainSep || structHash)
     // Extract (0x1901 || domainSep || structHash) is the pre-image of bulkDigest

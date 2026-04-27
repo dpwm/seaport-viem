@@ -265,8 +265,11 @@ export function unpackBulkSignature(packed: `0x${string}`): {
 
 /**
  * Encode an EIP-712 domain separator as bytes32.
+ *
+ * @param domain - The EIP-712 domain to encode.
+ * @returns The domain separator hash (bytes32).
  */
-function encodeDomainSeparator(domain: TypedDataDomain): `0x${string}` {
+export function encodeDomainSeparator(domain: TypedDataDomain): `0x${string}` {
   return keccak256(
     encodeAbiParameters(
       [

@@ -84,4 +84,5 @@ export {
   getProof,
   packBulkSignature,
   unpackBulkSignature,
+  encodeDomainSeparator,
 } from "./bulk_listings";

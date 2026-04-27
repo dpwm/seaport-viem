@@ -298,25 +298,17 @@ block): one verifying that `NATIVE_TOKEN` as the consideration token produces
 the correct ETH value, and one verifying that tips are correctly included when
 using `NATIVE_TOKEN` (this commit).
 
-### 3.7 `encodeDomainSeparator` is private, forcing test duplication
+### 3.7 `encodeDomainSeparator` is private, forcing test duplication ✅ FIXED
 
 **File:** `src/bulk_listings.ts` — the `encodeDomainSeparator` function is
-module-private (not exported). The cross-check tests in `bulk_listings.test.ts`
-must replicate its full logic to verify correctness:
+now exported and re-exported from `index.ts`. The cross-check tests in
+`bulk_listings.test.ts` import and use it directly instead of duplicating
+its logic.
 
-```ts
-const domainTypeHash = keccak256(
-  stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-);
-// ... 20 more lines duplicating encodeDomainSeparator's internals
-```
-
-If `encodeDomainSeparator` ever changes its parameter encoding order or adds
-new fields (like `salt`), the tests will silently diverge. Making it an
-exported utility and importable by tests would:
-- Eliminate duplication
-- Allow direct unit testing
-- Be useful for consumers who need to compute domain separators manually
+**Fix applied:** Added `export` keyword to `encodeDomainSeparator` in
+`bulk_listings.ts`, added to the barrel re-export in `index.ts`, and
+replaced the duplicated domain separator construction in both cross-check
+tests with calls to `encodeDomainSeparator(ctx.domain)` (this commit).
 
 ### 3.8 `Side` enum has no dedicated tests
 
