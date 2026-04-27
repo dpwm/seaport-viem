@@ -310,12 +310,15 @@ its logic.
 replaced the duplicated domain separator construction in both cross-check
 tests with calls to `encodeDomainSeparator(ctx.domain)` (this commit).
 
-### 3.8 `Side` enum has no dedicated tests
+### 3.8 `Side` enum has no dedicated tests ✅ FIXED
 
 **File:** `src/types.ts` — `Side` is defined, exported, and re-exported from
 `index.ts`, used in the `CriteriaResolver` type, but never tested. The other
 three enums (`ItemType`, `OrderType`, `BasicOrderRouteType`) all have value
 checks in `constants.test.ts`. `Side` should have the same treatment.
+
+**Fix applied:** Added `Side` import and two value tests (`Side.OFFER` is 0,
+`Side.CONSIDERATION` is 1) in `constants.test.ts` (this commit).
 
 ### 3.9 `FulfillmentComponent` fields typed as `bigint` — ergonomic friction
 

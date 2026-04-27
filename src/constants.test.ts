@@ -3,6 +3,7 @@ import {
   ItemType,
   OrderType,
   BasicOrderRouteType,
+  Side,
   ZERO_ADDRESS,
   ZERO_BYTES32,
   NATIVE_TOKEN,
@@ -35,6 +36,11 @@ describe("constants", () => {
     expect(BasicOrderRouteType.ERC20_TO_ERC1155).toBe(3);
     expect(BasicOrderRouteType.ERC721_TO_ERC20).toBe(4);
     expect(BasicOrderRouteType.ERC1155_TO_ERC20).toBe(5);
+  });
+
+  test("Side values are correct", () => {
+    expect(Side.OFFER).toBe(0);
+    expect(Side.CONSIDERATION).toBe(1);
   });
 
   test("ZERO_ADDRESS is a valid 20-byte hex address", () => {
