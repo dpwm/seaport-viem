@@ -7,6 +7,40 @@ impact; address the highest-priority items first.
 
 ## Priority 0 (critical — fix before any on-chain use)
 
+### 0.4 `fulfillAvailableOrders` in `scripts/bulk-list-and-buy.ts` — grouped consideration items with different recipients together ✅ FIXED
+
+**File:** `scripts/bulk-list-and-buy.ts` — Phase 7, `considerationFulfillments` construction.
+
+**What was wrong:** Each order has 2 consideration items (price to seller, fee to fee recipient) with different recipients. They were grouped together in a single fulfillment group:
+
+```ts
+// BAD: groups price (seller) + fee (fee recipient) together
+considerationFulfillments = orders.map((_, i) => [
+  { orderIndex: i, itemIndex: 0n },  // price → seller
+  { orderIndex: i, itemIndex: 1n },  // fee → fee recipient
+]);
+```
+
+In `fulfillAvailableOrders`, each fulfillment group aggregates items that must share the same `(itemType, token, identifier, recipient)` tuple. Since price and fee have different recipients, Seaport reverts with `InvalidFulfillmentComponentData` (0x7fda7279).
+
+**Fix applied:** Each consideration item gets its own group via `flatMap`:
+
+```ts
+// FIXED: separate groups for different recipients
+considerationFulfillments = orders.flatMap((_, i) => [
+  [{ orderIndex: i, itemIndex: 0n }],  // price to seller
+  [{ orderIndex: i, itemIndex: 1n }],  // fee to fee recipient
+]);
+```
+
+This matches Seaport's `_executeAvailableFulfillments` design where offer and consideration fulfillments are processed independently (not paired), and items aggregated within a group must have matching token/recipient.
+
+**Why tests didn't catch it:** Unit tests for `buildFulfillAvailableOrders` don't exercise fulfillment components against a live contract — they only verify data structure and value computation. The integration script is the only test that calls the real Seaport contract.
+
+---
+
+### 0.1 `hashOrderComponentsStruct` uses wrong last field (consideration.length instead of counter) ✅ FIXED
+
 ### 0.1 `hashOrderComponentsStruct` uses wrong last field (consideration.length instead of counter) ✅ FIXED
 
 **File:** `src/signature.ts` — inside `hashOrderComponentsStruct`, final
@@ -369,18 +403,20 @@ Consider having `canFulfillAsBasicOrder` return the qualifying items, or
 extract a shared private helper that returns `{ offerItem, primaryConsideration }`
 so both functions reuse the same extraction logic.
 
-### 3.16 `getCounter` has no error handling for network/contract failures
+### 3.16 `getCounter` — error handling for network/contract failures ✅ FIXED
 
 **File:** `src/counter.ts`
 
-```ts
-const result = await client.call({ to: ctx.address, data });
-```
+**What was wrong:** If the RPC was unreachable, the contract reverted, or
+`ctx.address` was not a deployed Seaport instance, `client.call` would throw
+a raw viem error with no additional context, making debugging difficult.
 
-If the RPC is unreachable, the contract reverts, or `ctx.address` is not a
-deployed Seaport instance, this will throw a raw viem error with no additional
-context. Consider wrapping in a try/catch with a descriptive error message,
-or at least documenting that callers should handle transport errors themselves.
+**Fix applied:** Wrapped the `client.call` in a try/catch. viem `BaseError`
+instances (RPC errors, contract reverts) are rethrown with a descriptive
+message including the offerer address and Seaport contract address.
+Non-`BaseError` exceptions (infrastructure errors like `TypeError`,
+`RangeError`) are also wrapped with the same context. The existing
+"no data" error path is preserved with enhanced messaging (this commit).
 
 ### 3.17 `test-fixtures.ts` imports from barrel creates latent circular dependency
 

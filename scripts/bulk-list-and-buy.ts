@@ -364,9 +364,11 @@ async function bulkListAndBuy() {
   const offerFulfillments = remainingListings.map((_, i) => [
     { orderIndex: BigInt(i), itemIndex: 0n },
   ]);
-  const considerationFulfillments = remainingListings.map((_, i) => [
-    { orderIndex: BigInt(i), itemIndex: 0n },
-    { orderIndex: BigInt(i), itemIndex: 1n },
+  // Each consideration item with a different recipient must be in its own group.
+  // Order i has: consideration[0] = price to seller, consideration[1] = fee to fee recipient
+  const considerationFulfillments = remainingListings.flatMap((_, i) => [
+    [{ orderIndex: BigInt(i), itemIndex: 0n }],  // price to seller
+    [{ orderIndex: BigInt(i), itemIndex: 1n }],  // fee to fee recipient
   ]);
 
   const batchFulfillment = buildFulfillAvailableOrders(
