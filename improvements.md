@@ -206,15 +206,15 @@ documented as such inline.
 
 ---
 
-### 14. `getEmptyOrderComponents` timestamp is invalid
+### 14. ~~`getEmptyOrderComponents` timestamp is invalid~~ ✅ Fixed
 
 **File:** `src/order.ts`
 
-Returns `startTime: 0n, endTime: 0n`, which fails `validateOrderComponents`
-(startTime >= endTime). This is intentional (the struct is only used as a
-padding leaf hash), but it's surprising. Document this in the JSDoc or use
-sentinel values like `startTime: 1n, endTime: 2n` that pass validation while
-still being obviously padding.
+**Fix:** Replaced `startTime: 0n, endTime: 0n` with sentinel values
+`startTime: 1n, endTime: 2n` that pass `validateOrderComponents` while
+still being obviously padding (epoch timestamps 1–2 seconds). Added JSDoc
+explaining these are sentinel values and the struct is never submitted
+on-chain — only its EIP-712 hash is used as a padding leaf.
 
 ---
 
@@ -309,7 +309,7 @@ with some dependency patterns.
 | 11 | 🟡 | `order.ts` | ~~Underdocumented formula~~ ✅ Fixed |
 | 12 | 🟡 | `signature.test.ts` | ~~Test duplicates production logic~~ ✅ Fixed |
 | 13 | 🟢 | `order.ts` | Dead code path |
-| 14 | 🟢 | `order.ts` | Invalid timestamps on padding struct |
+| 14 | 🟢 | `order.ts` | ~~Invalid timestamps on padding struct~~ ✅ Fixed |
 | 15 | 🟢 | `order.ts` | `computeNativeValue` not exported |
 | 16 | 🟢 | Scope | Missing functions (cancel, matchOrders, etc.) |
 | 17 | 🟢 | `scripts/` | Untested integration scripts |

@@ -337,6 +337,11 @@ export function toOrderParameters(
 /**
  * Return a canonical empty OrderComponents struct used to pad bulk order
  * merkle trees to the required capacity.
+ *
+ * The returned struct uses sentinel values (`startTime: 1n, endTime: 2n`)
+ * rather than zeros so it passes {@link validateOrderComponents}. The
+ * struct is never submitted on-chain — only its EIP-712 hash is used
+ * as a padding leaf in bulk order merkle trees.
  */
 export function getEmptyOrderComponents(): OrderComponents {
   return {
@@ -345,8 +350,8 @@ export function getEmptyOrderComponents(): OrderComponents {
     offer: [],
     consideration: [],
     orderType: OrderType.FULL_OPEN,
-    startTime: 0n,
-    endTime: 0n,
+    startTime: 1n,
+    endTime: 2n,
     zoneHash: ZERO_BYTES32,
     salt: 0n,
     conduitKey: ZERO_BYTES32,
