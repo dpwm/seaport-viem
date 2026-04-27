@@ -122,21 +122,16 @@ builders) identifies ETH transfers. The `NATIVE_TOKEN` import was removed from
 
 ---
 
-### 8. `validateOrderComponents` doesn't check itemType range
+### 8. ~~`validateOrderComponents` doesn't check itemType range~~ ✅ Fixed
 
 **File:** `src/validate.ts`
 
-The function validates amounts and timing but never checks that `itemType`
-values are within the valid range (0–5). An order with `itemType: 99` would
-pass validation and fail only at the contract level.
-
-**Recommendation:** Add a check like:
-```ts
-const VALID_ITEM_TYPES = new Set([0, 1, 2, 3, 4, 5]);
-if (!VALID_ITEM_TYPES.has(item.itemType)) {
-  return { valid: false, reason: `Invalid item type: ${item.itemType}` };
-}
-```
+**Fix:** Added `VALID_ITEM_TYPES` set derived from `Object.values(ItemType)`
+and checks `itemType` membership for both offer and consideration items.
+Validation now rejects itemType values outside the 0–5 range with a clear
+reason string. Added 4 tests: out-of-range offer itemType, negative offer
+itemType, out-of-range consideration itemType, and a loop verifying all
+valid values (0–5) are accepted.
 
 ---
 
@@ -314,7 +309,7 @@ with some dependency patterns.
 | 5 | 🟡 | `types.ts`/`encode.ts` | ~~`number \| bigint` precision risk~~ ✅ Fixed |
 | 6 | 🟡 | `validate.ts` | ~~No `SeaportContext` validation~~ ✅ Fixed |
 | 7 | 🟡 | `order.ts` | ~~Inconsistent ETH detection~~ ✅ Fixed |
-| 8 | 🟡 | `validate.ts` | Missing itemType range check |
+| 8 | 🟡 | `validate.ts` | ~~Missing itemType range check~~ ✅ Fixed |
 | 9 | 🟡 | `encode.test.ts` | Shallow encoder tests |
 | 10 | 🟡 | `order.ts` | No fulfillment-component helpers |
 | 11 | 🟡 | `order.ts` | Underdocumented formula |

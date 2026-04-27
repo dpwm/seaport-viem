@@ -209,6 +209,54 @@ describe("validateOrderComponents", () => {
     expect(result.valid).toBe(false);
   });
 
+  test("rejects offer item with invalid itemType (out of range)", () => {
+    const result = validateOrderComponents(
+      makeOrderComponents({
+        offer: [makeOfferItem({ itemType: 99 } as any)],
+      }),
+    );
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("item type");
+    }
+  });
+
+  test("rejects offer item with negative itemType", () => {
+    const result = validateOrderComponents(
+      makeOrderComponents({
+        offer: [makeOfferItem({ itemType: -1 } as any)],
+      }),
+    );
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("item type");
+    }
+  });
+
+  test("rejects consideration item with invalid itemType", () => {
+    const result = validateOrderComponents(
+      makeOrderComponents({
+        consideration: [makeConsiderationItem({ itemType: 42 } as any)],
+      }),
+    );
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("consideration item type");
+    }
+  });
+
+  test("accepts all valid itemType values (0-5)", () => {
+    for (const itemType of [0, 1, 2, 3, 4, 5] as const) {
+      const result = validateOrderComponents(
+        makeOrderComponents({
+          offer: [makeOfferItem({ itemType })],
+          consideration: [makeConsiderationItem({ itemType })],
+        }),
+      );
+      expect(result.valid).toBe(true);
+    }
+  });
+
   test("passes with multiple valid offer items", () => {
     const result = validateOrderComponents(
       makeOrderComponents({

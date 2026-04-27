@@ -1,5 +1,8 @@
 import { isAddress } from "viem";
 import type { SeaportContext, OrderComponents, ValidationResult } from "./types";
+import { ItemType } from "./types";
+
+const VALID_ITEM_TYPES = new Set<number>(Object.values(ItemType));
 
 /**
  * Validate a SeaportContext before using it in Seaport operations.
@@ -89,6 +92,12 @@ export function validateOrderComponents(
   }
 
   for (const item of components.offer) {
+    if (!VALID_ITEM_TYPES.has(item.itemType)) {
+      return {
+        valid: false,
+        reason: `Invalid offer item type: ${item.itemType}`,
+      };
+    }
     if (item.startAmount <= 0n || item.endAmount <= 0n) {
       return { valid: false, reason: "Offer amounts must be greater than 0" };
     }
@@ -102,6 +111,12 @@ export function validateOrderComponents(
   }
 
   for (const item of components.consideration) {
+    if (!VALID_ITEM_TYPES.has(item.itemType)) {
+      return {
+        valid: false,
+        reason: `Invalid consideration item type: ${item.itemType}`,
+      };
+    }
     if (item.startAmount <= 0n || item.endAmount <= 0n) {
       return {
         valid: false,
