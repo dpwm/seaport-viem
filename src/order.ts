@@ -147,11 +147,18 @@ export function buildBasicOrderFulfillment(
 }
 
 /**
- * Extract the offer item and primary consideration item from an order,
- * returning null if the order doesn't have exactly one offer item and
- * at least one consideration item.
+ * Check if an order passes the structural requirements for basic order
+ * fulfillment, returning the offer and primary consideration items if so.
+ *
+ * Structural requirements:
+ * - Exactly one offer item and at least one consideration item
+ * - Not a CONTRACT order type
+ * - Zone must be zero address
+ * - No criteria-based items (ERC721_WITH_CRITERIA or ERC1155_WITH_CRITERIA)
+ *   in the offer or any consideration item
+ * - Primary consideration recipient must be the offerer
  */
-function getBasicOrderItems(
+function isBasicOrderEligible(
   order: Order,
 ): { offerItem: OfferItem; primaryConsideration: ConsiderationItem } | null {
   if (order.parameters.offer.length !== 1) {
@@ -160,12 +167,41 @@ function getBasicOrderItems(
   if (order.parameters.consideration.length < 1) {
     return null;
   }
-  return {
-    // biome-ignore lint/style/noNonNullAssertion: guarded by length checks above
-    offerItem: order.parameters.offer[0]!,
-    // biome-ignore lint/style/noNonNullAssertion: guarded by length check above
-    primaryConsideration: order.parameters.consideration[0]!,
-  };
+
+  // biome-ignore lint/style/noNonNullAssertion: guarded by length checks above
+  const offerItem = order.parameters.offer[0]!;
+  // biome-ignore lint/style/noNonNullAssertion: guarded by length check above
+  const primaryConsideration = order.parameters.consideration[0]!;
+
+  if (order.parameters.orderType === OrderType.CONTRACT) {
+    return null;
+  }
+
+  if (order.parameters.zone !== ZERO_ADDRESS) {
+    return null;
+  }
+
+  if (
+    offerItem.itemType === ItemType.ERC721_WITH_CRITERIA ||
+    offerItem.itemType === ItemType.ERC1155_WITH_CRITERIA
+  ) {
+    return null;
+  }
+
+  for (const item of order.parameters.consideration) {
+    if (
+      item.itemType === ItemType.ERC721_WITH_CRITERIA ||
+      item.itemType === ItemType.ERC1155_WITH_CRITERIA
+    ) {
+      return null;
+    }
+  }
+
+  if (primaryConsideration.recipient !== order.parameters.offerer) {
+    return null;
+  }
+
+  return { offerItem, primaryConsideration };
 }
 
 /**
@@ -176,40 +212,12 @@ function getBasicOrderItems(
  * @returns `true` if the order qualifies for basic order fulfillment.
  */
 export function canFulfillAsBasicOrder(order: Order): boolean {
-  const items = getBasicOrderItems(order);
+  const items = isBasicOrderEligible(order);
   if (items === null) {
     return false;
   }
 
   const { offerItem, primaryConsideration } = items;
-
-  if (order.parameters.orderType === OrderType.CONTRACT) {
-    return false;
-  }
-
-  if (order.parameters.zone !== ZERO_ADDRESS) {
-    return false;
-  }
-
-  if (
-    offerItem.itemType === ItemType.ERC721_WITH_CRITERIA ||
-    offerItem.itemType === ItemType.ERC1155_WITH_CRITERIA
-  ) {
-    return false;
-  }
-
-  for (const item of order.parameters.consideration) {
-    if (
-      item.itemType === ItemType.ERC721_WITH_CRITERIA ||
-      item.itemType === ItemType.ERC1155_WITH_CRITERIA
-    ) {
-      return false;
-    }
-  }
-
-  if (primaryConsideration.recipient !== order.parameters.offerer) {
-    return false;
-  }
 
   const isEthToErc721 =
     offerItem.itemType === ItemType.ERC721 &&
@@ -255,37 +263,12 @@ export function canFulfillAsBasicOrder(order: Order): boolean {
 export function detectBasicOrderRouteType(
   order: Order,
 ): BasicOrderRouteTypeValue | null {
-  const items = getBasicOrderItems(order);
+  const items = isBasicOrderEligible(order);
   if (items === null) {
     return null;
   }
 
   const { offerItem, primaryConsideration } = items;
-
-  // Re-check the non-structural conditions that canFulfillAsBasicOrder enforces
-  if (order.parameters.orderType === OrderType.CONTRACT) {
-    return null;
-  }
-  if (order.parameters.zone !== ZERO_ADDRESS) {
-    return null;
-  }
-  if (
-    offerItem.itemType === ItemType.ERC721_WITH_CRITERIA ||
-    offerItem.itemType === ItemType.ERC1155_WITH_CRITERIA
-  ) {
-    return null;
-  }
-  for (const item of order.parameters.consideration) {
-    if (
-      item.itemType === ItemType.ERC721_WITH_CRITERIA ||
-      item.itemType === ItemType.ERC1155_WITH_CRITERIA
-    ) {
-      return null;
-    }
-  }
-  if (primaryConsideration.recipient !== order.parameters.offerer) {
-    return null;
-  }
 
   if (offerItem.itemType === ItemType.ERC721) {
     return primaryConsideration.itemType === ItemType.NATIVE
@@ -305,6 +288,8 @@ export function detectBasicOrderRouteType(
       : BasicOrderRouteType.ERC1155_TO_ERC20;
   }
 
+  // Fallback: structurally eligible but unrecognized offer/consideration combo
+  // (e.g., NATIVE offer item). canFulfillAsBasicOrder returns false for these.
   return null;
 }
 
