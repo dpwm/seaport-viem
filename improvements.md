@@ -452,16 +452,17 @@ Non-`BaseError` exceptions (infrastructure errors like `TypeError`,
 `RangeError`) are also wrapped with the same context. The existing
 "no data" error path is preserved with enhanced messaging (this commit).
 
-### 3.17 `test-fixtures.ts` imports from barrel creates latent circular dependency
+### 3.17 `test-fixtures.ts` imports from barrel creates latent circular dependency ✅ FIXED
 
 **File:** `src/test-fixtures.ts`
 
-Test fixtures import from `./index` (the barrel), which in turn imports from
-all other source modules. If any source module ever imports `test-fixtures`
-(e.g., to use a shared constant in a default parameter), a circular dependency
-will result. Currently safe because no source module imports `test-fixtures`,
-but it's a latent risk. Consider having `test-fixtures.ts` import directly
-from the individual source modules instead of the barrel.
+**What was wrong:** Test fixtures imported from `./index` (the barrel), which
+in turn imports from all other source modules. If any source module ever
+imported `test-fixtures` (e.g., to use a shared constant in a default
+parameter), a circular dependency would result.
+
+**Fix applied:** Changed to import directly from individual source modules
+(`./types` and `./constants`) instead of the barrel (this commit).
 
 ---
 

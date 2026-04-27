@@ -1,11 +1,12 @@
-import { ItemType, OrderType, ZERO_ADDRESS, ZERO_BYTES32 } from "./index";
+import { ZERO_ADDRESS, ZERO_BYTES32 } from "./constants";
+import { ItemType, OrderType } from "./types";
 import type {
   OrderComponents,
   Order,
   OfferItem,
   ConsiderationItem,
   SeaportContext,
-} from "./index";
+} from "./types";
 
 export const ALICE =
   "0xaaaa000000000000000000000000000000000001" as `0x${string}`;
