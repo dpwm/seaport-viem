@@ -48,18 +48,9 @@ the SeaportContext, checks the orders array is non-empty, and returns
 
 ---
 
-## 4. `aggregateOfferItems` / `aggregateConsiderationItems` loose typing (Low)
+## ~~4. `aggregateOfferItems` / `aggregateConsiderationItems` loose typing (Low)~~ ✅ Resolved
 
-```ts
-orders: { parameters: { offer: readonly unknown[] } }[]
-```
-
-The structural type `{ parameters: { offer: readonly unknown[] } }` is too
-loose — it accepts any object shape with a `parameters.offer` property. A
-caller could pass unrelated objects and get silently broken
-`FulfillmentComponent` output.
-
-**Fix:** use a generic constrained type:
+Both functions now use a generic constrained type:
 ```ts
 <T extends { parameters: { offer: readonly unknown[] } }>(orders: T[])
 ```

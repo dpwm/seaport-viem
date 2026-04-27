@@ -347,8 +347,8 @@ export function getEmptyOrderComponents(): OrderComponents {
  * @returns FulfillmentComponent[][] suitable for
  *   `fulfillAvailableOrders` / `fulfillAvailableAdvancedOrders`.
  */
-export function aggregateOfferItems(
-  orders: { parameters: { offer: readonly unknown[] } }[],
+export function aggregateOfferItems<T extends { parameters: { offer: readonly unknown[] } }>(
+  orders: T[],
 ): FulfillmentComponent[][] {
   const components: FulfillmentComponent[][] = [];
   for (let i = 0; i < orders.length; i++) {
@@ -373,8 +373,8 @@ export function aggregateOfferItems(
  * @returns FulfillmentComponent[][] suitable for
  *   `fulfillAvailableOrders` / `fulfillAvailableAdvancedOrders`.
  */
-export function aggregateConsiderationItems(
-  orders: { parameters: { consideration: readonly unknown[] } }[],
+export function aggregateConsiderationItems<T extends { parameters: { consideration: readonly unknown[] } }>(
+  orders: T[],
 ): FulfillmentComponent[][] {
   const components: FulfillmentComponent[][] = [];
   for (let i = 0; i < orders.length; i++) {
