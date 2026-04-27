@@ -274,6 +274,40 @@ describe("validateOrderComponents", () => {
     );
     expect(result.valid).toBe(true);
   });
+
+  test("rejects negative counter", () => {
+    const result = validateOrderComponents(
+      makeOrderComponents({ counter: -1n }),
+    );
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("counter");
+    }
+  });
+
+  test("accepts zero counter", () => {
+    const result = validateOrderComponents(
+      makeOrderComponents({ counter: 0n }),
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  test("rejects zero salt", () => {
+    const result = validateOrderComponents(
+      makeOrderComponents({ salt: 0n }),
+    );
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("salt");
+    }
+  });
+
+  test("accepts non-zero salt", () => {
+    const result = validateOrderComponents(
+      makeOrderComponents({ salt: 42n }),
+    );
+    expect(result.valid).toBe(true);
+  });
 });
 
 describe("buildValidate", () => {

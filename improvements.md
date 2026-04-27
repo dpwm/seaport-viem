@@ -73,12 +73,9 @@ that it is a placebo — not a real EIP-712 signature.
 
 ---
 
-## 7. `validateOrderComponents` does not check counter or salt (Low)
+## ~~7. `validateOrderComponents` does not check counter or salt (Low)~~ ✅ Resolved
 
-The validator checks amounts and timing (`startAmount <= 0n`, `startTime >=
-endTime`) but does not validate `counter >= 0n`, `salt`, or `offerer`
-(non-empty). The JSDoc explicitly says address validation is the caller's
-responsibility. Consider adding:
+`validateOrderComponents` now checks:
 - `counter >= 0n` — negative counters revert on-chain.
 - `salt !== 0n` — an explicit zero salt is unusual and likely a mistake.
 

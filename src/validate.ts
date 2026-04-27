@@ -78,9 +78,16 @@ export function validateSeaportContext(
 /**
  * Validate order components client-side before submission.
  *
- * NOTE: This performs structural validation only (amounts, timing, required
- * fields). It does not validate address fields — callers are responsible for
- * ensuring offerer, zone, token, and recipient addresses are well-formed.
+ * Checks:
+ * - At least one offer and one consideration item, each with valid types and
+ *   positive start/end amounts.
+ * - startTime is before endTime.
+ * - counter is non-negative (negative counters revert on-chain).
+ * - salt is non-zero (a zero salt is unusual and likely a mistake).
+ *
+ * NOTE: This performs structural validation only. It does not validate
+ * address fields — callers are responsible for ensuring offerer, zone,
+ * token, and recipient addresses are well-formed.
  *
  * @param components - The order components to validate.
  * @returns A result indicating validity, with a reason string on failure.
@@ -124,6 +131,20 @@ export function validateOrderComponents(
         reason: "Consideration amounts must be greater than 0",
       };
     }
+  }
+
+  if (components.counter < 0n) {
+    return {
+      valid: false,
+      reason: "counter must be non-negative",
+    };
+  }
+
+  if (components.salt === 0n) {
+    return {
+      valid: false,
+      reason: "salt must not be zero",
+    };
   }
 
   if (components.startTime >= components.endTime) {
