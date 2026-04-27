@@ -154,13 +154,21 @@ export type AdvancedOrder = {
   extraData: `0x${string}`;
 };
 
-/** A component identifying an item in a fulfillment group. */
+/**
+ * A component identifying an item in a fulfillment group.
+ * Both fields accept `number | bigint` for ergonomic convenience; Seaport's
+ * ABI encodes them as uint256.
+ */
 export type FulfillmentComponent = {
-  orderIndex: bigint;
-  itemIndex: bigint;
+  orderIndex: number | bigint;
+  itemIndex: number | bigint;
 };
 
-/** Side enum for criteria resolution. */
+/**
+ * Side enum for criteria resolution.
+ * Indicates whether a criteria resolver applies to the offer side (0) or
+ * consideration side (1) of an order.
+ */
 export const Side = {
   OFFER: 0,
   CONSIDERATION: 1,

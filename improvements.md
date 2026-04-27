@@ -320,21 +320,18 @@ checks in `constants.test.ts`. `Side` should have the same treatment.
 **Fix applied:** Added `Side` import and two value tests (`Side.OFFER` is 0,
 `Side.CONSIDERATION` is 1) in `constants.test.ts` (this commit).
 
-### 3.9 `FulfillmentComponent` fields typed as `bigint` — ergonomic friction
+### 3.9 `FulfillmentComponent` fields typed as `bigint` — ergonomic friction ✅ FIXED
 
 **File:** `src/types.ts`
 
-```ts
-export type FulfillmentComponent = {
-  orderIndex: bigint;
-  itemIndex: bigint;
-};
-```
+**What was wrong:** Both fields were typed as `bigint` (matching Solidity's
+`uint256`). viem's `encodeFunctionData` accepts `number` for small uints,
+but the TypeScript type forced consumers to pass `0n` instead of `0`.
 
-Both fields are typed as `bigint` (matching the Solidity `uint256`). viem's
-`encodeFunctionData` accepts `number` for small uints, but the TypeScript
-type forces consumers to pass `0n` instead of `0`. Consider accepting
-`number | bigint` for these fields, or provide a helper to construct them.
+**Fix applied:** Changed both fields to `number | bigint` so consumers can
+pass either plain numbers (e.g., `0`, `1`) or `bigint` literals (e.g., `0n`,
+`1n`). Added JSDoc noting the ergonomic convenience and that Seaport's ABI
+encodes them as uint256 (this commit).
 
 ### 3.10 `buildBulkOrderTree` internally calls `computeHeight` redundantly
 
