@@ -95,12 +95,23 @@ Changed to `domain.name ?? ""` / `domain.version ?? ""` (commit 9db47cf).
 Added fulfiller-perspective doc-comment to `BasicOrderRouteType` in
 `src/types.ts` (commit 9db47cf).
 
-### 2.3 `verifyOrderSignature` — broad catch may swallow infrastructure errors
+### 2.3 `verifyOrderSignature` — broad catch may swallow infrastructure errors ✅ FIXED
 
-The error handling distinguishes viem `BaseError` (rethrown) from plain `Error`
-(returns `false`). This assumes all signature/recovery failures produce plain
-`Error` instances, which is a viem implementation detail. A slightly more
-targeted filter would be safer.
+**File:** `src/signature.ts` — inside `verifyOrderSignature`, catch block.
+
+**What was wrong:** The catch block returned `false` for *all* non-`BaseError`
+errors. Infrastructure errors that don't extend `BaseError` (e.g., `TypeError`,
+`RangeError`, or future viem error types) would be silently swallowed and
+reported as invalid signatures, masking the real problem.
+
+**Fix applied:** Made the catch filter more targeted — only return `false` for
+`Error` instances whose message contains `"signature"` (case-insensitive),
+matching the error pattern from `@noble/curves` during signature recovery.
+All other errors are rethrown, ensuring unexpected failures propagate.
+
+**Impact if unfixed:** A transport error or programming mistake that produces
+a non-`BaseError` would be indistinguishable from a bad signature, making
+debugging extremely difficult.
 
 ### 2.4 `toOrderParameters` — rest-spread silently passes through unexpected fields
 

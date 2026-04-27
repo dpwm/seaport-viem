@@ -26,8 +26,13 @@ export async function verifyOrderSignature(
     if (error instanceof BaseError) {
       throw error;
     }
-    // Plain Error from @noble/curves — malformed or unrecoverable signature
-    return false;
+    // Signature recovery failures from @noble/curves produce Error instances
+    // with messages indicating an invalid/unrecoverable signature.
+    // Only swallow signature-related errors; rethrow everything else.
+    if (error instanceof Error && /signature/i.test(error.message)) {
+      return false;
+    }
+    throw error;
   }
 }
 
