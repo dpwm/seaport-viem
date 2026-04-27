@@ -295,24 +295,26 @@ verifier). Added 2 tests covering both boundary conditions.
 
 ---
 
-### 19. TypeScript `verbatimModuleSyntax` causes import noise
+### 19. ~~TypeScript `verbatimModuleSyntax` causes import noise~~ ✅ By design
 
 **File:** All source files
 
 `tsconfig.json` enables `verbatimModuleSyntax: true`, requiring `import type`
-for type-only imports. This is good practice but adds verbosity. No action
-needed — just noting for contributors.
+for type-only imports. This is good practice — the verbosity is a deliberate
+trade-off for correctness (prevents unintentional runtime imports of
+type-only modules). No action needed.
 
 ---
 
-### 20. `"splitting: false"` in tsup config
+### 20. ~~`"splitting: false"` in tsup config~~ ✅ Fixed
 
 **File:** `tsup.config.ts`
 
-Code splitting is disabled. For a library with 9 entry points, enabling
-splitting could reduce bundle size for consumers that import multiple
-subpath exports. Test this before enabling — it can produce broken output
-with some dependency patterns.
+**Fix:** Enabled code splitting (`splitting: true`) in tsup config after
+verifying the build succeeds and all 232 tests pass. Shared dependencies
+now emit as chunk files (e.g., `chunk-G2MFVFMY.js` for viem, `chunk-TULT5WV5.js`
+for constants/ABI), reducing total bundle size for consumers that import
+multiple subpath exports. Each entry point correctly references its chunks.
 
 ---
 
@@ -338,5 +340,5 @@ with some dependency patterns.
 | 16 | 🟢 | Scope | Missing functions (cancel, matchOrders, etc.) |
 | 17 | 🟢 | `scripts/` | ~~Untested integration scripts~~ ✅ Fixed |
 | 18 | 🟢 | `bulk_listings.ts` | Missing max-height in pack/unpack |
-| 19 | 🟢 | All | `verbatimModuleSyntax` verbosity |
-| 20 | 🟢 | `tsup.config.ts` | Code splitting disabled |
+| 19 | 🟢 | All | ~~`verbatimModuleSyntax` verbosity~~ ✅ By design |
+| 20 | 🟢 | `tsup.config.ts` | ~~Code splitting disabled~~ ✅ Fixed |
