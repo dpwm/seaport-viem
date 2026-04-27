@@ -466,6 +466,62 @@ parameter), a circular dependency would result.
 
 ---
 
+## Priority 1 (should fix)
+
+### 1.5 `bulk_signing_debug.test.ts` — domain separator computation missing `chainId` ✅ FIXED
+
+**File:** `src/bulk_signing_debug.test.ts` — third test inside
+`describe("bulk order signing diagnostics")`.
+
+**What was wrong:** The test computed an EIP-712 domain separator without
+including the `chainId` parameter in the ABI encoding. The type string
+correctly listed `uint256 chainId` as the fourth field, but the
+`encodeAbiParameters` call only encoded 4 values (omitting chainId):
+
+```ts
+// BAD: type string includes chainId but encoding omits it
+const domainTypeHash = keccak256(
+  stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+);
+const domainSeparator = keccak256(
+  encodeAbiParameters(
+    [
+      { type: "bytes32" },
+      { type: "bytes32" },
+      { type: "bytes32" },
+      { type: "address" }, // ⚠ chainId value never encoded
+    ],
+    [domainTypeHash, nameHash, versionHash, verifyingContract], // chainId missing!
+  ),
+);
+```
+
+This produced a domain separator that didn't match what `hashBulkOrder`,
+`encodeDomainSeparator`, or viem's `hashTypedData` compute.
+
+Additionally, the test name was misleading — it claimed to "match
+hashTypedData domain" but the assertion only checked it was a valid hex
+string (`/^0x[0-9a-f]{64}$/`), never actually comparing against
+`hashTypedData` output.
+
+**Fix applied:** Replaced the manual (and broken) domain separator
+computation with a call to the library's `encodeDomainSeparator` (already
+exported via fix 3.7). The test now cross-checks against viem's
+`hashTypedData` by recomputing the full EIP-712 digest for an empty struct
+and asserting an exact match. Test renamed to "domain separator matches
+hashTypedData".
+
+**Impact if unfixed:** A developer reading this debug test as a reference
+for computing EIP-712 domain separators would get a subtly wrong value,
+leading to signatures that fail on-chain verification.
+
+**Why existing tests didn't catch it:** The cross-check tests in
+`bulk_listings.test.ts` (fix 1.4) correctly use `encodeDomainSeparator`
+and compare against `hashTypedData`, so the library's domain encoding was
+verified separately. The bug only lived in the standalone debug test.
+
+---
+
 ## Checks before every commit
 
 Per `AGENTS.md`:

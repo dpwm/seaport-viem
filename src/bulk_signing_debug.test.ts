@@ -5,6 +5,7 @@ import {
   concat,
   stringToHex,
   recoverAddress,
+  hashTypedData,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
@@ -19,6 +20,7 @@ import {
   hashBulkOrder,
   getProof,
   toOrderParameters,
+  encodeDomainSeparator,
 } from "./index";
 import { ctx, makeOrderComponents, makeOfferItem, makeConsiderationItem } from "./test-fixtures";
 
@@ -91,29 +93,32 @@ describe("bulk order signing diagnostics", () => {
     expect(current).toBe(root);
   });
 
-  test("domain separator matches hashTypedData domain", () => {
-    // Compute domain separator the same way as hashBulkOrder
-    const domainTypeHash = keccak256(
-      stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-    );
-    const nameHash = keccak256(stringToHex(ctx.domain.name as string));
-    const versionHash = keccak256(stringToHex(ctx.domain.version as string));
+  test("domain separator matches hashTypedData", () => {
+    // Use the exported encodeDomainSeparator from the library (same as hashBulkOrder uses)
+    const domainSeparator = encodeDomainSeparator(ctx.domain);
 
-    const domainSeparator = keccak256(
-      encodeAbiParameters(
-        [
-          { type: "bytes32" },
-          { type: "bytes32" },
-          { type: "bytes32" },
-          { type: "address" },
-        ],
-        [domainTypeHash, nameHash, versionHash, ctx.domain.verifyingContract as `0x${string}`],
-      ),
+    // Cross-check against viem's hashTypedData with an empty struct
+    const viemDigest = hashTypedData({
+      domain: ctx.domain,
+      types: { Empty: [] },
+      primaryType: "Empty",
+      message: {},
+    });
+    // The EIP-712 digest is keccak256(0x1901 || domainSeparator || structHash).
+    // For an Empty type, structHash = keccak256(abi.encode(keccak256("Empty()"))).
+    const emptyTypeHash = keccak256(stringToHex("Empty()"));
+    const expectedStructHash = keccak256(
+      encodeAbiParameters([{ type: "bytes32" }], [emptyTypeHash]),
+    );
+    const expectedDigest = keccak256(
+      concat(["0x1901", domainSeparator, expectedStructHash]),
     );
 
     console.log(`  domain separator: ${domainSeparator}`);
+    console.log(`  viem digest:      ${viemDigest}`);
+    console.log(`  expected digest:  ${expectedDigest}`);
+    console.log(`  match: ${expectedDigest === viemDigest}`);
 
-    // The domain separator should be deterministic
-    expect(domainSeparator).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(expectedDigest).toBe(viemDigest);
   });
 });
