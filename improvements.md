@@ -386,7 +386,7 @@ to the type imports in `order.ts`.
 **Impact:** The function now rejects any item whose `itemType` is not a valid
 Seaport item type value, catching mismatches at compile time.
 
-### 3.13 `BulkOrder` type string brackets — repeated literal `[2]` could be confusing
+### 3.13 `BulkOrder` type string brackets — repeated literal `[2]` could be confusing ✅ FIXED
 
 **File:** `src/bulk_listings.ts`
 
@@ -402,6 +402,12 @@ This is correct for Seaport's bulk order scheme, but the magic number `2`
 appears nowhere in the function signature or nearby. Consider extracting a
 constant (`BULK_ORDER_BRANCH_FACTOR = 2`) or at least adding a doc comment
 that this matches Seaport's binary Merkle tree structure.
+
+**Fix applied:** Added `BULK_ORDER_BRANCH_FACTOR = 2` in `constants.ts` and
+used it in `getBulkOrderTypeString` (via template literal `[${BULK_ORDER_BRANCH_FACTOR}]`)
+and in the tree-building loop (`i += BULK_ORDER_BRANCH_FACTOR`). Added doc
+comment explaining the binary tree structure. Exported the constant from the
+barrel.
 
 ### 3.14 `packBulkSignature` accepts empty proof (asymmetry with `unpackBulkSignature`) ✅ FIXED
 

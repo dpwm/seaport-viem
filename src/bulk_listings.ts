@@ -13,6 +13,7 @@ import type { SeaportContext } from "./types";
 import {
   BULK_ORDER_HEIGHT_MIN,
   BULK_ORDER_HEIGHT_MAX,
+  BULK_ORDER_BRANCH_FACTOR,
   ORDER_COMPONENTS_TYPE_STRING,
   CONSIDERATION_ITEM_TYPE_STRING,
   OFFER_ITEM_TYPE_STRING,
@@ -84,7 +85,7 @@ export function buildBulkOrderTree(leaves: `0x${string}`[]): `0x${string}`[][] {
 
   while (current.length > 1) {
     const next: `0x${string}`[] = [];
-    for (let i = 0; i < current.length; i += 2) {
+    for (let i = 0; i < current.length; i += BULK_ORDER_BRANCH_FACTOR) {
       const left = current[i]!;
       const right = current[i + 1]!;
       next.push(keccak256(concat([left, right])));
@@ -107,7 +108,10 @@ export function getBulkOrderTypeString(height: number): string {
     );
   }
 
-  const brackets = "[2]".repeat(height);
+  // Seaport uses a binary merkle tree (branch factor = 2) for bulk orders.
+  // The [2] bracket notation repeats `height` times to match the tree depth,
+  // e.g. height 3 → "OrderComponents[2][2][2] tree"
+  const brackets = `[${BULK_ORDER_BRANCH_FACTOR}]`.repeat(height);
   return (
     `BulkOrder(OrderComponents${brackets} tree)` +
     CONSIDERATION_ITEM_TYPE_STRING +

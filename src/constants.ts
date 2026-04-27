@@ -436,6 +436,12 @@ export const BULK_ORDER_HEIGHT_MIN = 1;
 /** Maximum merkle tree height for bulk orders. */
 export const BULK_ORDER_HEIGHT_MAX = 24;
 
+/**
+ * Seaport's bulk order merkle tree is binary (branch factor = 2).
+ * Each node has exactly 2 children.
+ */
+export const BULK_ORDER_BRANCH_FACTOR = 2 as const;
+
 /** EIP-712 type definitions for Seaport order signing. */
 export const EIP712_TYPES = {
   OrderComponents: [
