@@ -116,8 +116,8 @@ export function encodeFulfillAvailableOrders(
     functionName: "fulfillAvailableOrders",
     args: [
       orders,
-      offerFulfillments as { orderIndex: bigint; itemIndex: bigint }[][],
-      considerationFulfillments as { orderIndex: bigint; itemIndex: bigint }[][],
+      offerFulfillments,
+      considerationFulfillments,
       fulfillerConduitKey,
       maximumFulfilled,
     ],
@@ -155,8 +155,8 @@ export function encodeFulfillAvailableAdvancedOrders(
     args: [
       advancedOrders,
       criteriaResolvers,
-      offerFulfillments as { orderIndex: bigint; itemIndex: bigint }[][],
-      considerationFulfillments as { orderIndex: bigint; itemIndex: bigint }[][],
+      offerFulfillments,
+      considerationFulfillments,
       fulfillerConduitKey,
       recipient,
       maximumFulfilled,

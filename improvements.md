@@ -73,20 +73,16 @@ the ABI encoding now stays in sync automatically.
 
 ## 🟡 Medium priority
 
-### 5. `FulfillmentComponent.orderIndex` / `itemIndex` accept `number | bigint`
+### 5. ~~`FulfillmentComponent.orderIndex` / `itemIndex` accept `number | bigint`~~ ✅ Fixed
 
 **File:** `src/types.ts`, `src/encode.ts`
 
-The type accepts `number | bigint` for ergonomic convenience, but `number`
-values > 2^53 lose precision. The encoders cast via `as { orderIndex: bigint;
-itemIndex: bigint }[][]`, which is an unchecked type assertion — a `number`
-value silently coerces to an incorrect `bigint` if the caller passes a
-large `number`.
-
-**Recommendation:** Either:
-- Narrow the type to `bigint` only and let callers convert.
-- Document the precision ceiling prominently.
-- Add a runtime check that `Number.isSafeInteger()` passes before encoding.
+**Fix:** Narrowed the type from `number | bigint` to `bigint` only in
+`FulfillmentComponent`. Removed the now-unnecessary `as { orderIndex: bigint;
+itemIndex: bigint }[][]` type assertions from `encodeFulfillAvailableOrders`
+and `encodeFulfillAvailableAdvancedOrders`. A JSDoc comment on the type notes
+that callers must convert via `BigInt()`. This is a minor breaking change for
+anyone passing raw `number` values — they must now explicitly convert.
 
 ---
 
@@ -320,7 +316,7 @@ with some dependency patterns.
 | 2 | 🔴 | `bulk_listings.ts` | Missing max-height guard |
 | 3 | 🔴 | `signature.ts` | ~~Overly broad error regex~~ ✅ Fixed |
 | 4 | 🔴 | `constants.ts`/`signature.ts` | ~~Duplicated ABI component definitions~~ ✅ Fixed |
-| 5 | 🟡 | `types.ts`/`encode.ts` | `number \| bigint` precision risk |
+| 5 | 🟡 | `types.ts`/`encode.ts` | ~~`number \| bigint` precision risk~~ ✅ Fixed |
 | 6 | 🟡 | `types.ts` | No `SeaportContext` validation |
 | 7 | 🟡 | `order.ts` | Inconsistent ETH detection |
 | 8 | 🟡 | `validate.ts` | Missing itemType range check |

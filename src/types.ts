@@ -156,12 +156,13 @@ export type AdvancedOrder = {
 
 /**
  * A component identifying an item in a fulfillment group.
- * Both fields accept `number | bigint` for ergonomic convenience; Seaport's
- * ABI encodes them as uint256.
+ * Both fields are `bigint` (matching Seaport's uint256 ABI encoding).
+ * Callers must convert `number` values via `BigInt()` — passing a raw
+ * `number` risks silent precision loss for values > 2^53.
  */
 export type FulfillmentComponent = {
-  orderIndex: number | bigint;
-  itemIndex: number | bigint;
+  orderIndex: bigint;
+  itemIndex: bigint;
 };
 
 /**
