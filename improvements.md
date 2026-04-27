@@ -5,6 +5,42 @@ impact; address the highest-priority items first.
 
 ---
 
+## Priority 0 (critical — fix before any on-chain use)
+
+### 0.1 `hashOrderComponentsStruct` uses wrong last field (consideration.length instead of counter)
+
+**File:** `src/signature.ts` — inside `hashOrderComponentsStruct`, final
+`encodeAbiParameters` call, last value:
+
+```typescript
+BigInt(orderComponents.consideration.length),
+```
+
+The `OrderComponents` struct ends with `counter`, not
+`totalOriginalConsiderationItems` (that's `OrderParameters`). The EIP-712
+struct hash must match Seaport's `_deriveOrderHash`, which uses `counter` as
+the last component.
+
+**Impact:**
+- All bulk order Merkle tree leaf hashes are wrong for any order where
+  `counter !== consideration.length` (i.e., every real order)
+- The Merkle root won't match what Seaport verifies on-chain
+- All bulk order signatures will be rejected by the Seaport contract
+
+**Fix:**
+
+```typescript
+orderComponents.counter,
+```
+
+This was not caught by tests because the debug test
+(`bulk_signing_debug.test.ts`) is self-referential — it uses the same buggy
+function to both build and verify the tree. The integration script
+(`scripts/bulk-list-and-buy.ts`) bypasses it entirely by calling on-chain
+`getOrderHash` for leaf computation.
+
+---
+
 ## Priority 1 (should fix)
 
 ### 1.1 README scope statement is stale
