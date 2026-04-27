@@ -10,6 +10,7 @@ import type {
   FulfillmentComponent,
   FulfillmentData,
   FulfillmentOptions,
+  ItemTypeValue,
   SeaportContext,
 } from "./types";
 import {
@@ -319,7 +320,7 @@ export function getEmptyOrderComponents(): OrderComponents {
 /**
  * Sum all NATIVE consideration items to compute msg.value.
  */
-function computeNativeValue(consideration: { itemType: number; endAmount: bigint }[]): bigint {
+function computeNativeValue(consideration: { itemType: ItemTypeValue; endAmount: bigint }[]): bigint {
   let value = 0n;
   for (const item of consideration) {
     if (item.itemType === ItemType.NATIVE) {

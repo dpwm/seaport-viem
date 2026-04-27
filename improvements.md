@@ -359,31 +359,32 @@ slightly roundabout. Consider a direct power-of-2 check for clarity.
 test. `computeHeight` is now only called in the error path to produce the error
 message with the expected capacity (this commit).
 
-### 3.11 No JSDoc on `Side` enum, `FulfillmentComponent` type, and private helpers
+### 3.11 No JSDoc on `Side` enum, `FulfillmentComponent` type, and private helpers ✅ FIXED
 
-- `Side` enum and `FulfillmentComponent` type in `types.ts` lack JSDoc
-- `checkUint120` in `encode.ts` has no JSDoc
-- `computeNativeValue` in `order.ts` has no JSDoc
-- The private `encodeDomainSeparator` in `bulk_listings.ts` has no JSDoc
-
-All public types and functions should have doc comments for a good DX.
-Private helpers are less critical but would aid maintainers.
+All items now have JSDoc:
+- `Side` enum in `types.ts` — documents that it applies to the offer (0) or consideration (1) side
+- `FulfillmentComponent` type in `types.ts` — documents ergonomic `number | bigint` fields
+- `checkUint120` in `encode.ts` — documents uint120 range with `@param` / `@throws`
+- `computeNativeValue` in `order.ts` — brief description of purpose
+- `encodeDomainSeparator` in `bulk_listings.ts` — documents domain encoding with `@param` / `@returns`
 
 ---
 
-### 3.12 `computeNativeValue` uses loose `{ itemType: number }` instead of `ItemTypeValue`
+### 3.12 `computeNativeValue` uses loose `{ itemType: number }` instead of `ItemTypeValue` ✅ FIXED
 
-**File:** `src/order.ts`
+**File:** `src/order.ts` — within `computeNativeValue`.
 
-```ts
-function computeNativeValue(consideration: { itemType: number; endAmount: bigint }[]): bigint {
-```
+**What was wrong:** The parameter type used `itemType: number` instead of the
+`ItemTypeValue` type (`0 | 1 | 2 | 3 | 4 | 5`). This bypassed type checking —
+any object with a `number` `itemType` would be accepted. While the function
+was only called internally with `ConsiderationItem[]`, the loose type could
+hide refactoring errors.
 
-The parameter type uses a loose inline shape with `itemType: number` instead
-of the `ConsiderationItem` type or at least `ItemTypeValue`. This bypasses
-type checking — any object with a `number` `itemType` would be accepted. Since
-this is a private function called only with `ConsiderationItem[]`, it works,
-but using the proper type would catch refactoring errors.
+**Fix applied:** Changed to `itemType: ItemTypeValue` and added `ItemTypeValue`
+to the type imports in `order.ts`.
+
+**Impact:** The function now rejects any item whose `itemType` is not a valid
+Seaport item type value, catching mismatches at compile time.
 
 ### 3.13 `BulkOrder` type string brackets — repeated literal `[2]` could be confusing
 
