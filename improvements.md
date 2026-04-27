@@ -10,7 +10,7 @@ impact; address the highest-priority items first.
 Per `AGENTS.md`:
 
 ```sh
-bun test              # all 182 tests must pass
+bun test              # all 229 tests must pass
 bun run typecheck     # tsc --noEmit must pass
 bun run build         # tsup → dist/ must succeed
 ```
@@ -71,9 +71,27 @@ the ABI encoding now stays in sync automatically.
 
 ---
 
+### 5. ~~Stray test files not merged into canonical test files~~ ✅ Fixed
+
+**Files:** `src/encode_new.test.ts`, `src/bulk_signing_debug.test.ts`
+
+The `encode_new.test.ts` file contained encoder tests (cancel, incrementCounter,
+getOrderStatus, matchOrders, matchAdvancedOrders, validate) that belonged in
+`src/encode.test.ts` — it was likely a WIP artifact from implementing issue #16.
+The `bulk_signing_debug.test.ts` file was a debug artifact with `console.log`
+calls whose tests (signer recovery, proof reconstruction, domain separator
+cross-check) already lived in `src/bulk_listings.test.ts`.
+
+**Fix:** Merged the 8 missing encoder tests from `encode_new.test.ts` into
+`encode.test.ts` alongside the existing encode tests. Removed both stray files.
+Test count dropped from 232 → 229 (3 debug tests were redundant with
+`bulk_listings.test.ts`).
+
+---
+
 ## 🟡 Medium priority
 
-### 5. ~~`FulfillmentComponent.orderIndex` / `itemIndex` accept `number | bigint`~~ ✅ Fixed
+### 6. ~~`FulfillmentComponent.orderIndex` / `itemIndex` accept `number | bigint`~~ ✅ Fixed
 
 **File:** `src/types.ts`, `src/encode.ts`
 
@@ -311,7 +329,7 @@ type-only modules). No action needed.
 **File:** `tsup.config.ts`
 
 **Fix:** Enabled code splitting (`splitting: true`) in tsup config after
-verifying the build succeeds and all 232 tests pass. Shared dependencies
+verifying the build succeeds and all tests pass. Shared dependencies
 now emit as chunk files (e.g., `chunk-G2MFVFMY.js` for viem, `chunk-TULT5WV5.js`
 for constants/ABI), reducing total bundle size for consumers that import
 multiple subpath exports. Each entry point correctly references its chunks.
@@ -326,19 +344,20 @@ multiple subpath exports. Each entry point correctly references its chunks.
 | 2 | 🔴 | `bulk_listings.ts` | Missing max-height guard |
 | 3 | 🔴 | `signature.ts` | ~~Overly broad error regex~~ ✅ Fixed |
 | 4 | 🔴 | `constants.ts`/`signature.ts` | ~~Duplicated ABI component definitions~~ ✅ Fixed |
-| 5 | 🟡 | `types.ts`/`encode.ts` | ~~`number \| bigint` precision risk~~ ✅ Fixed |
-| 6 | 🟡 | `validate.ts` | ~~No `SeaportContext` validation~~ ✅ Fixed |
-| 7 | 🟡 | `order.ts` | ~~Inconsistent ETH detection~~ ✅ Fixed |
-| 8 | 🟡 | `validate.ts` | ~~Missing itemType range check~~ ✅ Fixed |
-| 9 | 🟡 | `encode.test.ts` | ~~Shallow encoder tests~~ ✅ Fixed |
-| 10 | 🟡 | `order.ts` | ~~No fulfillment-component helpers~~ ✅ Fixed |
-| 11 | 🟡 | `order.ts` | ~~Underdocumented formula~~ ✅ Fixed |
-| 12 | 🟡 | `signature.test.ts` | ~~Test duplicates production logic~~ ✅ Fixed |
-| 13 | 🟢 | `order.ts` | Dead code path |
-| 14 | 🟢 | `order.ts` | ~~Invalid timestamps on padding struct~~ ✅ Fixed |
-| 15 | 🟢 | `order.ts` | ~~`computeNativeValue` not exported~~ ✅ Fixed |
-| 16 | 🟢 | Scope | Missing functions (cancel, matchOrders, etc.) |
-| 17 | 🟢 | `scripts/` | ~~Untested integration scripts~~ ✅ Fixed |
-| 18 | 🟢 | `bulk_listings.ts` | Missing max-height in pack/unpack |
-| 19 | 🟢 | All | ~~`verbatimModuleSyntax` verbosity~~ ✅ By design |
-| 20 | 🟢 | `tsup.config.ts` | ~~Code splitting disabled~~ ✅ Fixed |
+| 5 | 🟡 | `encode.test.ts` | ~~Stray `encode_new.test.ts` / `bulk_signing_debug.test.ts` not merged~~ ✅ Fixed |
+| 6 | 🟡 | `types.ts`/`encode.ts` | ~~`number \| bigint` precision risk~~ ✅ Fixed |
+| 7 | 🟡 | `validate.ts` | ~~No `SeaportContext` validation~~ ✅ Fixed |
+| 8 | 🟡 | `order.ts` | ~~Inconsistent ETH detection~~ ✅ Fixed |
+| 9 | 🟡 | `validate.ts` | ~~Missing itemType range check~~ ✅ Fixed |
+| 10 | 🟡 | `encode.test.ts` | ~~Shallow encoder tests~~ ✅ Fixed |
+| 11 | 🟡 | `order.ts` | ~~No fulfillment-component helpers~~ ✅ Fixed |
+| 12 | 🟡 | `order.ts` | ~~Underdocumented formula~~ ✅ Fixed |
+| 13 | 🟡 | `signature.test.ts` | ~~Test duplicates production logic~~ ✅ Fixed |
+| 14 | 🟢 | `order.ts` | Dead code path |
+| 15 | 🟢 | `order.ts` | ~~Invalid timestamps on padding struct~~ ✅ Fixed |
+| 16 | 🟢 | `order.ts` | ~~`computeNativeValue` not exported~~ ✅ Fixed |
+| 17 | 🟢 | Scope | Missing functions (cancel, matchOrders, etc.) |
+| 18 | 🟢 | `scripts/` | ~~Untested integration scripts~~ ✅ Fixed |
+| 19 | 🟢 | `bulk_listings.ts` | Missing max-height in pack/unpack |
+| 20 | 🟢 | All | ~~`verbatimModuleSyntax` verbosity~~ ✅ By design |
+| 21 | 🟢 | `tsup.config.ts` | ~~Code splitting disabled~~ ✅ Fixed |
