@@ -23,8 +23,10 @@ import { getEmptyOrderComponents } from "./order";
  * @returns The height (>= 1).
  */
 export function computeHeight(orderCount: number): number {
-  if (orderCount <= 0) {
-    return BULK_ORDER_HEIGHT_MIN;
+  if (orderCount < 1) {
+    throw new Error(
+      `orderCount must be at least 1, got ${orderCount}`,
+    );
   }
   return Math.max(BULK_ORDER_HEIGHT_MIN, Math.ceil(Math.log2(orderCount)));
 }

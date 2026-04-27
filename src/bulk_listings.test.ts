@@ -17,8 +17,8 @@ import { ctx, makeOrderComponents } from "./test-fixtures";
 // ── computeHeight ────────────────────────────────────────────
 
 describe("computeHeight", () => {
-  test("returns 1 for 0 orders", () => {
-    expect(computeHeight(0)).toBe(1);
+  test("throws for 0 orders", () => {
+    expect(() => computeHeight(0)).toThrow("orderCount must be at least 1");
   });
 
   test("returns 1 for 1 order", () => {

@@ -136,32 +136,16 @@ Added early `leaves.length === 0` throw in `padLeaves` (commit 9db47cf).
 Replaced ternary with `Math.max(BULK_ORDER_HEIGHT_MIN, ...)` after zero guard
 (commit 9db47cf).
 
-### 2.7 `computeHeight` — returns 1 for zero orders instead of throwing
+### 2.7 `computeHeight` — returns 1 for zero orders instead of throwing ✅ FIXED
 
 **File:** `src/bulk_listings.ts` — inside `computeHeight`.
 
-```ts
-export function computeHeight(orderCount: number): number {
-  if (orderCount <= 0) {
-    return BULK_ORDER_HEIGHT_MIN;
-  }
-  return Math.max(BULK_ORDER_HEIGHT_MIN, Math.ceil(Math.log2(orderCount)));
-}
-```
+**What was wrong:** `computeHeight(0)` returned `BULK_ORDER_HEIGHT_MIN` (1)
+instead of throwing. While not reachable in practice (both `padLeaves` and
+`buildBulkOrderTree` guard against empty input), it was misleading for
+standalone callers.
 
-**Problem:** `computeHeight(0)` returns 1. While this is currently unreachable
-in practice (both `padLeaves` and `buildBulkOrderTree` throw on empty input),
-it's misleading. A caller using `computeHeight` standalone for introspection
-would get a nonsensical result. The function should either throw for `orderCount < 1`
-or be documented as only valid for positive inputs.
-
-**Fix options:**
-- Throw on `orderCount < 1`
-- Or clamp to `BULK_ORDER_HEIGHT_MIN` and document the behavior
-
-Note that if the early return is removed, the `Math.max` guard would still
-produce the same value for `orderCount <= 0`, which is harmless but still
-misleading.
+**Fix applied:** Changed to throw on `orderCount < 1` (this commit).
 
 ---
 
