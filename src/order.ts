@@ -278,8 +278,19 @@ export function toOrderParameters(
   components: OrderComponents,
   totalOriginalConsiderationItems: bigint,
 ): OrderParameters {
-  const { counter: _, ...rest } = components;
-  return { ...rest, totalOriginalConsiderationItems };
+  return {
+    offerer: components.offerer,
+    zone: components.zone,
+    offer: components.offer,
+    consideration: components.consideration,
+    orderType: components.orderType,
+    startTime: components.startTime,
+    endTime: components.endTime,
+    zoneHash: components.zoneHash,
+    salt: components.salt,
+    conduitKey: components.conduitKey,
+    totalOriginalConsiderationItems,
+  };
 }
 
 /**

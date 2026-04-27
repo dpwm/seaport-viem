@@ -113,21 +113,19 @@ All other errors are rethrown, ensuring unexpected failures propagate.
 a non-`BaseError` would be indistinguishable from a bad signature, making
 debugging extremely difficult.
 
-### 2.4 `toOrderParameters` — rest-spread silently passes through unexpected fields
+### 2.4 `toOrderParameters` — rest-spread silently passes through unexpected fields ✅ FIXED
 
 **File:** `src/order.ts` — inside `toOrderParameters`.
 
-```ts
-const { counter: _, ...rest } = components;
-return { ...rest, totalOriginalConsiderationItems };
-```
+**What was wrong:** The destructure-and-spread pattern silently passed through
+any unexpected fields from `OrderComponents` into `OrderParameters`. If either
+struct ever gained a field that wasn't supposed to cross over, the bug would
+be silent.
 
-If `OrderComponents` ever gains a new field that does not belong in
-`OrderParameters` (beyond `counter`), it will be silently included in the
-output. Conversely, if `OrderParameters` gains a field not present in
-`OrderComponents`, it won't be set. This is fine as long as both structs are
-stable, but it's a maintenance trap. Consider an explicit field-by-field
-mapping or a dedicated type guard instead of destructure-and-spread.
+**Fix applied:** Replaced the rest-spread with an explicit field-by-field
+mapping. Each common field is listed individually, and
+`totalOriginalConsiderationItems` is set explicitly. This is more verbose but
+makes the conversion contract explicit at the type level (this commit).
 
 ### 2.5 `padLeaves` — no guard against empty input ✅ FIXED
 
