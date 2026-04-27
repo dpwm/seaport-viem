@@ -127,7 +127,7 @@ export function hashOrderComponentsStruct(
         orderComponents.zoneHash,
         orderComponents.salt,
         orderComponents.conduitKey,
-        BigInt(orderComponents.consideration.length),
+        orderComponents.counter,
       ],
     ),
   );

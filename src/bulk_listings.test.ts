@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { hashTypedData, keccak256, stringToHex, encodeAbiParameters, concat } from "viem";
 import {
   computeHeight,
   padLeaves,
@@ -404,5 +405,127 @@ describe("unpackBulkSignature", () => {
   test("throws for invalid length (not 67 + 32k)", () => {
     const bad = ("0x" + "aa".repeat(68)) as `0x${string}`;
     expect(() => unpackBulkSignature(bad)).toThrow("invalid length");
+  });
+
+  test("throws for height 0 (67 bytes, no proof)", () => {
+    // 32 (r) + 32 (sCompact) + 3 (orderIndex) = 67 bytes, no proof elements
+    const height0 = ("0x" + "aa".repeat(32) + "bb".repeat(32) + "000000") as `0x${string}`;
+    expect(() => unpackBulkSignature(height0)).toThrow("at least one proof element");
+  });
+});
+
+// ── padLeaves ────────────────────────────────────────────────
+
+describe("padLeaves", () => {
+  test("throws for empty input", () => {
+    expect(() => padLeaves([])).toThrow("Cannot pad an empty leaf array");
+  });
+});
+
+// ── Domain separator cross-check ────────────────────────────
+
+describe("domain separator cross-check", () => {
+  test("manual domain separator produces same EIP-712 digest as viem", () => {
+    // Replicate the manual domain separator from encodeDomainSeparator
+    const domainTypeHash = keccak256(
+      stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+    );
+    const nameHash = keccak256(stringToHex(ctx.domain.name ?? ""));
+    const versionHash = keccak256(stringToHex(ctx.domain.version ?? ""));
+
+    const manualSeparator = keccak256(
+      encodeAbiParameters(
+        [
+          { type: "bytes32" },
+          { type: "bytes32" },
+          { type: "bytes32" },
+          { type: "uint256" },
+          { type: "address" },
+        ],
+        [
+          domainTypeHash,
+          nameHash,
+          versionHash,
+          BigInt(ctx.domain.chainId ?? 0),
+          ctx.domain.verifyingContract as `0x${string}`,
+        ],
+      ),
+    );
+
+    // Compute structHash for Empty type: keccak256(abi.encode(keccak256("Empty()")))
+    const emptyTypeHash = keccak256(stringToHex("Empty()"));
+    const structHash = keccak256(
+      encodeAbiParameters([{ type: "bytes32" }], [emptyTypeHash]),
+    );
+
+    // Full digest using manual domain separator
+    const computedDigest = keccak256(
+      concat(["0x1901", manualSeparator, structHash]),
+    );
+
+    // viem's reference
+    const viemDigest = hashTypedData({
+      domain: ctx.domain,
+      types: { Empty: [] },
+      primaryType: "Empty",
+      message: {},
+    });
+
+    expect(computedDigest).toBe(viemDigest);
+  });
+
+  test("hashBulkOrder uses same domain separator as hashTypedData", () => {
+    // Build a minimal tree and hash it
+    const leaf = hashOrderComponentsStruct(makeOrderComponents());
+    const padded = padLeaves([leaf]);
+    const layers = buildBulkOrderTree(padded);
+    const root = layers[layers.length - 1]![0]!;
+
+    const bulkDigest = hashBulkOrder(ctx, root, 1);
+
+    // Compute the same domain separator via encodeDomainSeparator logic
+    const domainTypeHash = keccak256(
+      stringToHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+    );
+    const nameHash = keccak256(stringToHex(ctx.domain.name ?? ""));
+    const versionHash = keccak256(stringToHex(ctx.domain.version ?? ""));
+
+    const manualSeparator = keccak256(
+      encodeAbiParameters(
+        [
+          { type: "bytes32" },
+          { type: "bytes32" },
+          { type: "bytes32" },
+          { type: "uint256" },
+          { type: "address" },
+        ],
+        [
+          domainTypeHash,
+          nameHash,
+          versionHash,
+          BigInt(ctx.domain.chainId ?? 0),
+          ctx.domain.verifyingContract as `0x${string}`,
+        ],
+      ),
+    );
+
+    // hashBulkOrder = keccak256(0x1901 || domainSep || structHash)
+    // Extract (0x1901 || domainSep || structHash) is the pre-image of bulkDigest
+    // structHash = keccak256(abi.encode(typeHash, root)) for BulkOrder with 1 field
+    const bulkTypeString = getBulkOrderTypeString(1);
+    const bulkTypeHash = keccak256(stringToHex(bulkTypeString));
+    const expectedStructHash = keccak256(
+      encodeAbiParameters(
+        [{ type: "bytes32" }, { type: "bytes32" }],
+        [bulkTypeHash, root],
+      ),
+    );
+
+    // Compute what the digest should be using the manual domain separator
+    const expectedDigest = keccak256(
+      concat(["0x1901", manualSeparator, expectedStructHash]),
+    );
+
+    expect(bulkDigest).toBe(expectedDigest);
   });
 });

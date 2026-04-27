@@ -31,7 +31,10 @@ export const OrderType = {
 /** Numeric value of an {@link OrderType} member. */
 export type OrderTypeValue = (typeof OrderType)[keyof typeof OrderType];
 
-/** Basic order route type enum values. */
+/**
+ * Basic order route type enum values.
+ * Each route is from the fulfiller's perspective (what the fulfiller sends → what they receive).
+ */
 export const BasicOrderRouteType = {
   ETH_TO_ERC721: 0,
   ETH_TO_ERC1155: 1,

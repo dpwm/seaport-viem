@@ -26,8 +26,7 @@ export function computeHeight(orderCount: number): number {
   if (orderCount <= 0) {
     return BULK_ORDER_HEIGHT_MIN;
   }
-  const height = Math.ceil(Math.log2(orderCount));
-  return height < BULK_ORDER_HEIGHT_MIN ? BULK_ORDER_HEIGHT_MIN : height;
+  return Math.max(BULK_ORDER_HEIGHT_MIN, Math.ceil(Math.log2(orderCount)));
 }
 
 /**
@@ -40,6 +39,9 @@ export function computeHeight(orderCount: number): number {
 export function padLeaves(
   leaves: `0x${string}`[],
 ): `0x${string}`[] {
+  if (leaves.length === 0) {
+    throw new Error("Cannot pad an empty leaf array");
+  }
   const padded = [...leaves];
   const emptyHash = hashOrderComponentsStruct(getEmptyOrderComponents());
   const height = computeHeight(padded.length);
@@ -201,6 +203,7 @@ export function packBulkSignature(
  *
  * @param packed - The packed bulk signature.
  * @returns The signature components, order index, and merkle proof.
+ * @throws If the packed signature has height < 1 (no proof elements).
  */
 export function unpackBulkSignature(packed: `0x${string}`): {
   signature: { r: `0x${string}`; s: `0x${string}`; yParity: 0 | 1 };
@@ -223,6 +226,12 @@ export function unpackBulkSignature(packed: `0x${string}`): {
   }
 
   const height = (bytes.length - 67) / 32;
+
+  if (height < 1) {
+    throw new Error(
+      "Packed signature must include at least one proof element",
+    );
+  }
 
   const r = toHex(bytes.slice(0, 32));
   const sCompact = BigInt(toHex(bytes.slice(32, 64)));
@@ -262,8 +271,8 @@ function encodeDomainSeparator(domain: TypedDataDomain): `0x${string}` {
             "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
           ),
         ),
-        keccak256(stringToHex(domain.name as string)),
-        keccak256(stringToHex(domain.version as string)),
+        keccak256(stringToHex(domain.name ?? "")),
+        keccak256(stringToHex(domain.version ?? "")),
         BigInt(domain.chainId ?? 0),
         domain.verifyingContract as `0x${string}`,
       ],

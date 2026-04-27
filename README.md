@@ -133,7 +133,15 @@ import { validateOrderComponents } from "seaport-viem/validate";
 
 ## Scope
 
-This library covers `fulfillBasicOrder` only. It does not implement `fulfillOrder`, `fulfillAdvancedOrder`, `cancel`, `incrementCounter`, `getOrderStatus`, or event parsing. This is intentional scope.
+This library covers:
+- Basic order fulfillment (`fulfillBasicOrder`)
+- Standard order fulfillment (`fulfillOrder`)
+- Advanced order fulfillment with partial fills (`fulfillAdvancedOrder`)
+- Batch fulfillment of available orders and advanced orders (`fulfillAvailableOrders`, `fulfillAvailableAdvancedOrders`)
+- Bulk order tree building, signing, and signature packing (for Seaport 1.6 bulk listings)
+- Order component validation, EIP-712 signature verification, and on-chain counter reads
+
+It does not implement `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`, `matchAdvancedOrders`, or event parsing. This is intentional scope.
 
 ## License
 
