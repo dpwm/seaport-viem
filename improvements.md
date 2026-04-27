@@ -165,19 +165,15 @@ items per order, and `AdvancedOrder[]` inputs.
 
 ---
 
-### 11. `basicOrderType` encoding lacks documentation of the formula
+### 11. ~~`basicOrderType` encoding lacks documentation of the formula~~ ✅ Fixed
 
 **File:** `src/order.ts` (line: `const basicOrderType = order.parameters.orderType + routeType * 4`)
 
-The formula `orderType + routeType * 4` is Seaport's internal encoding. The
-code documents it once in the `toBasicOrderParameters` JSDoc but not inline.
-A developer unfamiliar with Seaport internals may not understand why `* 4`
-is used.
-
-**Recommendation:** Add an inline comment explaining that Seaport packs
+**Fix:** Added a detailed inline comment explaining that Seaport packs
 `basicOrderType` as `(routeType << 2) | orderType` (or equivalently
-`orderType + routeType * 4`), and that the 4 comes from having 4 order types
-(0–3, with CONTRACT excluded from basic orders).
+`orderType + routeType * 4`), that the multiplier 4 derives from the 4 order
+types (0–3, with CONTRACT excluded from basic orders), and that the type
+field only needs 2 bits with the route type shifted into the upper bits.
 
 ---
 
@@ -310,7 +306,7 @@ with some dependency patterns.
 | 8 | 🟡 | `validate.ts` | ~~Missing itemType range check~~ ✅ Fixed |
 | 9 | 🟡 | `encode.test.ts` | ~~Shallow encoder tests~~ ✅ Fixed |
 | 10 | 🟡 | `order.ts` | No fulfillment-component helpers |
-| 11 | 🟡 | `order.ts` | Underdocumented formula |
+| 11 | 🟡 | `order.ts` | ~~Underdocumented formula~~ ✅ Fixed |
 | 12 | 🟡 | `signature.test.ts` | Test duplicates production logic |
 | 13 | 🟢 | `order.ts` | Dead code path |
 | 14 | 🟢 | `order.ts` | Invalid timestamps on padding struct |

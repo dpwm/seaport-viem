@@ -72,7 +72,12 @@ export function toBasicOrderParameters(
     ...tips,
   ];
 
-  // Seaport encodes basicOrderType as: routeType * 4 + orderType
+  // Seaport packs basicOrderType as (routeType << 2) | orderType, which is
+  // equivalent to orderType + routeType * 4. The multiplier 4 derives from
+  // the number of order types (0–3, FULL_OPEN through FULL_RESTRICTED);
+  // CONTRACT orders (type 4) are excluded from the basic order pathway, so
+  // the type field only needs 2 bits, and the basic order route type is
+  // shifted into the upper bits.
   const basicOrderType = order.parameters.orderType + routeType * 4;
 
   return {
