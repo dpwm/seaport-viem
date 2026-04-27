@@ -1,6 +1,7 @@
 import { isAddress } from "viem";
-import type { SeaportContext, OrderComponents, ValidationResult } from "./types";
+import type { SeaportContext, OrderComponents, OrderParameters, FulfillmentData, ValidationResult } from "./types";
 import { ItemType } from "./types";
+import { encodeValidate } from "./encode";
 
 const VALID_ITEM_TYPES = new Set<number>(Object.values(ItemType));
 
@@ -133,4 +134,33 @@ export function validateOrderComponents(
   }
 
   return { valid: true };
+}
+
+/**
+ * Build a transaction to validate one or more Seaport orders.
+ * Validating an order marks it as approved on-chain so it can be fulfilled
+ * or matched without requiring a signature transfer.
+ *
+ * @param ctx - Seaport deployment context (address and EIP-712 domain).
+ * @param orders - The signed orders to validate.
+ * @returns Transaction data ready to send.
+ */
+export function buildValidate(
+  ctx: SeaportContext,
+  orders: { parameters: OrderParameters; signature: `0x${string}` }[],
+): FulfillmentData {
+  const ctxValid = validateSeaportContext(ctx);
+  if (!ctxValid.valid) {
+    throw new Error(ctxValid.reason);
+  }
+
+  if (orders.length === 0) {
+    throw new Error("At least one order must be provided to validate");
+  }
+
+  return {
+    to: ctx.address,
+    data: encodeValidate(orders),
+    value: 0n,
+  };
 }

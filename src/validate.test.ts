@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { validateOrderComponents, validateSeaportContext } from "./index";
 import {
+  validateOrderComponents,
+  validateSeaportContext,
+  buildValidate,
+  toOrderParameters,
+} from "./index";
+import {
+  makeOrder,
   makeOrderComponents,
   makeOfferItem,
   makeConsiderationItem,
@@ -267,5 +273,73 @@ describe("validateOrderComponents", () => {
       }),
     );
     expect(result.valid).toBe(true);
+  });
+});
+
+describe("buildValidate", () => {
+  test("returns transaction data with correct to address", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const result = buildValidate(ctx, [
+      { parameters: params, signature: order.signature },
+    ]);
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+    expect(result.value).toBe(0n);
+  });
+
+  test("includes encoded validate function selector", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const result = buildValidate(ctx, [
+      { parameters: params, signature: order.signature },
+    ]);
+    // validate function selector: 0x88147732
+    expect(result.data.startsWith("0x88147732")).toBe(true);
+  });
+
+  test("accepts multiple orders", () => {
+    const order1 = makeOrder({ parameters: makeOrderComponents({ salt: 1n }) });
+    const order2 = makeOrder({ parameters: makeOrderComponents({ salt: 2n }) });
+    const params1 = toOrderParameters(
+      order1.parameters,
+      BigInt(order1.parameters.consideration.length),
+    );
+    const params2 = toOrderParameters(
+      order2.parameters,
+      BigInt(order2.parameters.consideration.length),
+    );
+    const result = buildValidate(ctx, [
+      { parameters: params1, signature: order1.signature },
+      { parameters: params2, signature: order2.signature },
+    ]);
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("throws on empty orders array", () => {
+    expect(() => buildValidate(ctx, [])).toThrow(
+      "At least one order must be provided to validate",
+    );
+  });
+
+  test("throws on invalid context", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    expect(() =>
+      buildValidate(
+        { ...ctx, address: undefined as unknown as `0x${string}` },
+        [{ parameters: params, signature: order.signature }],
+      ),
+    ).toThrow("ctx.address");
   });
 });

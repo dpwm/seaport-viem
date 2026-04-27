@@ -70,7 +70,7 @@ export { verifyOrderSignature, hashOrderComponents, hashOrderComponentsStruct } 
 export { getCounter } from "./counter";
 
 // Validation
-export { validateOrderComponents, validateSeaportContext } from "./validate";
+export { validateOrderComponents, validateSeaportContext, buildValidate } from "./validate";
 
 // Order fulfillment
 export {

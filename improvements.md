@@ -39,15 +39,12 @@ ERC20 consideration would incorrectly return `ERC1155_TO_ERC20`).
 
 ---
 
-## 3. Missing `buildValidate` builder (Medium)
+## ~~3. Missing `buildValidate` builder (Medium)~~ ✅ Resolved
 
-`encode.ts` exports `encodeValidate` (calldata for Seaport's `validate(Order[])`),
-but there is no corresponding high-level builder like `buildValidate(ctx, orders):
-FulfillmentData` — the pattern established for every other Seaport function
-(`buildCancel`, `buildMatchOrders`, `buildFulfillOrder`, etc.).
-
-Either add `buildValidate` in `order.ts` (or a new `validate.ts`), or
-document in the README why `validate` is encoder-only.
+`buildValidate(ctx, orders)` added to `src/validate.ts`, exported from the
+barrel, following the same pattern as `buildCancel`. The function validates
+the SeaportContext, checks the orders array is non-empty, and returns
+`FulfillmentData` with the `validate(Order[])` calldata and zero value.
 
 ---
 
