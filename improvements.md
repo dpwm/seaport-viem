@@ -218,13 +218,14 @@ on-chain — only its EIP-712 hash is used as a padding leaf.
 
 ---
 
-### 15. `computeNativeValue` could be exported
+### 15. ~~`computeNativeValue` could be exported~~ ✅ Fixed
 
 **File:** `src/order.ts`
 
-This private helper sums NATIVE consideration amounts. Callers who build
-their own transaction objects may want to compute the correct `value` field
-without using the full builder. Consider exporting it.
+**Fix:** Exported `computeNativeValue` from `order.ts` and added it to the
+barrel export in `index.ts`. Callers who build their own transaction objects
+can now import `computeNativeValue` directly to compute the correct `value`
+field without using the full fulfillment builder.
 
 ---
 
@@ -305,12 +306,12 @@ with some dependency patterns.
 | 7 | 🟡 | `order.ts` | ~~Inconsistent ETH detection~~ ✅ Fixed |
 | 8 | 🟡 | `validate.ts` | ~~Missing itemType range check~~ ✅ Fixed |
 | 9 | 🟡 | `encode.test.ts` | ~~Shallow encoder tests~~ ✅ Fixed |
-| 10 | 🟡 | `order.ts` | No fulfillment-component helpers |
+| 10 | 🟡 | `order.ts` | ~~No fulfillment-component helpers~~ ✅ Fixed |
 | 11 | 🟡 | `order.ts` | ~~Underdocumented formula~~ ✅ Fixed |
 | 12 | 🟡 | `signature.test.ts` | ~~Test duplicates production logic~~ ✅ Fixed |
 | 13 | 🟢 | `order.ts` | Dead code path |
 | 14 | 🟢 | `order.ts` | ~~Invalid timestamps on padding struct~~ ✅ Fixed |
-| 15 | 🟢 | `order.ts` | `computeNativeValue` not exported |
+| 15 | 🟢 | `order.ts` | ~~`computeNativeValue` not exported~~ ✅ Fixed |
 | 16 | 🟢 | Scope | Missing functions (cancel, matchOrders, etc.) |
 | 17 | 🟢 | `scripts/` | Untested integration scripts |
 | 18 | 🟢 | `bulk_listings.ts` | Missing max-height in pack/unpack |

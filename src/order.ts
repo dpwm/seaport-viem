@@ -418,7 +418,7 @@ export function aggregateConsiderationItems(
 /**
  * Sum all NATIVE consideration items to compute msg.value.
  */
-function computeNativeValue(consideration: { itemType: ItemTypeValue; endAmount: bigint }[]): bigint {
+export function computeNativeValue(consideration: { itemType: ItemTypeValue; endAmount: bigint }[]): bigint {
   let value = 0n;
   for (const item of consideration) {
     if (item.itemType === ItemType.NATIVE) {

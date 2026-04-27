@@ -67,6 +67,7 @@ export { validateOrderComponents, validateSeaportContext } from "./validate";
 export {
   toBasicOrderParameters,
   buildBasicOrderFulfillment,
+  computeNativeValue,
   canFulfillAsBasicOrder,
   detectBasicOrderRouteType,
   toOrderParameters,
