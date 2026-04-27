@@ -7,67 +7,42 @@ impact; address the highest-priority items first.
 
 ## Priority 0 (critical — fix before any on-chain use)
 
-### 0.1 `hashOrderComponentsStruct` uses wrong last field (consideration.length instead of counter)
+### 0.1 `hashOrderComponentsStruct` uses wrong last field (consideration.length instead of counter) ✅ FIXED
 
 **File:** `src/signature.ts` — inside `hashOrderComponentsStruct`, final
-`encodeAbiParameters` call, last value:
+`encodeAbiParameters` call, last value.
 
-```typescript
-BigInt(orderComponents.consideration.length),
-```
-
-The `OrderComponents` struct ends with `counter`, not
+**What was wrong:** `BigInt(orderComponents.consideration.length)` — the
+`OrderComponents` struct ends with `counter`, not
 `totalOriginalConsiderationItems` (that's `OrderParameters`). The EIP-712
 struct hash must match Seaport's `_deriveOrderHash`, which uses `counter` as
 the last component.
 
-**Impact:**
-- All bulk order Merkle tree leaf hashes are wrong for any order where
-  `counter !== consideration.length` (i.e., every real order)
-- The Merkle root won't match what Seaport verifies on-chain
-- All bulk order signatures will be rejected by the Seaport contract
+**Impact if unfixed:** All bulk order Merkle tree leaf hashes are wrong for
+any order where `counter !== consideration.length` (i.e., every real order).
+The Merkle root won't match what Seaport verifies on-chain, so all bulk order
+signatures would be rejected by the contract.
 
-**Fix:**
+**Fix applied:** Changed to `orderComponents.counter` (commit 9db47cf).
 
-```typescript
-orderComponents.counter,
-```
-
-This was not caught by tests because the debug test
+**Why tests didn't catch it:** The debug test
 (`bulk_signing_debug.test.ts`) is self-referential — it uses the same buggy
 function to both build and verify the tree. The integration script
-(`scripts/bulk-list-and-buy.ts`) bypasses it entirely by calling on-chain
-`getOrderHash` for leaf computation.
+(`scripts/bulk-list-and-buy.ts`) bypasses `hashOrderComponentsStruct`
+entirely by calling on-chain `getOrderHash` for leaf computation.
 
 ---
 
 ## Priority 1 (should fix)
 
-### 1.1 README scope statement is stale
+### 1.1 README scope statement is stale ✅ FIXED
 
-The README says the library only covers `fulfillBasicOrder`, but it now also
-covers `fulfillOrder`, `fulfillAdvancedOrder`, `fulfillAvailableOrders`,
-`fulfillAvailableAdvancedOrders`, and bulk listings. Update the scope
-paragraph.
+The README scope paragraph now lists all covered fulfillment pathways
+(commit 9db47cf).
 
-### 1.2 `unpackBulkSignature` allows height 0 (no proof)
+### 1.2 `unpackBulkSignature` allows height 0 (no proof) ✅ FIXED
 
-`packBulkSignature` always packs at least one proof element because
-`BULK_ORDER_HEIGHT_MIN = 1`, but `unpackBulkSignature` accepts a 67-byte input
-(r||sCompact||orderIndex with no proof elements, height 0). This would return
-an empty proof array, which will never verify on-chain. The function should
-reject this early.
-
-**File:** `src/bulk_listings.ts` — inside `unpackBulkSignature`, after computing
-`height`:
-
-```typescript
-if (height < 1) {
-  throw new Error(
-    "Packed signature must include at least one proof element",
-  );
-}
-```
+Added the height < 1 check inside `unpackBulkSignature` (commit 9db47cf).
 
 ### 1.3 `getBulkOrderTypeString` — verify casing against Seaport 1.6
 
@@ -83,53 +58,30 @@ won't match and all bulk order signing will fail silently. Cross-check against
 the Seaport 1.6 source (`contracts/test/TypehashDirectory.sol` or the
 `EIP712MerkleTree` test helper).
 
-### 1.4 `encodeDomainSeparator` — risk of silent divergence from viem
+### 1.4 `encodeDomainSeparator` — risk of silent divergence from viem ✅ FIXED
 
-The domain separator is computed manually in `encodeDomainSeparator`
-(`src/bulk_listings.ts`) rather than using viem's internal implementation.
-There are now **two** implementations of EIP-712 domain separator computation
-in the codebase. If they diverge (different encoding, field ordering, etc.),
-`hashBulkOrder` will produce digests that don't match what viem's
-`verifyTypedData` expects or what Seaport verifies on-chain.
+Added two cross-check tests in `src/bulk_listings.test.ts`:
+- "manual domain separator produces same EIP-712 digest as viem" — recomputes
+  the full EIP-712 digest using the manual domain separator and a known empty
+  struct, then compares against viem's `hashTypedData` output
+- "hashBulkOrder uses same domain separator as hashTypedData" — reconstructs
+  the `hashBulkOrder` digest from its components using the manual domain
+  separator and verifies it matches `hashBulkOrder`'s output
 
-**Fix:** Add a cross-check test that validates the manual domain separator
-against a known-good value (e.g., computed by `hashTypedData` with an empty
-message and no primary type, or hardcoded against a forge deployment).
+Both pass (commit 9db47cf).
 
 ---
 
 ## Priority 2 (good to fix)
 
-### 2.1 `encodeDomainSeparator` — unsafe cast of optional domain fields
+### 2.1 `encodeDomainSeparator` — unsafe cast of optional domain fields ✅ FIXED
 
-`TypedDataDomain` has `name` and `version` as optional fields. The code uses:
+Changed to `domain.name ?? ""` / `domain.version ?? ""` (commit 9db47cf).
 
-```typescript
-keccak256(stringToHex(domain.name as string))
-keccak256(stringToHex(domain.version as string))
-```
+### 2.2 `canFulfillAsBasicOrder` — route type variable names are ambiguous ✅ FIXED
 
-If a caller passes a domain without `name` or `version`, `as string` suppresses
-the type error but `stringToHex(undefined)` will throw at runtime.
-
-**Fix:** Use nullish coalescing:
-
-```typescript
-keccak256(stringToHex(domain.name ?? ""))
-keccak256(stringToHex(domain.version ?? ""))
-```
-
-### 2.2 `canFulfillAsBasicOrder` — route type variable names are ambiguous
-
-The route-checking variable names (`isErc721ToErc20`, `isErc20ToErc721`, etc.)
-use the **fulfiller's perspective** (matching `BasicOrderRouteType`), but the
-checked fields use the **order's perspective** (offer/consideration). This is
-correct but takes mental effort to verify. Consider adding a clarifying
-doc-comment on the `BasicOrderRouteType` enum in `types.ts`:
-
-```typescript
-/** Route type from the fulfiller's perspective (what the fulfiller sends → what they receive). */
-```
+Added fulfiller-perspective doc-comment to `BasicOrderRouteType` in
+`src/types.ts` (commit 9db47cf).
 
 ### 2.3 `verifyOrderSignature` — broad catch may swallow infrastructure errors
 
@@ -138,32 +90,14 @@ The error handling distinguishes viem `BaseError` (rethrown) from plain `Error`
 `Error` instances, which is a viem implementation detail. A slightly more
 targeted filter would be safer.
 
-### 2.4 `padLeaves` — no guard against empty input
+### 2.4 `padLeaves` — no guard against empty input ✅ FIXED
 
-`padLeaves([])` returns `[]` without error, but `buildBulkOrderTree([])` throws
-with "Cannot build a tree from zero leaves". Add an early check in `padLeaves`:
+Added early `leaves.length === 0` throw in `padLeaves` (commit 9db47cf).
 
-```typescript
-if (leaves.length === 0) {
-  throw new Error("Cannot pad an empty leaf array");
-}
-```
+### 2.5 `computeHeight` — redundant floor check ✅ FIXED
 
-### 2.5 `computeHeight` — redundant floor check
-
-```typescript
-const height = Math.ceil(Math.log2(orderCount));
-return height < BULK_ORDER_HEIGHT_MIN ? BULK_ORDER_HEIGHT_MIN : height;
-```
-
-`Math.ceil(Math.log2(1))` returns 0, and `0 < BULK_ORDER_HEIGHT_MIN` (1) so
-the ternary catches it. But also `Math.ceil(Math.log2(0))` returns `-Infinity`,
-which is < 1 so also caught. Consider a more explicit approach:
-
-```typescript
-if (orderCount <= 0) return BULK_ORDER_HEIGHT_MIN;
-return Math.max(BULK_ORDER_HEIGHT_MIN, Math.ceil(Math.log2(orderCount)));
-```
+Replaced ternary with `Math.max(BULK_ORDER_HEIGHT_MIN, ...)` after zero guard
+(commit 9db47cf).
 
 ---
 
@@ -196,7 +130,7 @@ Seaport deployment or a foundry test fixture).
 Per `AGENTS.md`:
 
 ```sh
-bun test              # all 136 tests must pass
+bun test              # all 140 tests must pass
 bun run typecheck     # tsc --noEmit must pass
 bun run build         # tsup → dist/ must succeed
 ```
