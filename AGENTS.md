@@ -61,3 +61,9 @@ Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { .
 ## Build output
 
 tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 9 subpath entry points, one per source module.
+
+## Open issues
+
+See [`improvements.md`](./improvements.md) for known issues, action items, and
+recommended fixes from the latest code review. Check it before starting new
+work to avoid overlapping with known problems.
