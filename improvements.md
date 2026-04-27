@@ -150,11 +150,14 @@ standalone callers.
 
 ## Priority 3 (minor / nice to have)
 
-### 3.1 `bulk_signing_debug.test.ts` uses a hardcoded private key
+### 3.1 `bulk_signing_debug.test.ts` uses a hardcoded private key ✅ FIXED
 
 The file `src/bulk_signing_debug.test.ts` contains a hardcoded `SELLER_KEY`.
 This is acceptable for an integration test but should not be treated as a
 secret. Consider documenting that this key is test-only.
+
+**Fix applied:** Added doc comment above the key stating it is test-only (this
+commit).
 
 ### 3.2 No upper-bound validation on `maximumFulfilled`
 

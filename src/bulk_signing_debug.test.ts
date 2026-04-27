@@ -22,6 +22,8 @@ import {
 } from "./index";
 import { ctx, makeOrderComponents, makeOfferItem, makeConsiderationItem } from "./test-fixtures";
 
+// Test-only key — do NOT use for any real funds. This key is used exclusively
+// for integration-level debugging of bulk order signing.
 const SELLER_KEY =
   "0x84ce473bdcb5460191fb3201117551d16c2d83a3cd896b55f605a4649520d140" as `0x${string}`;
 
