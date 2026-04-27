@@ -1,9 +1,10 @@
 import type { PublicClient } from "viem";
-import { decodeFunctionResult, BaseError } from "viem";
+import { decodeFunctionResult } from "viem";
 import type { SeaportContext, OrderStatus } from "./types";
 import { getOrderStatusAbiItem } from "./constants";
 import { encodeGetOrderStatus } from "./encode";
 import { validateSeaportContext } from "./validate";
+import { safeCall } from "./call";
 
 /**
  * Fetch the on-chain status of an order by its hash.
@@ -25,37 +26,18 @@ export async function getOrderStatus(
   }
 
   const data = encodeGetOrderStatus(orderHash);
-  try {
-    const result = await client.call({
-      to: ctx.address,
-      data,
+  const resultData = await safeCall(
+    client,
+    { to: ctx.address, data },
+    "getOrderStatus",
+    "fetch order status",
+    `for order hash ${orderHash} at Seaport ${ctx.address}`,
+  );
+  const [isValidated, isCancelled, totalFilled, totalSize] =
+    decodeFunctionResult({
+      abi: [getOrderStatusAbiItem],
+      functionName: "getOrderStatus",
+      data: resultData,
     });
-    if (result.data === undefined || result.data === "0x") {
-      throw new Error(
-        `getOrderStatus returned no data for order hash ${orderHash} at Seaport ${ctx.address}`,
-      );
-    }
-    const [isValidated, isCancelled, totalFilled, totalSize] =
-      decodeFunctionResult({
-        abi: [getOrderStatusAbiItem],
-        functionName: "getOrderStatus",
-        data: result.data,
-      });
-    return { isValidated, isCancelled, totalFilled, totalSize };
-  } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.message.startsWith("getOrderStatus returned no data")
-    ) {
-      throw error;
-    }
-    if (error instanceof BaseError) {
-      throw new Error(
-        `Failed to fetch order status for order hash ${orderHash} from Seaport at ${ctx.address}: ${error.shortMessage ?? error.message}`,
-      );
-    }
-    throw new Error(
-      `Failed to fetch order status for order hash ${orderHash} from Seaport at ${ctx.address}: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
+  return { isValidated, isCancelled, totalFilled, totalSize };
 }

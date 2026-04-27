@@ -1,9 +1,10 @@
 import type { PublicClient } from "viem";
-import { decodeFunctionResult, BaseError } from "viem";
+import { decodeFunctionResult } from "viem";
 import type { SeaportContext } from "./types";
 import { getCounterAbiItem } from "./constants";
 import { encodeGetCounter } from "./encode";
 import { validateSeaportContext } from "./validate";
+import { safeCall } from "./call";
 
 /**
  * Fetch an offerer's current order counter from the Seaport contract.
@@ -28,35 +29,16 @@ export async function getCounter(
   }
 
   const data = encodeGetCounter(offerer);
-  try {
-    const result = await client.call({
-      to: ctx.address,
-      data,
-    });
-    if (result.data === undefined || result.data === "0x") {
-      throw new Error(
-        `getCounter returned no data for offerer ${offerer} at Seaport ${ctx.address}`,
-      );
-    }
-    return decodeFunctionResult({
-      abi: [getCounterAbiItem],
-      functionName: "getCounter",
-      data: result.data,
-    });
-  } catch (error: unknown) {
-    // If the error already carries our context, rethrow it.
-    if (error instanceof Error && error.message.startsWith("getCounter returned no data")) {
-      throw error;
-    }
-    // Wrap viem BaseErrors (RPC errors, contract reverts, etc.) with context.
-    if (error instanceof BaseError) {
-      throw new Error(
-        `Failed to fetch counter for offerer ${offerer} from Seaport at ${ctx.address}: ${error.shortMessage ?? error.message}`,
-      );
-    }
-    // Wrap infrastructure errors (e.g., TypeError, RangeError, or thrown strings).
-    throw new Error(
-      `Failed to fetch counter for offerer ${offerer} from Seaport at ${ctx.address}: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
+  const resultData = await safeCall(
+    client,
+    { to: ctx.address, data },
+    "getCounter",
+    "fetch counter",
+    `for offerer ${offerer} at Seaport ${ctx.address}`,
+  );
+  return decodeFunctionResult({
+    abi: [getCounterAbiItem],
+    functionName: "getCounter",
+    data: resultData,
+  });
 }

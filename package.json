@@ -86,6 +86,12 @@
         "default": "./dist/increment_counter.js"
       }
     },
+    "./call": {
+      "import": {
+        "types": "./dist/call.d.ts",
+        "default": "./dist/call.js"
+      }
+    },
     "./events": {
       "import": {
         "types": "./dist/events.d.ts",

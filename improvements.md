@@ -81,11 +81,10 @@ that it is a placebo — not a real EIP-712 signature.
 
 ---
 
-## 8. Shared error-handling pattern across `counter.ts` and `order_status.ts` (Low)
+## ~~8. Shared error-handling pattern across `counter.ts` and `order_status.ts` (Low)~~ ✅ Resolved
 
-Both modules have identical structure for wrapping `client.call` results:
-- Check `result.data === undefined || result.data === "0x"`
-- Three-tier catch (`BaseError`, then generic `Error`) with context strings.
-
-Extracting a helper like `safeCall(client, to, data, fnName, debugContext)`
-would reduce duplication and make the pattern testable.
+A `safeCall(client, params, fnLabel, actionLabel, details)` helper has been
+added to `src/call.ts` and exported from the barrel. Both `counter.ts` and
+`order_status.ts` now delegate to it, eliminating the duplicated try/catch
+and no-data checks. The helper is also available via the `seaport-viem/call`
+subpath export for external testing and reuse.
