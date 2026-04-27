@@ -10,7 +10,7 @@ impact; address the highest-priority items first.
 Per `AGENTS.md`:
 
 ```sh
-bun test              # all 167 tests must pass
+bun test              # all 182 tests must pass
 bun run typecheck     # tsc --noEmit must pass
 bun run build         # tsup → dist/ must succeed
 ```
@@ -86,44 +86,39 @@ anyone passing raw `number` values — they must now explicitly convert.
 
 ---
 
-### 6. No validation for `SeaportContext`
+### 6. ~~No validation for `SeaportContext`~~ ✅ Fixed
 
-**File:** `src/types.ts`
+**File:** `src/validate.ts`
 
-`SeaportContext` requires `address` (a 20-byte hex) and `domain` (an EIP-712
-domain object with at minimum `verifyingContract`). No function validates the
-context — passing a malformed address or a domain with `chainId: undefined`
-produces cryptic downstream errors from viem.
+**Fix:** Added `validateSeaportContext(ctx)` in `src/validate.ts` that
+checks:
+- `ctx.address` is a valid 20-byte hex address (using viem's `isAddress`).
+- `ctx.domain.verifyingContract` is present, non-empty, and a valid address.
+- `ctx.domain.chainId` is a positive integer if provided.
 
-**Recommendation:** Add a `validateSeaportContext(ctx)` function that checks:
-- `address` is a valid 40-char hex string (or use viem's `isAddress`).
-- `domain.verifyingContract` is present and non-empty.
-- `domain.chainId` is a positive integer if provided.
+The function is called at the entry of all 8 public functions that accept
+`SeaportContext`: `buildBasicOrderFulfillment`, `buildFulfillOrder`,
+`buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`,
+`buildFulfillAvailableAdvancedOrders` (in `order.ts`),
+`verifyOrderSignature`, `hashOrderComponents` (in `signature.ts`),
+and `getCounter` (in `counter.ts`).
 
-Call it at the entry to the main public functions (`buildBasicOrderFulfillment`,
-`buildFulfillOrder`, `hashOrderComponents`, etc.).
+Exported from `src/index.ts` for standalone use. 12 unit tests cover
+valid context, missing/invalid address, missing/empty/invalid
+verifyingContract, chainId as number/bigint/undefined, and
+non-positive/non-integer chainId values.
 
 ---
 
-### 7. `NATIVE_TOKEN` / `ZERO_ADDRESS` inconsistency in value computation
+### 7. ~~`NATIVE_TOKEN` / `ZERO_ADDRESS` inconsistency in value computation~~ ✅ Fixed
 
 **File:** `src/order.ts`
 
-`computeNativeValue()` (used by `buildFulfillOrder`, `buildFulfillAdvancedOrder`,
-etc.) uses `item.itemType === ItemType.NATIVE` to identify ETH. But
-`buildBasicOrderFulfillment()` checks `considerationToken === ZERO_ADDRESS ||
-considerationToken === NATIVE_TOKEN` (token address) to decide `msg.value`.
-
-Seaport's own logic identifies native transfers by `itemType === NATIVE`, not
-by token address. The address-based check in `buildBasicOrderFulfillment` works
-in practice because all well-formed Seaport orders use `ZERO_ADDRESS` for
-the token field on NATIVE items, but it's inconsistent and would miss
-edge cases where the item type is NATIVE but the token field is something
-atypical.
-
-**Recommendation:** Unify on `itemType === ItemType.NATIVE` for ETH value
-computation. The `toBasicOrderParameters` function already has access to
-`primaryConsideration.itemType` — use it instead of the derived token address.
+**Fix:** `buildBasicOrderFulfillment()` now checks `primaryConsideration.itemType ===
+ItemType.NATIVE` instead of comparing `considerationToken` against `ZERO_ADDRESS`
+or `NATIVE_TOKEN`. This matches how `computeNativeValue()` (used by all other
+builders) identifies ETH transfers. The `NATIVE_TOKEN` import was removed from
+`order.ts` since it's no longer needed there (still re-exported from `index.ts`).
 
 ---
 
@@ -317,8 +312,8 @@ with some dependency patterns.
 | 3 | 🔴 | `signature.ts` | ~~Overly broad error regex~~ ✅ Fixed |
 | 4 | 🔴 | `constants.ts`/`signature.ts` | ~~Duplicated ABI component definitions~~ ✅ Fixed |
 | 5 | 🟡 | `types.ts`/`encode.ts` | ~~`number \| bigint` precision risk~~ ✅ Fixed |
-| 6 | 🟡 | `types.ts` | No `SeaportContext` validation |
-| 7 | 🟡 | `order.ts` | Inconsistent ETH detection |
+| 6 | 🟡 | `validate.ts` | ~~No `SeaportContext` validation~~ ✅ Fixed |
+| 7 | 🟡 | `order.ts` | ~~Inconsistent ETH detection~~ ✅ Fixed |
 | 8 | 🟡 | `validate.ts` | Missing itemType range check |
 | 9 | 🟡 | `encode.test.ts` | Shallow encoder tests |
 | 10 | 🟡 | `order.ts` | No fulfillment-component helpers |

@@ -61,7 +61,7 @@ export { verifyOrderSignature, hashOrderComponents, hashOrderComponentsStruct } 
 export { getCounter } from "./counter";
 
 // Validation
-export { validateOrderComponents } from "./validate";
+export { validateOrderComponents, validateSeaportContext } from "./validate";
 
 // Order fulfillment
 export {

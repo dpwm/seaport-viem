@@ -1,4 +1,75 @@
-import type { OrderComponents, ValidationResult } from "./types";
+import { isAddress } from "viem";
+import type { SeaportContext, OrderComponents, ValidationResult } from "./types";
+
+/**
+ * Validate a SeaportContext before using it in Seaport operations.
+ *
+ * Checks that:
+ * - `ctx.address` is a valid 20-byte hex address.
+ * - `ctx.domain.verifyingContract` is present and non-empty.
+ * - `ctx.domain.chainId` is a positive integer if provided.
+ *
+ * @param ctx - The Seaport deployment context to validate.
+ * @returns A validation result; `{ valid: true }` on success, or
+ *   `{ valid: false, reason }` describing the problem.
+ */
+export function validateSeaportContext(
+  ctx: SeaportContext,
+): ValidationResult {
+  if (!ctx.address) {
+    return { valid: false, reason: "ctx.address is missing" };
+  }
+
+  if (!isAddress(ctx.address)) {
+    return {
+      valid: false,
+      reason: `ctx.address is not a valid address: ${ctx.address}`,
+    };
+  }
+
+  if (
+    !ctx.domain.verifyingContract ||
+    ctx.domain.verifyingContract === "0x"
+  ) {
+    return {
+      valid: false,
+      reason: "ctx.domain.verifyingContract is missing or empty",
+    };
+  }
+
+  if (!isAddress(ctx.domain.verifyingContract)) {
+    return {
+      valid: false,
+      reason: `ctx.domain.verifyingContract is not a valid address: ${ctx.domain.verifyingContract}`,
+    };
+  }
+
+  if (ctx.domain.chainId !== undefined) {
+    if (
+      typeof ctx.domain.chainId !== "number" &&
+      typeof ctx.domain.chainId !== "bigint"
+    ) {
+      return {
+        valid: false,
+        reason: `ctx.domain.chainId must be a number or bigint, got ${typeof ctx.domain.chainId}`,
+      };
+    }
+
+    const chainIdNum =
+      typeof ctx.domain.chainId === "bigint"
+        ? Number(ctx.domain.chainId)
+        : ctx.domain.chainId;
+
+    if (!Number.isInteger(chainIdNum) || chainIdNum <= 0) {
+      return {
+        valid: false,
+        reason: `ctx.domain.chainId must be a positive integer, got ${String(ctx.domain.chainId)}`,
+      };
+    }
+  }
+
+  return { valid: true };
+}
 
 /**
  * Validate order components client-side before submission.

@@ -1,6 +1,140 @@
 import { describe, expect, test } from "bun:test";
-import { validateOrderComponents } from "./index";
-import { makeOrderComponents, makeOfferItem, makeConsiderationItem } from "./test-fixtures";
+import { validateOrderComponents, validateSeaportContext } from "./index";
+import {
+  makeOrderComponents,
+  makeOfferItem,
+  makeConsiderationItem,
+  ctx,
+  SEAPORT_ADDRESS,
+} from "./test-fixtures";
+
+describe("validateSeaportContext", () => {
+  test("valid context passes", () => {
+    const result = validateSeaportContext(ctx);
+    expect(result.valid).toBe(true);
+  });
+
+  test("rejects missing address", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      address: undefined as unknown as `0x${string}`,
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("address is missing");
+    }
+  });
+
+  test("rejects invalid address format", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      address: "0xshort" as `0x${string}`,
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("not a valid address");
+    }
+  });
+
+  test("rejects missing verifyingContract", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: {
+        ...ctx.domain,
+        verifyingContract: undefined as unknown as `0x${string}`,
+      },
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("verifyingContract");
+    }
+  });
+
+  test("rejects empty verifyingContract (0x)", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: {
+        ...ctx.domain,
+        verifyingContract: "0x" as `0x${string}`,
+      },
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("verifyingContract");
+    }
+  });
+
+  test("rejects invalid verifyingContract address", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: {
+        ...ctx.domain,
+        verifyingContract: "0xnotvalid0000000000000000000000000000" as `0x${string}`,
+      },
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("not a valid address");
+    }
+  });
+
+  test("accepts chainId as number", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: { ...ctx.domain, chainId: 1 },
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  test("accepts chainId as bigint", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: { ...ctx.domain, chainId: 1n },
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  test("accepts chainId as undefined", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: { ...ctx.domain, chainId: undefined },
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  test("rejects non-positive chainId", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: { ...ctx.domain, chainId: 0 },
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("positive integer");
+    }
+  });
+
+  test("rejects negative chainId", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: { ...ctx.domain, chainId: -1 },
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("positive integer");
+    }
+  });
+
+  test("rejects non-integer chainId", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: { ...ctx.domain, chainId: 1.5 },
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("positive integer");
+    }
+  });
+});
 
 describe("validateOrderComponents", () => {
   test("valid order passes", () => {

@@ -23,7 +23,6 @@ import {
 import {
   ZERO_ADDRESS,
   ZERO_BYTES32,
-  NATIVE_TOKEN,
 } from "./constants";
 import {
   encodeFulfillBasicOrder,
@@ -33,6 +32,7 @@ import {
   encodeFulfillAvailableAdvancedOrders,
   checkUint120,
 } from "./encode";
+import { validateSeaportContext } from "./validate";
 
 /**
  * Convert a high-level Order into the flat BasicOrderParameters needed by
@@ -113,6 +113,11 @@ export function buildBasicOrderFulfillment(
   order: Order,
   options: FulfillmentOptions = {},
 ): FulfillmentData {
+  const ctxValid = validateSeaportContext(ctx);
+  if (!ctxValid.valid) {
+    throw new Error(ctxValid.reason);
+  }
+
   const routeType = options.routeType ?? detectBasicOrderRouteType(order);
   if (routeType === null) {
     throw new Error("Order does not qualify for basic order fulfillment");
@@ -127,13 +132,16 @@ export function buildBasicOrderFulfillment(
 
   const data = encodeFulfillBasicOrder(params);
 
+  // Seaport identifies native (ETH) transfers by itemType, not token address.
+  // All other builders (buildFulfillOrder, etc.) use computeNativeValue()
+  // which checks item.itemType === ItemType.NATIVE. Unify on that here.
   let value = 0n;
-  const isNativePayment =
-    params.considerationToken === ZERO_ADDRESS ||
-    params.considerationToken === NATIVE_TOKEN;
+  // biome-ignore lint/style/noNonNullAssertion: basic orders have ≥1 consideration
+  const primaryConsideration = order.parameters.consideration[0]!;
+  const isNativePayment = primaryConsideration.itemType === ItemType.NATIVE;
 
   if (isNativePayment) {
-    value = params.considerationAmount;
+    value = primaryConsideration.endAmount;
     for (const recipient of params.additionalRecipients) {
       value += recipient.amount;
     }
@@ -369,6 +377,11 @@ export function buildFulfillOrder(
   order: { parameters: OrderParameters; signature: `0x${string}` },
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
 ): FulfillmentData {
+  const ctxValid = validateSeaportContext(ctx);
+  if (!ctxValid.valid) {
+    throw new Error(ctxValid.reason);
+  }
+
   return {
     to: ctx.address,
     data: encodeFulfillOrder(order, fulfillerConduitKey),
@@ -393,6 +406,11 @@ export function buildFulfillAdvancedOrder(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
+  const ctxValid = validateSeaportContext(ctx);
+  if (!ctxValid.valid) {
+    throw new Error(ctxValid.reason);
+  }
+
   checkUint120(advancedOrder.numerator, "numerator");
   checkUint120(advancedOrder.denominator, "denominator");
   return {
@@ -427,6 +445,11 @@ export function buildFulfillAvailableOrders(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   maximumFulfilled: bigint = BigInt(orders.length),
 ): FulfillmentData {
+  const ctxValid = validateSeaportContext(ctx);
+  if (!ctxValid.valid) {
+    throw new Error(ctxValid.reason);
+  }
+
   if (maximumFulfilled > BigInt(orders.length)) {
     throw new Error(
       `maximumFulfilled (${maximumFulfilled}) exceeds orders length (${orders.length})`,
@@ -474,6 +497,11 @@ export function buildFulfillAvailableAdvancedOrders(
   recipient: `0x${string}` = ZERO_ADDRESS,
   maximumFulfilled: bigint = BigInt(advancedOrders.length),
 ): FulfillmentData {
+  const ctxValid = validateSeaportContext(ctx);
+  if (!ctxValid.valid) {
+    throw new Error(ctxValid.reason);
+  }
+
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");
     checkUint120(order.denominator, "denominator");
