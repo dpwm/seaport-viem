@@ -511,6 +511,15 @@ describe("packBulkSignature", () => {
       "at least one proof element",
     );
   });
+
+  test("throws for proof height exceeding BULK_ORDER_HEIGHT_MAX", () => {
+    const tooMany = Array.from({ length: 25 }, (_, i) =>
+      ("0x" + i.toString(16).padStart(64, "0")) as `0x${string}`,
+    );
+    expect(() => packBulkSignature(sig, 0, tooMany)).toThrow(
+      "exceeds maximum bulk order height",
+    );
+  });
 });
 
 describe("unpackBulkSignature", () => {
@@ -528,6 +537,16 @@ describe("unpackBulkSignature", () => {
     // 32 (r) + 32 (sCompact) + 3 (orderIndex) = 67 bytes, no proof elements
     const height0 = ("0x" + "aa".repeat(32) + "bb".repeat(32) + "000000") as `0x${string}`;
     expect(() => unpackBulkSignature(height0)).toThrow("at least one proof element");
+  });
+
+  test("throws for height exceeding BULK_ORDER_HEIGHT_MAX", () => {
+    // 67 + 25*32 = 867 bytes, height 25
+    const prefix = "aa".repeat(32) + "bb".repeat(32) + "000000";
+    const proof = "cc".repeat(32 * 25);
+    const tooHigh = ("0x" + prefix + proof) as `0x${string}`;
+    expect(() => unpackBulkSignature(tooHigh)).toThrow(
+      "exceeds maximum bulk order height",
+    );
   });
 });
 

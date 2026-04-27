@@ -257,18 +257,16 @@ available, or at minimum document how to run them manually.
 
 ---
 
-### 18. `packBulkSignature` / `unpackBulkSignature` height validation mismatch
+### 18. ~~`packBulkSignature` / `unpackBulkSignature` height validation mismatch~~ ✅ Fixed
 
 **File:** `src/bulk_listings.ts`
 
-`packBulkSignature` throws for `proof.length < 1` but does not check against
-`BULK_ORDER_HEIGHT_MAX` (24). `unpackBulkSignature` computes `height` from
-the signature length but doesn't validate against `BULK_ORDER_HEIGHT_MAX`
-either. A packed signature with 25 proof elements would be unpacked
-successfully but would then fail in `hashBulkOrder` / Seaport's on-chain
-verifier.
-
-**Recommendation:** Validate height <= 24 in both pack and unpack functions.
+**Fix:** Added `BULK_ORDER_HEIGHT_MAX` validation in both functions.
+`packBulkSignature` now throws when `proof.length > BULK_ORDER_HEIGHT_MAX`
+and `unpackBulkSignature` now throws when the computed `height >
+BULK_ORDER_HEIGHT_MAX`. This prevents packed signatures with 25+ proof
+elements from being accepted (they would fail later at the on-chain
+verifier). Added 2 tests covering both boundary conditions.
 
 ---
 

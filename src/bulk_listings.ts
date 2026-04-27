@@ -205,6 +205,12 @@ export function packBulkSignature(
     );
   }
 
+  if (proof.length > BULK_ORDER_HEIGHT_MAX) {
+    throw new Error(
+      `Proof height (${proof.length}) exceeds maximum bulk order height (${BULK_ORDER_HEIGHT_MAX})`,
+    );
+  }
+
   if (orderIndex < 0 || orderIndex > 0xffffff) {
     throw new Error(
       `orderIndex must fit in 3 bytes (0–16777215), got ${orderIndex}`,
@@ -255,6 +261,12 @@ export function unpackBulkSignature(packed: `0x${string}`): {
   if (height < 1) {
     throw new Error(
       "Packed signature must include at least one proof element",
+    );
+  }
+
+  if (height > BULK_ORDER_HEIGHT_MAX) {
+    throw new Error(
+      `Packed signature height (${height}) exceeds maximum bulk order height (${BULK_ORDER_HEIGHT_MAX})`,
     );
   }
 
