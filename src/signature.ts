@@ -1,6 +1,11 @@
 import { BaseError, verifyTypedData, hashTypedData, keccak256, encodeAbiParameters, concat, stringToHex } from "viem";
 import type { SeaportContext, Order, OrderComponents } from "./types";
-import { EIP712_TYPES } from "./constants";
+import {
+  EIP712_TYPES,
+  ORDER_COMPONENTS_TYPE_STRING,
+  CONSIDERATION_ITEM_TYPE_STRING,
+  OFFER_ITEM_TYPE_STRING,
+} from "./constants";
 
 /**
  * Verify an order's EIP-712 signature against the offerer's address.
@@ -57,12 +62,13 @@ export function hashOrderComponents(
 /**
  * The Seaport ORDER_TYPEHASH constant.
  * Matches the Solidity: keccak256("OrderComponents(...)ConsiderationItem(...)OfferItem(...)")
+ * Generated from EIP712_TYPES in constants.ts — keeps the two in sync automatically.
  */
 const ORDER_TYPEHASH = keccak256(
   stringToHex(
-    "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)" +
-    "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)" +
-    "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)",
+    ORDER_COMPONENTS_TYPE_STRING +
+    CONSIDERATION_ITEM_TYPE_STRING +
+    OFFER_ITEM_TYPE_STRING,
   ),
 );
 

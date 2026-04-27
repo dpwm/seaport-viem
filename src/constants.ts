@@ -467,3 +467,24 @@ export const EIP712_TYPES = {
     { name: "recipient", type: "address" },
   ],
 } as const;
+
+/**
+ * Convert an EIP-712 type name and parameter list to its canonical type string.
+ * @example eip712TypeString("OrderComponents", EIP712_TYPES.OrderComponents)
+ * // => "OrderComponents(address offerer,address zone,...)"
+ */
+export function eip712TypeString(
+  name: string,
+  params: readonly { readonly name: string; readonly type: string }[],
+): string {
+  return `${name}(${params.map((p) => `${p.type} ${p.name}`).join(",")})`;
+}
+
+/** Canonical type string for the OrderComponents struct. Generated from EIP712_TYPES. */
+export const ORDER_COMPONENTS_TYPE_STRING = eip712TypeString("OrderComponents", EIP712_TYPES.OrderComponents);
+
+/** Canonical type string for the ConsiderationItem struct. Generated from EIP712_TYPES. */
+export const CONSIDERATION_ITEM_TYPE_STRING = eip712TypeString("ConsiderationItem", EIP712_TYPES.ConsiderationItem);
+
+/** Canonical type string for the OfferItem struct. Generated from EIP712_TYPES. */
+export const OFFER_ITEM_TYPE_STRING = eip712TypeString("OfferItem", EIP712_TYPES.OfferItem);

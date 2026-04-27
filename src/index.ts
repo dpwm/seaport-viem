@@ -34,6 +34,10 @@ export {
   BULK_ORDER_HEIGHT_MAX,
   seaportAbi,
   EIP712_TYPES,
+  eip712TypeString,
+  ORDER_COMPONENTS_TYPE_STRING,
+  CONSIDERATION_ITEM_TYPE_STRING,
+  OFFER_ITEM_TYPE_STRING,
 } from "./constants";
 
 // Encoders

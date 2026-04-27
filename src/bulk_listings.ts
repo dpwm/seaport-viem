@@ -13,6 +13,9 @@ import type { SeaportContext } from "./types";
 import {
   BULK_ORDER_HEIGHT_MIN,
   BULK_ORDER_HEIGHT_MAX,
+  ORDER_COMPONENTS_TYPE_STRING,
+  CONSIDERATION_ITEM_TYPE_STRING,
+  OFFER_ITEM_TYPE_STRING,
 } from "./constants";
 import { hashOrderComponentsStruct } from "./signature";
 import { getEmptyOrderComponents } from "./order";
@@ -107,9 +110,9 @@ export function getBulkOrderTypeString(height: number): string {
   const brackets = "[2]".repeat(height);
   return (
     `BulkOrder(OrderComponents${brackets} tree)` +
-    `ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)` +
-    `OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)` +
-    `OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)`
+    CONSIDERATION_ITEM_TYPE_STRING +
+    OFFER_ITEM_TYPE_STRING +
+    ORDER_COMPONENTS_TYPE_STRING
   );
 }
 

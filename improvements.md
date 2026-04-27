@@ -65,9 +65,8 @@ reconstruct the canonical type string from its components and compare directly
 against `getBulkOrderTypeString` output for heights 1, 2, 3, and 24, and
 verify each sub-type independently (this commit).
 
-**Related:** The `BulkOrder` type string must still be kept in sync with any
-changes to the `EIP712_TYPES` constant in `constants.ts` and the hardcoded
-sub-type strings in `hashOrderComponentsStruct` in `signature.ts` (see item
+**Related:** The `BulkOrder` type string is now automatically kept in sync
+with `EIP712_TYPES` via `eip712TypeString()` in `constants.ts` (see item
 3.5).
 
 ### 1.4 `encodeDomainSeparator` — risk of silent divergence from viem ✅ FIXED
@@ -186,30 +185,38 @@ No bug today, but the pattern should be documented or moved to a common
 validation layer so both paths are equally protected. If someone ever adds a
 new builder that calls the encoder indirectly, they might forget to validate.
 
-### 3.5 Hardcoded type strings in `hashOrderComponentsStruct` can drift from `EIP712_TYPES`
+### 3.5 Hardcoded type strings in `hashOrderComponentsStruct` can drift from `EIP712_TYPES` ✅ FIXED
 
-**File:** `src/signature.ts` — the `ORDER_TYPEHASH` constant is built from a
-hardcoded string:
+**Files:** `src/signature.ts` (`ORDER_TYPEHASH`), `src/bulk_listings.ts`
+(`getBulkOrderTypeString`), `src/constants.ts` (new `eip712TypeString` helper).
 
-```ts
-const ORDER_TYPEHASH = keccak256(
-  stringToHex(
-    "OrderComponents(...)" +
-    "ConsiderationItem(...)" +
-    "OfferItem(...)",
-  ),
-);
-```
+**What was wrong:** The `ORDER_TYPEHASH` constant in `signature.ts` was built
+from a hardcoded type string that duplicated the field definitions in
+`EIP712_TYPES`. If `EIP712_TYPES` were ever updated (e.g., Seaport adds a field
+to one of the structs), the two definitions could diverge, causing all order
+hashing to silently produce wrong results.
 
-**Problem:** The sub-type field definitions here are duplicated from the
-`EIP712_TYPES` constant in `constants.ts`. If those are ever updated (e.g.,
-Seaport adds a field to one of the structs), the two definitions can diverge.
-There is no cross-check test verifying that the hardcoded type string produces
-the same typehash as the structured `EIP712_TYPES` definition.
+**Fix applied:** Added `eip712TypeString()` in `constants.ts` that converts an
+EIP-712 type definition to its canonical type string programmatically. The
+three sub-type strings (`ORDER_COMPONENTS_TYPE_STRING`,
+`CONSIDERATION_ITEM_TYPE_STRING`, `OFFER_ITEM_TYPE_STRING`) are now computed
+from `EIP712_TYPES` at module load time. Both `ORDER_TYPEHASH` in
+`signature.ts` and `getBulkOrderTypeString` in `bulk_listings.ts` use these
+computed strings instead of hardcoded ones.
 
-**Fix:** Add a test that derives a typehash from each `EIP712_TYPES` entry and
-compares them against the hardcoded strings, or better, generate the type
-strings programmatically from the `EIP712_TYPES` struct.
+**Impact if unfixed:** If `EIP712_TYPES` were updated without updating the
+hardcoded strings, all order hashing (both single-order signatures and bulk
+order Merkle tree construction) would produce incorrect hashes, breaking all
+signature verification.
+
+**Verification:** All 150 existing tests pass, including the 10 cross-check
+tests in `bulk_listings.test.ts` that compare the output against the known
+Seaport 1.6 canonical format. The type string generation is now derived from
+the same source as the signing types, so they can't diverge.
+
+**Related:** The cross-check tests in `bulk_listings.test.ts` still use
+hardcoded canonical strings as the reference — if `EIP712_TYPES` ever changes,
+these tests will fail and alert the developer.
 
 ### 3.6 No test for `NATIVE_TOKEN` payment path in `buildBasicOrderFulfillment`
 
