@@ -78,7 +78,7 @@ export function makeOrder(overrides?: Partial<Order>): Order {
     parameters: makeOrderComponents(),
     signature:
       "0x" +
-      "ab".repeat(65) as `0x${string}`,
+      "ab".repeat(65) as `0x${string}`, // placebo — not a real EIP-712 signature
     ...overrides,
   };
 }

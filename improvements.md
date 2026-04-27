@@ -66,15 +66,10 @@ import only the specific ABI item they need, enabling better tree-shaking.
 
 ---
 
-## 6. Test fixture signatures are placeholder values (Low)
+## ~~6. Test fixture signatures are placeholder values (Low)~~ ✅ Resolved
 
-```ts
-signature: "0x" + "ab".repeat(65) // 0xababab…
-```
-
-These 130-hex-char strings are valid-looking but not cryptographically
-meaningful. Tests don't verify signatures against real EIP-712 digests, so
-this works. Add a comment noting these are placebo signatures for unit tests.
+A comment has been added to the `signature` field in `makeOrder()` noting
+that it is a placebo — not a real EIP-712 signature.
 
 ---
 
