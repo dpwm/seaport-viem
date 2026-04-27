@@ -159,12 +159,10 @@ secret. Consider documenting that this key is test-only.
 **Fix applied:** Added doc comment above the key stating it is test-only (this
 commit).
 
-### 3.2 No upper-bound validation on `maximumFulfilled`
+### 3.2 No upper-bound validation on `maximumFulfilled` ✅ FIXED
 
-`buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders` accept
-`maximumFulfilled` as a `bigint` without capping it to the array length.
-Seaport caps on-chain, so this is harmless, but an early clamp would fail
-faster.
+`buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders` now
+throw if `maximumFulfilled` exceeds the array length (this commit).
 
 ### 3.3 Missing explicit test for `hashOrderComponentsStruct`
 

@@ -387,6 +387,7 @@ export function buildFulfillAdvancedOrder(
  * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
  * @param maximumFulfilled - Maximum number of orders to fulfill. Defaults to all.
  * @returns Transaction data ready to send.
+ * @throws If maximumFulfilled exceeds orders.length.
  */
 export function buildFulfillAvailableOrders(
   ctx: SeaportContext,
@@ -396,6 +397,12 @@ export function buildFulfillAvailableOrders(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   maximumFulfilled: bigint = BigInt(orders.length),
 ): FulfillmentData {
+  if (maximumFulfilled > BigInt(orders.length)) {
+    throw new Error(
+      `maximumFulfilled (${maximumFulfilled}) exceeds orders length (${orders.length})`,
+    );
+  }
+
   let value = 0n;
   for (const order of orders) {
     value += computeNativeValue(order.parameters.consideration);
@@ -425,6 +432,7 @@ export function buildFulfillAvailableOrders(
  * @param recipient - Address to receive the items. Defaults to zero (msg.sender).
  * @param maximumFulfilled - Maximum number of orders to fulfill. Defaults to all.
  * @returns Transaction data ready to send.
+ * @throws If maximumFulfilled exceeds advancedOrders.length.
  */
 export function buildFulfillAvailableAdvancedOrders(
   ctx: SeaportContext,
@@ -436,6 +444,12 @@ export function buildFulfillAvailableAdvancedOrders(
   recipient: `0x${string}` = ZERO_ADDRESS,
   maximumFulfilled: bigint = BigInt(advancedOrders.length),
 ): FulfillmentData {
+  if (maximumFulfilled > BigInt(advancedOrders.length)) {
+    throw new Error(
+      `maximumFulfilled (${maximumFulfilled}) exceeds advanced orders length (${advancedOrders.length})`,
+    );
+  }
+
   let value = 0n;
   for (const order of advancedOrders) {
     value += computeNativeValue(order.parameters.consideration);

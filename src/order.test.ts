@@ -633,6 +633,15 @@ describe("buildFulfillAvailableOrders", () => {
     const result = buildFulfillAvailableOrders(ctx, orders);
     expect(result.value).toBe(1000n);
   });
+
+  test("rejects maximumFulfilled exceeding orders length", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const orders = [{ parameters: params, signature: order.signature }];
+    expect(() =>
+      buildFulfillAvailableOrders(ctx, orders, [], [], ZERO_BYTES32, 5n),
+    ).toThrow("maximumFulfilled");
+  });
 });
 
 // ── buildFulfillAvailableAdvancedOrders ───────────────────────
@@ -669,5 +678,20 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
     }];
     const result = buildFulfillAvailableAdvancedOrders(ctx, advancedOrders);
     expect(result.value).toBe(800n);
+  });
+
+  test("rejects maximumFulfilled exceeding advanced orders length", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    expect(() =>
+      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders, [], [], [], ZERO_BYTES32, ZERO_ADDRESS, 5n),
+    ).toThrow("maximumFulfilled");
   });
 });
