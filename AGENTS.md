@@ -9,12 +9,11 @@ Lightweight viem-based toolkit for Seaport NFT marketplace orders. Single runtim
 ```sh
 bun test              # run all tests (bun:test, not vitest/jest)
 bun run typecheck     # tsc --noEmit
-bun run build         # tsup → dist/
 ```
 
 Run a single test by name: `bun test -t "test name substring"`.
 
-All three must pass before committing. There is no lint or format script.
+Both must pass before committing. There is no lint or format script.
 
 ## Source layout
 
