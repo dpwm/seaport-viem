@@ -29,16 +29,13 @@ The README has been updated to:
 
 ---
 
-## 2. Duplicated route-matching logic in `order.ts` (Medium)
+## ~~2. Duplicated route-matching logic in `order.ts` (Medium)~~ ✅ Resolved
 
-`canFulfillAsBasicOrder` and `detectBasicOrderRouteType` both call
-`isBasicOrderEligible()`, then each independently re-derives the route
-classification through near-identical conditionals (all six
-`isEthToErc721` / `isErc20ToErc1155` / … checks).
-
-**Fix:** `canFulfillAsBasicOrder` should call `detectBasicOrderRouteType(order)`
-and return `result !== null`. This consolidates the route validity truth-table
-into one function and eliminates ~30 lines of redundant logic.
+`canFulfillAsBasicOrder` now delegates to `detectBasicOrderRouteType(order)` and
+returns `result !== null`, eliminating ~30 lines of redundant route-matching
+conditionals. Additionally, `detectBasicOrderRouteType` was fixed to properly
+return `null` for invalid offer/consideration combinations (e.g., ERC20 offer +
+ERC20 consideration would incorrectly return `ERC1155_TO_ERC20`).
 
 ---
 

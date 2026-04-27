@@ -225,45 +225,7 @@ function isBasicOrderEligible(
  * @returns `true` if the order qualifies for basic order fulfillment.
  */
 export function canFulfillAsBasicOrder(order: Order): boolean {
-  const items = isBasicOrderEligible(order);
-  if (items === null) {
-    return false;
-  }
-
-  const { offerItem, primaryConsideration } = items;
-
-  const isEthToErc721 =
-    offerItem.itemType === ItemType.ERC721 &&
-    primaryConsideration.itemType === ItemType.NATIVE;
-
-  const isEthToErc1155 =
-    offerItem.itemType === ItemType.ERC1155 &&
-    primaryConsideration.itemType === ItemType.NATIVE;
-
-  const isErc20ToErc721 =
-    offerItem.itemType === ItemType.ERC721 &&
-    primaryConsideration.itemType === ItemType.ERC20;
-
-  const isErc20ToErc1155 =
-    offerItem.itemType === ItemType.ERC1155 &&
-    primaryConsideration.itemType === ItemType.ERC20;
-
-  const isErc721ToErc20 =
-    offerItem.itemType === ItemType.ERC20 &&
-    primaryConsideration.itemType === ItemType.ERC721;
-
-  const isErc1155ToErc20 =
-    offerItem.itemType === ItemType.ERC20 &&
-    primaryConsideration.itemType === ItemType.ERC1155;
-
-  return (
-    isEthToErc721 ||
-    isEthToErc1155 ||
-    isErc20ToErc721 ||
-    isErc20ToErc1155 ||
-    isErc721ToErc20 ||
-    isErc1155ToErc20
-  );
+  return detectBasicOrderRouteType(order) !== null;
 }
 
 /**
@@ -284,25 +246,37 @@ export function detectBasicOrderRouteType(
   const { offerItem, primaryConsideration } = items;
 
   if (offerItem.itemType === ItemType.ERC721) {
-    return primaryConsideration.itemType === ItemType.NATIVE
-      ? BasicOrderRouteType.ETH_TO_ERC721
-      : BasicOrderRouteType.ERC20_TO_ERC721;
+    if (primaryConsideration.itemType === ItemType.NATIVE) {
+      return BasicOrderRouteType.ETH_TO_ERC721;
+    }
+    if (primaryConsideration.itemType === ItemType.ERC20) {
+      return BasicOrderRouteType.ERC20_TO_ERC721;
+    }
+    return null;
   }
 
   if (offerItem.itemType === ItemType.ERC1155) {
-    return primaryConsideration.itemType === ItemType.NATIVE
-      ? BasicOrderRouteType.ETH_TO_ERC1155
-      : BasicOrderRouteType.ERC20_TO_ERC1155;
+    if (primaryConsideration.itemType === ItemType.NATIVE) {
+      return BasicOrderRouteType.ETH_TO_ERC1155;
+    }
+    if (primaryConsideration.itemType === ItemType.ERC20) {
+      return BasicOrderRouteType.ERC20_TO_ERC1155;
+    }
+    return null;
   }
 
   if (offerItem.itemType === ItemType.ERC20) {
-    return primaryConsideration.itemType === ItemType.ERC721
-      ? BasicOrderRouteType.ERC721_TO_ERC20
-      : BasicOrderRouteType.ERC1155_TO_ERC20;
+    if (primaryConsideration.itemType === ItemType.ERC721) {
+      return BasicOrderRouteType.ERC721_TO_ERC20;
+    }
+    if (primaryConsideration.itemType === ItemType.ERC1155) {
+      return BasicOrderRouteType.ERC1155_TO_ERC20;
+    }
+    return null;
   }
 
   // Fallback: structurally eligible but unrecognized offer/consideration combo
-  // (e.g., NATIVE offer item). canFulfillAsBasicOrder returns false for these.
+  // (e.g., NATIVE offer item or ERC20/ERC20).
   return null;
 }
 
