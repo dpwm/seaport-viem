@@ -99,6 +99,96 @@ describe("getBulkOrderTypeString", () => {
   });
 });
 
+// ── getBulkOrderTypeString cross-check against Seaport 1.6 ──
+
+describe("getBulkOrderTypeString cross-check", () => {
+  /**
+   * Replicate the canonical Seaport 1.6 type string format from
+   * TypehashDirectory.sol (contracts/test/TypehashDirectory.sol).
+   * The canonical string is:
+   *   BulkOrder(OrderComponents[2]... tree)ConsiderationItem(...)OfferItem(...)OrderComponents(...)
+   * with sub-types in the order: ConsiderationItem, OfferItem, OrderComponents.
+   */
+  const canonicalConsiderationItem =
+    "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)";
+
+  const canonicalOfferItem =
+    "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";
+
+  const canonicalOrderComponents =
+    "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)";
+
+  const canonicalSubTypes =
+    canonicalConsiderationItem +
+    canonicalOfferItem +
+    canonicalOrderComponents;
+
+  test("height 1 matches Seaport canonical format", () => {
+    const s = getBulkOrderTypeString(1);
+    const expected = `BulkOrder(OrderComponents[2] tree)${canonicalSubTypes}`;
+    // Direct string comparison against the canonical format
+    expect(s).toBe(expected);
+    // keccak256 hash must be consistent
+    expect(keccak256(stringToHex(s))).toBe(keccak256(stringToHex(expected)));
+  });
+
+  test("height 2 matches Seaport canonical format", () => {
+    const s = getBulkOrderTypeString(2);
+    const expected = `BulkOrder(OrderComponents[2][2] tree)${canonicalSubTypes}`;
+    expect(s).toBe(expected);
+  });
+
+  test("height 3 matches Seaport canonical format", () => {
+    const s = getBulkOrderTypeString(3);
+    const expected = `BulkOrder(OrderComponents[2][2][2] tree)${canonicalSubTypes}`;
+    expect(s).toBe(expected);
+  });
+
+  test("height 24 matches Seaport canonical format", () => {
+    const s = getBulkOrderTypeString(24);
+    const brackets = "[2]".repeat(24);
+    const expected = `BulkOrder(OrderComponents${brackets} tree)${canonicalSubTypes}`;
+    expect(s).toBe(expected);
+  });
+
+  test("ConsiderationItem sub-type matches Seaport canonical definition", () => {
+    const s = getBulkOrderTypeString(1);
+    expect(s).toContain(canonicalConsiderationItem);
+  });
+
+  test("OfferItem sub-type matches Seaport canonical definition", () => {
+    const s = getBulkOrderTypeString(1);
+    expect(s).toContain(canonicalOfferItem);
+  });
+
+  test("OrderComponents sub-type matches Seaport canonical definition", () => {
+    const s = getBulkOrderTypeString(1);
+    expect(s).toContain(canonicalOrderComponents);
+  });
+
+  test("sub-type order is ConsiderationItem then OfferItem then OrderComponents", () => {
+    const s = getBulkOrderTypeString(1);
+    const ciIndex = s.indexOf(canonicalConsiderationItem);
+    const oiIndex = s.indexOf(canonicalOfferItem);
+    const ocIndex = s.indexOf(canonicalOrderComponents);
+    expect(ciIndex).toBeGreaterThan(0);
+    expect(oiIndex).toBeGreaterThan(ciIndex);
+    expect(ocIndex).toBeGreaterThan(oiIndex);
+  });
+
+  test("type hash is deterministic — same string always produces same hash", () => {
+    const h1 = keccak256(stringToHex(getBulkOrderTypeString(1)));
+    const h2 = keccak256(stringToHex(getBulkOrderTypeString(1)));
+    expect(h1).toBe(h2);
+  });
+
+  test("different heights produce different type hashes", () => {
+    const h1 = keccak256(stringToHex(getBulkOrderTypeString(1)));
+    const h2 = keccak256(stringToHex(getBulkOrderTypeString(2)));
+    expect(h1).not.toBe(h2);
+  });
+});
+
 // ── padLeaves ────────────────────────────────────────────────
 
 describe("padLeaves", () => {
