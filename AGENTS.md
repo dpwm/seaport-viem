@@ -67,3 +67,8 @@ tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in
 See [`improvements.md`](./improvements.md) for known issues, action items, and
 recommended fixes from the latest code review. Check it before starting new
 work to avoid overlapping with known problems.
+
+## Related projects
+
+The canonical Seaport protocol reference (smart contracts) lives at
+`~/Projects/seaport/`.
