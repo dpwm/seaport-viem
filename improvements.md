@@ -270,15 +270,15 @@ All 5 new modules have corresponding test files with 33 additional tests.
 
 ---
 
-### 17. Script files are untested
+### 17. ~~Script files are untested~~ ✅ Fixed
 
 **Files:** `scripts/list-and-buy.ts`, `scripts/bulk-list-and-buy.ts`,
-`scripts/collection-offer-erc20.ts`
+`scripts/collection-offer-erc20.ts`, `scripts/README.md`
 
-These require a running Anvil fork and are not part of the test suite. They
-serve as integration examples but may rot as the API evolves. Consider adding
-a CI step that runs them against `anvil --fork-url` if a reliable RPC is
-available, or at minimum document how to run them manually.
+**Fix:** Added `scripts/README.md` documenting prerequisites (Foundry/Anvil,
+Bun, mainnet RPC URL), quick-start commands (`anvil --fork-url` then
+`bun run scripts/<name>.ts`), a description of what each script demonstrates,
+and caveats (hardcoded keys, fork block, BAYC token ID assumptions).
 
 ---
 
@@ -336,7 +336,7 @@ with some dependency patterns.
 | 14 | 🟢 | `order.ts` | ~~Invalid timestamps on padding struct~~ ✅ Fixed |
 | 15 | 🟢 | `order.ts` | ~~`computeNativeValue` not exported~~ ✅ Fixed |
 | 16 | 🟢 | Scope | Missing functions (cancel, matchOrders, etc.) |
-| 17 | 🟢 | `scripts/` | Untested integration scripts |
+| 17 | 🟢 | `scripts/` | ~~Untested integration scripts~~ ✅ Fixed |
 | 18 | 🟢 | `bulk_listings.ts` | Missing max-height in pack/unpack |
 | 19 | 🟢 | All | `verbatimModuleSyntax` verbosity |
 | 20 | 🟢 | `tsup.config.ts` | Code splitting disabled |
