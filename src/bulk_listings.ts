@@ -185,6 +185,12 @@ export function packBulkSignature(
   orderIndex: number,
   proof: `0x${string}`[],
 ): `0x${string}` {
+  if (proof.length < 1) {
+    throw new Error(
+      "Bulk order signature must include at least one proof element",
+    );
+  }
+
   if (orderIndex < 0 || orderIndex > 0xffffff) {
     throw new Error(
       `orderIndex must fit in 3 bytes (0–16777215), got ${orderIndex}`,

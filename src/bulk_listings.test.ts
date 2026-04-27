@@ -478,11 +478,19 @@ describe("packBulkSignature", () => {
   });
 
   test("throws for negative orderIndex", () => {
-    expect(() => packBulkSignature(sig, -1, [])).toThrow("3 bytes");
+    const proof = [("0x" + "cc".repeat(32)) as `0x${string}`];
+    expect(() => packBulkSignature(sig, -1, proof)).toThrow("3 bytes");
   });
 
   test("throws for orderIndex > 0xffffff", () => {
-    expect(() => packBulkSignature(sig, 0x1000000, [])).toThrow("3 bytes");
+    const proof = [("0x" + "cc".repeat(32)) as `0x${string}`];
+    expect(() => packBulkSignature(sig, 0x1000000, proof)).toThrow("3 bytes");
+  });
+
+  test("throws for empty proof", () => {
+    expect(() => packBulkSignature(sig, 0, [])).toThrow(
+      "at least one proof element",
+    );
   });
 });
 

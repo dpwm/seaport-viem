@@ -340,15 +340,18 @@ appears nowhere in the function signature or nearby. Consider extracting a
 constant (`BULK_ORDER_BRANCH_FACTOR = 2`) or at least adding a doc comment
 that this matches Seaport's binary Merkle tree structure.
 
-### 3.14 `packBulkSignature` accepts empty proof (asymmetry with `unpackBulkSignature`)
+### 3.14 `packBulkSignature` accepts empty proof (asymmetry with `unpackBulkSignature`) ✅ FIXED
 
 **File:** `src/bulk_listings.ts`
 
-`packBulkSignature` will produce a 67-byte (height 0) packed signature if
-given an empty `proof` array. `unpackBulkSignature` then rejects it with
-`"at least one proof element"`. The functions are asymmetric —
-`packBulkSignature` should validate `proof.length >= 1` just as
-`unpackBulkSignature` validates `height >= 1`.
+**What was wrong:** `packBulkSignature` silently produced a 67-byte (height 0)
+packed signature if given an empty `proof` array, but `unpackBulkSignature`
+rejected it with `"at least one proof element"`. The functions were asymmetric
+— `packBulkSignature` could produce output that `unpackBulkSignature` would
+reject.
+
+**Fix applied:** Added `proof.length < 1` validation at the top of
+`packBulkSignature` (this commit).
 
 ### 3.15 `canFulfillAsBasicOrder` and `detectBasicOrderRouteType` recompute items
 
