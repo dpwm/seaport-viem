@@ -11,6 +11,8 @@ import {
   toBasicOrderParameters,
   buildBasicOrderFulfillment,
   toOrderParameters,
+  aggregateOfferItems,
+  aggregateConsiderationItems,
   buildFulfillOrder,
   buildFulfillAdvancedOrder,
   buildFulfillAvailableOrders,
@@ -782,5 +784,169 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
     expect(() =>
       buildFulfillAvailableAdvancedOrders(ctx, advancedOrders, [], [], [], ZERO_BYTES32, ZERO_ADDRESS, 5n),
     ).toThrow("maximumFulfilled");
+  });
+});
+
+// ── aggregateOfferItems / aggregateConsiderationItems ────────
+
+describe("aggregateOfferItems", () => {
+  test("returns empty array for empty input", () => {
+    expect(aggregateOfferItems([])).toEqual([]);
+  });
+
+  test("single order with single offer item", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, 1n);
+    const orders = [{ parameters: params, signature: order.signature }];
+    const result = aggregateOfferItems(orders);
+    expect(result).toEqual([[{ orderIndex: 0n, itemIndex: 0n }]]);
+  });
+
+  test("single order with multiple offer items", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [
+          makeOfferItem({ token: NFT }),
+          makeOfferItem({ token: NFT, identifierOrCriteria: 2n }),
+          makeOfferItem({ token: NFT, identifierOrCriteria: 3n }),
+        ],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, 1n);
+    const orders = [{ parameters: params, signature: order.signature }];
+    const result = aggregateOfferItems(orders);
+    expect(result).toEqual([
+      [{ orderIndex: 0n, itemIndex: 0n }],
+      [{ orderIndex: 0n, itemIndex: 1n }],
+      [{ orderIndex: 0n, itemIndex: 2n }],
+    ]);
+  });
+
+  test("multiple orders with single offer items each", () => {
+    const order1 = makeOrder({
+      parameters: makeOrderComponents({ salt: 1n }),
+    });
+    const order2 = makeOrder({
+      parameters: makeOrderComponents({ salt: 2n }),
+    });
+    const params1 = toOrderParameters(order1.parameters, 1n);
+    const params2 = toOrderParameters(order2.parameters, 1n);
+    const orders = [
+      { parameters: params1, signature: order1.signature },
+      { parameters: params2, signature: order2.signature },
+    ];
+    const result = aggregateOfferItems(orders);
+    expect(result).toEqual([
+      [{ orderIndex: 0n, itemIndex: 0n }],
+      [{ orderIndex: 1n, itemIndex: 0n }],
+    ]);
+  });
+
+  test("works with AdvancedOrder[]", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, 1n);
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    const result = aggregateOfferItems(advancedOrders);
+    expect(result).toEqual([[{ orderIndex: 0n, itemIndex: 0n }]]);
+  });
+});
+
+describe("aggregateConsiderationItems", () => {
+  test("returns empty array for empty input", () => {
+    expect(aggregateConsiderationItems([])).toEqual([]);
+  });
+
+  test("single order with single consideration item", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, 1n);
+    const orders = [{ parameters: params, signature: order.signature }];
+    const result = aggregateConsiderationItems(orders);
+    expect(result).toEqual([[{ orderIndex: 0n, itemIndex: 0n }]]);
+  });
+
+  test("single order with multiple consideration items", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ endAmount: 100n, recipient: ALICE }),
+          makeConsiderationItem({ endAmount: 200n, recipient: BOB }),
+        ],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, 1n);
+    const orders = [{ parameters: params, signature: order.signature }];
+    const result = aggregateConsiderationItems(orders);
+    expect(result).toEqual([
+      [{ orderIndex: 0n, itemIndex: 0n }],
+      [{ orderIndex: 0n, itemIndex: 1n }],
+    ]);
+  });
+
+  test("multiple orders with mixed consideration counts", () => {
+    const order1 = makeOrder({
+      parameters: makeOrderComponents({
+        salt: 1n,
+        consideration: [
+          makeConsiderationItem({ endAmount: 100n, recipient: ALICE }),
+          makeConsiderationItem({ endAmount: 200n, recipient: BOB }),
+        ],
+      }),
+    });
+    const order2 = makeOrder({
+      parameters: makeOrderComponents({
+        salt: 2n,
+      }),
+    });
+    const params1 = toOrderParameters(
+      order1.parameters,
+      BigInt(order1.parameters.consideration.length),
+    );
+    const params2 = toOrderParameters(
+      order2.parameters,
+      BigInt(order2.parameters.consideration.length),
+    );
+    const orders = [
+      { parameters: params1, signature: order1.signature },
+      { parameters: params2, signature: order2.signature },
+    ];
+    const result = aggregateConsiderationItems(orders);
+    expect(result).toEqual([
+      [{ orderIndex: 0n, itemIndex: 0n }],
+      [{ orderIndex: 0n, itemIndex: 1n }],
+      [{ orderIndex: 1n, itemIndex: 0n }],
+    ]);
+  });
+
+  test("works with AdvancedOrder[]", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ endAmount: 100n, recipient: ALICE }),
+          makeConsiderationItem({ endAmount: 200n, recipient: BOB }),
+        ],
+      }),
+    });
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    const result = aggregateConsiderationItems(advancedOrders);
+    expect(result).toEqual([
+      [{ orderIndex: 0n, itemIndex: 0n }],
+      [{ orderIndex: 0n, itemIndex: 1n }],
+    ]);
   });
 });

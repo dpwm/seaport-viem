@@ -71,6 +71,8 @@ export {
   detectBasicOrderRouteType,
   toOrderParameters,
   getEmptyOrderComponents,
+  aggregateOfferItems,
+  aggregateConsiderationItems,
   buildFulfillOrder,
   buildFulfillAdvancedOrder,
   buildFulfillAvailableOrders,

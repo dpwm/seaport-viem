@@ -349,6 +349,60 @@ export function getEmptyOrderComponents(): OrderComponents {
   };
 }
 
+// ── Fulfillment component helpers ───────────────────────────
+
+/**
+ * Create default one-to-one offer fulfillment components for independent
+ * order fulfillment. Each order's offer items each form their own
+ * fulfillment group — no cross-order aggregation occurs. This is the
+ * most common case.
+ *
+ * @param orders - Array of orders or advanced orders to generate
+ *   components for. Each element must have a `parameters` property
+ *   with an `offer` array.
+ * @returns FulfillmentComponent[][] suitable for
+ *   `fulfillAvailableOrders` / `fulfillAvailableAdvancedOrders`.
+ */
+export function aggregateOfferItems(
+  orders: { parameters: { offer: readonly unknown[] } }[],
+): FulfillmentComponent[][] {
+  const components: FulfillmentComponent[][] = [];
+  for (let i = 0; i < orders.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: loop index is bounded
+    const offer = orders[i]!.parameters.offer;
+    for (let j = 0; j < offer.length; j++) {
+      components.push([{ orderIndex: BigInt(i), itemIndex: BigInt(j) }]);
+    }
+  }
+  return components;
+}
+
+/**
+ * Create default one-to-one consideration fulfillment components for
+ * independent order fulfillment. Each order's consideration items each
+ * form their own fulfillment group — no cross-order aggregation occurs.
+ * This is the most common case.
+ *
+ * @param orders - Array of orders or advanced orders to generate
+ *   components for. Each element must have a `parameters` property
+ *   with a `consideration` array.
+ * @returns FulfillmentComponent[][] suitable for
+ *   `fulfillAvailableOrders` / `fulfillAvailableAdvancedOrders`.
+ */
+export function aggregateConsiderationItems(
+  orders: { parameters: { consideration: readonly unknown[] } }[],
+): FulfillmentComponent[][] {
+  const components: FulfillmentComponent[][] = [];
+  for (let i = 0; i < orders.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: loop index is bounded
+    const consideration = orders[i]!.parameters.consideration;
+    for (let j = 0; j < consideration.length; j++) {
+      components.push([{ orderIndex: BigInt(i), itemIndex: BigInt(j) }]);
+    }
+  }
+  return components;
+}
+
 // ── Fulfillment builders ────────────────────────────────────
 
 /**

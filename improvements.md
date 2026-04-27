@@ -147,18 +147,21 @@ handles checksummed address differences between viem's encoder and decoder.
 
 ---
 
-### 10. No helpers for constructing fulfillment components
+### 10. ~~No helpers for constructing fulfillment components~~ ✅ Fixed
 
-**File:** `src/order.ts`, `src/types.ts`
+**File:** `src/order.ts`
 
-`buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders`
-require `FulfillmentComponent[][]` arguments that are non-trivial to
-construct correctly. The library provides the data structures but no helpers
-for building them from multiple orders.
+**Fix:** Added `aggregateOfferItems(orders)` and
+`aggregateConsiderationItems(orders)` helper functions that produce default
+one-to-one `FulfillmentComponent[][]` arrays for independent order
+fulfillment. Each order's items form their own group — no cross-order
+aggregation. Both functions accept `{ parameters: { offer } }[]` and
+`{ parameters: { consideration } }[]` shapes respectively, working with
+both `OrderParameters` and `AdvancedOrder` arrays.
 
-**Recommendation:** Add a helper like `aggregateOfferItems(orders)` and
-`aggregateConsiderationItems(orders)` that produce default one-to-one
-fulfillment components for independent order fulfillment (the most common case).
+Exported from `src/index.ts` alongside the existing fulfillment builders.
+10 unit tests cover empty input, single/multiple orders, single/multiple
+items per order, and `AdvancedOrder[]` inputs.
 
 ---
 
