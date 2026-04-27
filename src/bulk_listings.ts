@@ -71,9 +71,9 @@ export function buildBulkOrderTree(leaves: `0x${string}`[]): `0x${string}`[][] {
     throw new Error("Cannot build a tree from zero leaves");
   }
 
-  const height = computeHeight(leaves.length);
-  const capacity = 2 ** height;
-  if (leaves.length !== capacity) {
+  if ((leaves.length & (leaves.length - 1)) !== 0) {
+    const height = computeHeight(leaves.length);
+    const capacity = 2 ** height;
     throw new Error(
       `Leaves must be padded to a power of 2. Expected ${capacity}, got ${leaves.length}. Use padLeaves() first.`,
     );

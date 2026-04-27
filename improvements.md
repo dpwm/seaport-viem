@@ -333,7 +333,7 @@ pass either plain numbers (e.g., `0`, `1`) or `bigint` literals (e.g., `0n`,
 `1n`). Added JSDoc noting the ergonomic convenience and that Seaport's ABI
 encodes them as uint256 (this commit).
 
-### 3.10 `buildBulkOrderTree` internally calls `computeHeight` redundantly
+### 3.10 `buildBulkOrderTree` internally calls `computeHeight` redundantly ✅ FIXED
 
 **File:** `src/bulk_listings.ts`
 
@@ -354,6 +354,10 @@ the next line computes `2 ** height` to check against the actual length. This
 is equivalent to checking `(leaves.length & (leaves.length - 1)) !== 0`
 (i.e., is it a power of 2?). The current approach is perfectly correct but
 slightly roundabout. Consider a direct power-of-2 check for clarity.
+
+**Fix applied:** Replaced the roundabout check with a direct bitwise power-of-2
+test. `computeHeight` is now only called in the error path to produce the error
+message with the expected capacity (this commit).
 
 ### 3.11 No JSDoc on `Side` enum, `FulfillmentComponent` type, and private helpers
 
