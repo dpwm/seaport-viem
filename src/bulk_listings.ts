@@ -24,7 +24,8 @@ import { getEmptyOrderComponents } from "./order";
 /**
  * Compute the merkle tree height for a given number of orders.
  * Height H gives capacity 2^H.
- * @returns The height (>= 1).
+ * @returns The height (>= 1 and <= BULK_ORDER_HEIGHT_MAX).
+ * @throws If orderCount would require a height exceeding BULK_ORDER_HEIGHT_MAX (24).
  */
 export function computeHeight(orderCount: number): number {
   if (orderCount < 1) {
@@ -32,7 +33,16 @@ export function computeHeight(orderCount: number): number {
       `orderCount must be at least 1, got ${orderCount}`,
     );
   }
-  return Math.max(BULK_ORDER_HEIGHT_MIN, Math.ceil(Math.log2(orderCount)));
+  const height = Math.max(
+    BULK_ORDER_HEIGHT_MIN,
+    Math.ceil(Math.log2(orderCount)),
+  );
+  if (height > BULK_ORDER_HEIGHT_MAX) {
+    throw new Error(
+      `orderCount (${orderCount}) exceeds maximum bulk order capacity (${2 ** BULK_ORDER_HEIGHT_MAX})`,
+    );
+  }
+  return height;
 }
 
 /**

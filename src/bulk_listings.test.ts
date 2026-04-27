@@ -12,6 +12,7 @@ import {
   hashOrderComponentsStruct,
   getEmptyOrderComponents,
   encodeDomainSeparator,
+  BULK_ORDER_HEIGHT_MAX,
 } from "./index";
 import { ctx, makeOrderComponents } from "./test-fixtures";
 
@@ -48,6 +49,23 @@ describe("computeHeight", () => {
 
   test("returns 10 for 1024 orders", () => {
     expect(computeHeight(1024)).toBe(10);
+  });
+
+  test("returns 24 for 2^24 orders (max capacity)", () => {
+    expect(computeHeight(2 ** 24)).toBe(BULK_ORDER_HEIGHT_MAX);
+  });
+
+  test("throws for orderCount exceeding max capacity (2^24 + 1)", () => {
+    const excessive = 2 ** 24 + 1;
+    expect(() => computeHeight(excessive)).toThrow(
+      `orderCount (${excessive}) exceeds maximum bulk order capacity`,
+    );
+  });
+
+  test("throws for extremely large orderCount", () => {
+    expect(() => computeHeight(1_000_000_000)).toThrow(
+      /exceeds maximum bulk order capacity/,
+    );
   });
 });
 

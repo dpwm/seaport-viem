@@ -35,28 +35,14 @@ but unrecognized combos (addressing issue #13 as well).
 
 ---
 
-### 2. `computeHeight` can return values exceeding `BULK_ORDER_HEIGHT_MAX`
+### 2. ~~`computeHeight` can return values exceeding `BULK_ORDER_HEIGHT_MAX`~~ ✅ Fixed
 
 **File:** `src/bulk_listings.ts`
 
-`computeHeight` uses `Math.max(BULK_ORDER_HEIGHT_MIN, Math.ceil(Math.log2(count)))`
-but never checks `BULK_ORDER_HEIGHT_MAX` (24). For 2^25 orders (≈33M),
-`computeHeight` returns 25, which would pass through `padLeaves` and
-`buildBulkOrderTree` only to fail later in `getBulkOrderTypeString` or
-`hashBulkOrder` with a confusing "Height must be between 1 and 24" error.
-
-**Recommendation:** Add a max-height guard to `computeHeight`:
-
-```ts
-if (height > BULK_ORDER_HEIGHT_MAX) {
-  throw new Error(
-    `orderCount (${orderCount}) exceeds maximum bulk order capacity (${2 ** BULK_ORDER_HEIGHT_MAX})`
-  );
-}
-```
-
-Alternatively, `buildBulkOrderTree` should validate that the computed height
-is within range before building the tree.
+**Fix:** Added a max-height guard in `computeHeight` that throws when the
+computed height exceeds `BULK_ORDER_HEIGHT_MAX` (24) with a clear error message
+indicating the order count and maximum capacity. Also added tests for the
+boundary (2^24 orders succeeds, 2^24+1 throws).
 
 ---
 
