@@ -100,6 +100,69 @@ import { getCounter } from "seaport-viem/counter";
 const counter = await getCounter(client, ctx, offerer);   // bigint
 ```
 
+### Cancel
+
+```ts
+import { buildCancel } from "seaport-viem/cancel";
+
+const tx = buildCancel(ctx, orders);
+// { to: ctx.address, data: encodeCancel(orders), value: 0n }
+```
+
+### Increment counter
+
+```ts
+import { buildIncrementCounter } from "seaport-viem/increment-counter";
+
+const tx = buildIncrementCounter(ctx);
+// { to: ctx.address, data: encodeIncrementCounter(), value: 0n }
+```
+
+### Order status
+
+```ts
+import { getOrderStatus } from "seaport-viem/order-status";
+
+const status = await getOrderStatus(client, ctx, orderHash);
+// { isValidated, isCancelled, totalFilled, totalSize }
+```
+
+### Two-sided matching
+
+```ts
+import { buildMatchOrders, buildMatchAdvancedOrders } from "seaport-viem/match";
+
+const tx = buildMatchOrders(ctx, orders, fulfillments);
+const tx2 = buildMatchAdvancedOrders(ctx, advancedOrders, criteriaResolvers, fulfillments, recipient);
+```
+
+### Event parsing
+
+```ts
+import {
+  decodeSeaportEvent,
+  ORDER_FULFILLED_TOPIC,
+  ORDER_CANCELLED_TOPIC,
+  ORDER_VALIDATED_TOPIC,
+  ORDERS_MATCHED_TOPIC,
+  COUNTER_INCREMENTED_TOPIC,
+} from "seaport-viem/events";
+
+// Decode a Seaport event log
+const args = decodeSeaportEvent(log);
+// args.eventName is the event type (union discriminator)
+
+// Type exports
+import type {
+  OrderFulfilledEventArgs,
+  OrderCancelledEventArgs,
+  OrderValidatedEventArgs,
+  OrdersMatchedEventArgs,
+  CounterIncrementedEventArgs,
+  SeaportEventArgs,
+} from "seaport-viem/events";
+```
+
 ### Encoders
 
 ```ts
@@ -107,6 +170,16 @@ import {
   encodeGetCounter,
   encodeGetOrderHash,
   encodeFulfillBasicOrder,
+  encodeFulfillOrder,
+  encodeFulfillAdvancedOrder,
+  encodeFulfillAvailableOrders,
+  encodeFulfillAvailableAdvancedOrders,
+  encodeCancel,
+  encodeIncrementCounter,
+  encodeGetOrderStatus,
+  encodeMatchOrders,
+  encodeMatchAdvancedOrders,
+  encodeValidate,
 } from "seaport-viem/encode";
 ```
 
@@ -138,10 +211,12 @@ This library covers:
 - Standard order fulfillment (`fulfillOrder`)
 - Advanced order fulfillment with partial fills (`fulfillAdvancedOrder`)
 - Batch fulfillment of available orders and advanced orders (`fulfillAvailableOrders`, `fulfillAvailableAdvancedOrders`)
+- Two-sided matching of orders (`matchOrders`, `matchAdvancedOrders`)
 - Bulk order tree building, signing, and signature packing (for Seaport 1.6 bulk listings)
-- Order component validation, EIP-712 signature verification, and on-chain counter reads
-
-It does not implement `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`, `matchAdvancedOrders`, or event parsing. This is intentional scope.
+- Order cancellation (`cancel`)
+- Counter management (`incrementCounter`)
+- Order component validation, EIP-712 signature verification, and on-chain reads (counter, order status)
+- Event parsing for all Seaport events
 
 ## License
 

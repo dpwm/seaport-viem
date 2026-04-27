@@ -16,18 +16,16 @@ bun run typecheck     # tsc --noEmit must pass
 
 ---
 
-## 1. README is outdated (High)
+## ~~1. README is outdated (High)~~ ✅ Resolved
 
-The README claims these features are not implemented:
-_"It does not implement cancel, incrementCounter, getOrderStatus, matchOrders, matchAdvancedOrders, or event parsing."_
-
-But all of them **are** implemented: `cancel.ts`, `increment_counter.ts`,
-`order_status.ts`, `match.ts`, `events.ts`. Each is exported from the barrel
-and has corresponding subpath entries in `package.json`.
-
-The README should also document new exports: `buildCancel`, `getOrderStatus`,
-`buildMatchOrders`, `buildMatchAdvancedOrders`, `buildIncrementCounter`,
-`decodeSeaportEvent`, event topic constants, and event argument types.
+The README has been updated to:
+- Remove the false "does not implement" claim
+- Add `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`,
+  `matchAdvancedOrders`, and event parsing to the scope list
+- Add API documentation for `buildCancel`, `getOrderStatus`,
+  `buildMatchOrders`, `buildMatchAdvancedOrders`, `buildIncrementCounter`,
+  `decodeSeaportEvent`, event topic constants, and event argument types
+- Update the encoders import example to include all encoder functions
 
 ---
 
