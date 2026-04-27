@@ -46,39 +46,28 @@ boundary (2^24 orders succeeds, 2^24+1 throws).
 
 ---
 
-### 3. `verifyOrderSignature` error-handling regex is too broad
+### 3. ~~`verifyOrderSignature` error-handling regex is too broad~~ ✅ Fixed
 
 **File:** `src/signature.ts`
 
-The catch block uses `/signature/i.test(error.message)` to decide whether to
-swallow an error (returning `false`) or rethrow. Some infrastructure errors
-from `@noble/curves` use the word "signature" in non-signature-validation
-contexts (e.g., invalid curve points, malformed R/S values), which are
-infrastructure errors, not invalid-signer cases. This could silently mask
-real bugs.
-
-**Recommendation:** Replace the regex with a whitelist of known signature-recovery
-failure messages, or use viem's `isHex(error.signature)` status pattern if
-available. At minimum, narrow the regex to match specific phrases like
-`/signature invalid|unrecoverable signature|signature mismatch/i`.
+**Fix:** Narrowed the regex from `/signature/i` to
+`/signature (invalid|mismatch)|unrecoverable signature/i`, matching only
+known signature-recovery failure messages from `@noble/curves`. This avoids
+swallowing infrastructure errors that happen to contain the word "signature"
+(e.g., invalid curve points, malformed R/S values).
 
 ---
 
-### 4. Duplicated ABI component definitions between `constants.ts` and `signature.ts`
+### 4. ~~Duplicated ABI component definitions between `constants.ts` and `signature.ts`~~ ✅ Fixed
 
 **File:** `src/constants.ts`, `src/signature.ts`
 
-`hashOrderComponentsStruct` in `signature.ts` manually defines the tuple
-component arrays for `OfferItem` and `ConsiderationItem` that already exist
-in `EIP712_TYPES` in `constants.ts`. If a field is added or reordered in the
-EIP-712 types, the ABI-encoding versions in `signature.ts` must be updated
-separately — a maintenance hazard.
-
-**Recommendation:** Either:
-- Export reusable ABI parameter definitions from `constants.ts` and reuse them
-  in `signature.ts`.
-- Build the `abi.encode` parameter objects programmatically from
-  `EIP712_TYPES` at module load time.
+**Fix:** Exported `OFFER_ITEM_COMPONENTS` and `CONSIDERATION_ITEM_COMPONENTS`
+from `constants.ts` (derived from `EIP712_TYPES`). Updated
+`hashOrderComponentsStruct` in `signature.ts` and the independent computation
+tests in `signature.test.ts` to use these shared constants instead of inline
+ABI component definitions. If a field is added or reordered in `EIP712_TYPES`,
+the ABI encoding now stays in sync automatically.
 
 ---
 
@@ -329,8 +318,8 @@ with some dependency patterns.
 |---|----------|------|-------|
 | 1 | 🔴 | `order.ts` | Duplicated validation logic |
 | 2 | 🔴 | `bulk_listings.ts` | Missing max-height guard |
-| 3 | 🔴 | `signature.ts` | Overly broad error regex |
-| 4 | 🔴 | `constants.ts`/`signature.ts` | Duplicated ABI component definitions |
+| 3 | 🔴 | `signature.ts` | ~~Overly broad error regex~~ ✅ Fixed |
+| 4 | 🔴 | `constants.ts`/`signature.ts` | ~~Duplicated ABI component definitions~~ ✅ Fixed |
 | 5 | 🟡 | `types.ts`/`encode.ts` | `number \| bigint` precision risk |
 | 6 | 🟡 | `types.ts` | No `SeaportContext` validation |
 | 7 | 🟡 | `order.ts` | Inconsistent ETH detection |

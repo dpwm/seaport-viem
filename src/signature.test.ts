@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { keccak256, stringToHex, encodeAbiParameters } from "viem";
-import { hashOrderComponents, hashOrderComponentsStruct, ORDER_COMPONENTS_TYPE_STRING, CONSIDERATION_ITEM_TYPE_STRING, OFFER_ITEM_TYPE_STRING } from "./index";
+import { hashOrderComponents, hashOrderComponentsStruct, ORDER_COMPONENTS_TYPE_STRING, CONSIDERATION_ITEM_TYPE_STRING, OFFER_ITEM_TYPE_STRING, OFFER_ITEM_COMPONENTS, CONSIDERATION_ITEM_COMPONENTS } from "./index";
 import { ctx, makeOrderComponents, makeOfferItem, makeConsiderationItem } from "./test-fixtures";
 
 describe("hashOrderComponents", () => {
@@ -69,6 +69,8 @@ describe("hashOrderComponentsStruct", () => {
     // EIP-712 encoding for arrays of structs, different from Seaport's
     // raw abi.encode approach). Instead it validates that the function's
     // internal steps produce the correct output.
+    // Uses shared OFFER_ITEM_COMPONENTS / CONSIDERATION_ITEM_COMPONENTS
+    // from constants.ts, so the test stays in sync with EIP-712 type defs.
     const components = makeOrderComponents();
 
     const hash = hashOrderComponentsStruct(components);
@@ -85,13 +87,7 @@ describe("hashOrderComponentsStruct", () => {
     // Encode offer items as a dynamic array of tuples
     const offerHash = keccak256(
       encodeAbiParameters(
-        [{ type: "tuple[]", components: [
-          { name: "itemType", type: "uint8" },
-          { name: "token", type: "address" },
-          { name: "identifierOrCriteria", type: "uint256" },
-          { name: "startAmount", type: "uint256" },
-          { name: "endAmount", type: "uint256" },
-        ] }],
+        [{ type: "tuple[]", components: OFFER_ITEM_COMPONENTS }],
         [components.offer],
       ),
     );
@@ -99,14 +95,7 @@ describe("hashOrderComponentsStruct", () => {
     // Encode consideration items as a dynamic array of tuples
     const considerationHash = keccak256(
       encodeAbiParameters(
-        [{ type: "tuple[]", components: [
-          { name: "itemType", type: "uint8" },
-          { name: "token", type: "address" },
-          { name: "identifierOrCriteria", type: "uint256" },
-          { name: "startAmount", type: "uint256" },
-          { name: "endAmount", type: "uint256" },
-          { name: "recipient", type: "address" },
-        ] }],
+        [{ type: "tuple[]", components: CONSIDERATION_ITEM_COMPONENTS }],
         [components.consideration],
       ),
     );
@@ -174,27 +163,14 @@ describe("hashOrderComponentsStruct", () => {
 
     const offerHash = keccak256(
       encodeAbiParameters(
-        [{ type: "tuple[]", components: [
-          { name: "itemType", type: "uint8" },
-          { name: "token", type: "address" },
-          { name: "identifierOrCriteria", type: "uint256" },
-          { name: "startAmount", type: "uint256" },
-          { name: "endAmount", type: "uint256" },
-        ] }],
+        [{ type: "tuple[]", components: OFFER_ITEM_COMPONENTS }],
         [components.offer],
       ),
     );
 
     const considerationHash = keccak256(
       encodeAbiParameters(
-        [{ type: "tuple[]", components: [
-          { name: "itemType", type: "uint8" },
-          { name: "token", type: "address" },
-          { name: "identifierOrCriteria", type: "uint256" },
-          { name: "startAmount", type: "uint256" },
-          { name: "endAmount", type: "uint256" },
-          { name: "recipient", type: "address" },
-        ] }],
+        [{ type: "tuple[]", components: CONSIDERATION_ITEM_COMPONENTS }],
         [components.consideration],
       ),
     );

@@ -5,6 +5,8 @@ import {
   ORDER_COMPONENTS_TYPE_STRING,
   CONSIDERATION_ITEM_TYPE_STRING,
   OFFER_ITEM_TYPE_STRING,
+  OFFER_ITEM_COMPONENTS,
+  CONSIDERATION_ITEM_COMPONENTS,
 } from "./constants";
 
 /**
@@ -34,7 +36,10 @@ export async function verifyOrderSignature(
     // Signature recovery failures from @noble/curves produce Error instances
     // with messages indicating an invalid/unrecoverable signature.
     // Only swallow signature-related errors; rethrow everything else.
-    if (error instanceof Error && /signature/i.test(error.message)) {
+    // Narrow match to known signature-recovery failure messages from
+    // @noble/curves; avoid swallowing infrastructure errors that happen
+    // to contain the word "signature" (e.g., invalid curve points).
+    if (error instanceof Error && /signature (invalid|mismatch)|unrecoverable signature/i.test(error.message)) {
       return false;
     }
     throw error;
@@ -81,30 +86,19 @@ export function hashOrderComponentsStruct(
   orderComponents: OrderComponents,
 ): `0x${string}` {
   // Encode offer items as a dynamic array of tuples
+  // Uses OFFER_ITEM_COMPONENTS from constants.ts to stay in sync with EIP-712 type definitions.
   const offerHash = keccak256(
     encodeAbiParameters(
-      [{ type: "tuple[]", components: [
-        { name: "itemType", type: "uint8" },
-        { name: "token", type: "address" },
-        { name: "identifierOrCriteria", type: "uint256" },
-        { name: "startAmount", type: "uint256" },
-        { name: "endAmount", type: "uint256" },
-      ] }],
+      [{ type: "tuple[]", components: OFFER_ITEM_COMPONENTS }],
       [orderComponents.offer],
     ),
   );
 
   // Encode consideration items as a dynamic array of tuples
+  // Uses CONSIDERATION_ITEM_COMPONENTS from constants.ts to stay in sync with EIP-712 type definitions.
   const considerationHash = keccak256(
     encodeAbiParameters(
-      [{ type: "tuple[]", components: [
-        { name: "itemType", type: "uint8" },
-        { name: "token", type: "address" },
-        { name: "identifierOrCriteria", type: "uint256" },
-        { name: "startAmount", type: "uint256" },
-        { name: "endAmount", type: "uint256" },
-        { name: "recipient", type: "address" },
-      ] }],
+      [{ type: "tuple[]", components: CONSIDERATION_ITEM_COMPONENTS }],
       [orderComponents.consideration],
     ),
   );

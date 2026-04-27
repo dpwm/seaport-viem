@@ -494,3 +494,13 @@ export const CONSIDERATION_ITEM_TYPE_STRING = eip712TypeString("ConsiderationIte
 
 /** Canonical type string for the OfferItem struct. Generated from EIP712_TYPES. */
 export const OFFER_ITEM_TYPE_STRING = eip712TypeString("OfferItem", EIP712_TYPES.OfferItem);
+
+/** Reusable ABI component definitions for OfferItem, derived from EIP712_TYPES.
+ * Keeps ABI encoding in hashOrderComponentsStruct in sync with the EIP-712 type
+ * definitions automatically. */
+export const OFFER_ITEM_COMPONENTS = EIP712_TYPES.OfferItem;
+
+/** Reusable ABI component definitions for ConsiderationItem, derived from EIP712_TYPES.
+ * Keeps ABI encoding in hashOrderComponentsStruct in sync with the EIP-712 type
+ * definitions automatically. */
+export const CONSIDERATION_ITEM_COMPONENTS = EIP712_TYPES.ConsiderationItem;
