@@ -229,19 +229,44 @@ field without using the full fulfillment builder.
 
 ---
 
-### 16. Missing `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`
+### 16. ~~Missing `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`~~ ✅ Fixed
 
-**File:** `src/index.ts`
+**Files:** `src/cancel.ts`, `src/order_status.ts`, `src/match.ts`,
+`src/increment_counter.ts`, `src/events.ts`, `src/constants.ts`,
+`src/encode.ts`, `src/types.ts`, `src/index.ts`
 
-These are documented as out of scope. Track them here so new contributors
-know they're intentionally absent, not overlooked:
+**Fix:** Implemented all five missing functions plus event ABI and typed
+parsing utilities:
 
-- `cancel(OrderComponents[])` — Seaport's `cancel()` function.
-- `incrementCounter()` — Bump the offerer's nonce.
-- `getOrderStatus(orderHash)` — On-chain order status lookup.
-- `matchOrders(orders[], fulfillments[])` — Two-sided order matching.
-- `matchAdvancedOrders(advancedOrders[], criteriaResolvers[], fulfillments[])`
-- Event ABI and typed event parsing utilities.
+- `buildCancel(ctx, OrderComponents[])` in `src/cancel.ts` — Builds a
+  transaction to cancel one or more orders.
+- `buildIncrementCounter(ctx)` in `src/increment_counter.ts` — Builds a
+  transaction to bump the offerer's nonce, bulk-cancelling all orders with
+  the current counter.
+- `getOrderStatus(client, ctx, orderHash)` in `src/order_status.ts` —
+  On-chain order status lookup returning `{ isValidated, isCancelled,
+  totalFilled, totalSize }`.
+- `buildMatchOrders(ctx, orders, fulfillments)` in `src/match.ts` —
+  Two-sided order matching via `matchOrders`.
+- `buildMatchAdvancedOrders(ctx, advancedOrders, criteriaResolvers,
+  fulfillments, recipient)` in `src/match.ts` — Two-sided matching with
+  criteria resolvers and partial fills.
+- `encodeValidate(orders)` in `src/encode.ts` — Calldata encoder for
+  Seaport's `validate()` function.
+- `seaportEventAbi` in `src/constants.ts` — Full event ABI for
+  `OrderFulfilled`, `OrderCancelled`, `OrderValidated`, `OrdersMatched`,
+  and `CounterIncremented`.
+- `decodeSeaportEvent(log)` in `src/events.ts` — Typed event log decoder.
+- Parsed event ABI references (`OrderFulfilledEvent`,
+  `OrderCancelledEvent`, etc.) and topic hash constants
+  (`ORDER_FULFILLED_TOPIC`, etc.) for use with viem's `parseEventLogs`.
+- `SpentItem` and `OrderStatus` types in `src/types.ts`.
+
+New subpath exports: `seaport-viem/cancel`, `seaport-viem/order-status`,
+`seaport-viem/match`, `seaport-viem/increment-counter`,
+`seaport-viem/events`.
+
+All 5 new modules have corresponding test files with 33 additional tests.
 
 ---
 

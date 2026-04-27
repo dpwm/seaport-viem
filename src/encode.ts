@@ -6,6 +6,7 @@ import type {
   AdvancedOrder,
   CriteriaResolver,
   FulfillmentComponent,
+  Fulfillment,
 } from "./types";
 import { seaportAbi } from "./constants";
 
@@ -161,6 +162,105 @@ export function encodeFulfillAvailableAdvancedOrders(
       recipient,
       maximumFulfilled,
     ],
+  });
+}
+
+/**
+ * Encode calldata for Seaport's cancel(OrderComponents[]) function.
+ * @param orders - The order components to cancel.
+ * @returns ABI-encoded function call data.
+ */
+export function encodeCancel(
+  orders: OrderComponents[],
+): `0x${string}` {
+  return encodeFunctionData({
+    abi: seaportAbi,
+    functionName: "cancel",
+    args: [orders],
+  });
+}
+
+/**
+ * Encode calldata for Seaport's incrementCounter() function.
+ * @returns ABI-encoded function call data.
+ */
+export function encodeIncrementCounter(): `0x${string}` {
+  return encodeFunctionData({
+    abi: seaportAbi,
+    functionName: "incrementCounter",
+  });
+}
+
+/**
+ * Encode calldata for Seaport's getOrderStatus(bytes32) function.
+ * @param orderHash - The order hash to query.
+ * @returns ABI-encoded function call data.
+ */
+export function encodeGetOrderStatus(
+  orderHash: `0x${string}`,
+): `0x${string}` {
+  return encodeFunctionData({
+    abi: seaportAbi,
+    functionName: "getOrderStatus",
+    args: [orderHash],
+  });
+}
+
+/**
+ * Encode calldata for Seaport's matchOrders function.
+ * @param orders - Array of orders to match.
+ * @param fulfillments - Fulfillments allocating offer to consideration components.
+ * @returns ABI-encoded function call data.
+ */
+export function encodeMatchOrders(
+  orders: { parameters: OrderParameters; signature: `0x${string}` }[],
+  fulfillments: Fulfillment[],
+): `0x${string}` {
+  return encodeFunctionData({
+    abi: seaportAbi,
+    functionName: "matchOrders",
+    args: [orders, fulfillments],
+  });
+}
+
+/**
+ * Encode calldata for Seaport's matchAdvancedOrders function.
+ * @param advancedOrders - Array of advanced orders to match.
+ * @param criteriaResolvers - Resolutions for criteria-based items.
+ * @param fulfillments - Fulfillments allocating offer to consideration components.
+ * @param recipient - Address to receive unspent offer items.
+ * @returns ABI-encoded function call data.
+ * @throws If any numerator or denominator exceed uint120 range.
+ */
+export function encodeMatchAdvancedOrders(
+  advancedOrders: AdvancedOrder[],
+  criteriaResolvers: CriteriaResolver[],
+  fulfillments: Fulfillment[],
+  recipient: `0x${string}`,
+): `0x${string}` {
+  for (const order of advancedOrders) {
+    checkUint120(order.numerator, "numerator");
+    checkUint120(order.denominator, "denominator");
+  }
+  return encodeFunctionData({
+    abi: seaportAbi,
+    functionName: "matchAdvancedOrders",
+    args: [advancedOrders, criteriaResolvers, fulfillments, recipient],
+  });
+}
+
+/**
+ * Encode calldata for Seaport's validate(Order[]) function.
+ * @param orders - The signed orders to validate.
+ * @returns ABI-encoded function call data.
+ */
+export function encodeValidate(
+  orders: { parameters: OrderParameters; signature: `0x${string}` }[],
+): `0x${string}` {
+  return encodeFunctionData({
+    abi: seaportAbi,
+    functionName: "validate",
+    args: [orders],
   });
 }
 

@@ -208,3 +208,19 @@ export type Execution = {
   offerer: `0x${string}`;
   conduitKey: `0x${string}`;
 };
+
+/** A spent (offer) item in Seaport event data. */
+export type SpentItem = {
+  itemType: ItemTypeValue;
+  token: `0x${string}`;
+  identifier: bigint;
+  amount: bigint;
+};
+
+/** On-chain order status returned by getOrderStatus. */
+export type OrderStatus = {
+  isValidated: boolean;
+  isCancelled: boolean;
+  totalFilled: bigint;
+  totalSize: bigint;
+};

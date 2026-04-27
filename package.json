@@ -61,6 +61,36 @@
         "types": "./dist/bulk_listings.d.ts",
         "default": "./dist/bulk_listings.js"
       }
+    },
+    "./cancel": {
+      "import": {
+        "types": "./dist/cancel.d.ts",
+        "default": "./dist/cancel.js"
+      }
+    },
+    "./order-status": {
+      "import": {
+        "types": "./dist/order_status.d.ts",
+        "default": "./dist/order_status.js"
+      }
+    },
+    "./match": {
+      "import": {
+        "types": "./dist/match.d.ts",
+        "default": "./dist/match.js"
+      }
+    },
+    "./increment-counter": {
+      "import": {
+        "types": "./dist/increment_counter.d.ts",
+        "default": "./dist/increment_counter.js"
+      }
+    },
+    "./events": {
+      "import": {
+        "types": "./dist/events.d.ts",
+        "default": "./dist/events.js"
+      }
     }
   },
   "files": [

@@ -21,6 +21,8 @@ export type {
   ValidationResult,
   FulfillmentData,
   FulfillmentOptions,
+  SpentItem,
+  OrderStatus,
 } from "./types";
 
 export { ItemType, OrderType, BasicOrderRouteType, Side } from "./types";
@@ -34,6 +36,7 @@ export {
   BULK_ORDER_HEIGHT_MAX,
   BULK_ORDER_BRANCH_FACTOR,
   seaportAbi,
+  seaportEventAbi,
   EIP712_TYPES,
   eip712TypeString,
   ORDER_COMPONENTS_TYPE_STRING,
@@ -52,6 +55,12 @@ export {
   encodeFulfillAdvancedOrder,
   encodeFulfillAvailableOrders,
   encodeFulfillAvailableAdvancedOrders,
+  encodeCancel,
+  encodeIncrementCounter,
+  encodeGetOrderStatus,
+  encodeMatchOrders,
+  encodeMatchAdvancedOrders,
+  encodeValidate,
 } from "./encode";
 
 // Signature
@@ -92,3 +101,38 @@ export {
   unpackBulkSignature,
   encodeDomainSeparator,
 } from "./bulk_listings";
+
+// Cancel
+export { buildCancel } from "./cancel";
+
+// Order status
+export { getOrderStatus } from "./order_status";
+
+// Two-sided matching
+export { buildMatchOrders, buildMatchAdvancedOrders } from "./match";
+
+// Counter management
+export { buildIncrementCounter } from "./increment_counter";
+
+// Event parsing
+export {
+  decodeSeaportEvent,
+  OrderFulfilledEvent,
+  OrderCancelledEvent,
+  OrderValidatedEvent,
+  OrdersMatchedEvent,
+  CounterIncrementedEvent,
+  ORDER_FULFILLED_TOPIC,
+  ORDER_CANCELLED_TOPIC,
+  ORDER_VALIDATED_TOPIC,
+  ORDERS_MATCHED_TOPIC,
+  COUNTER_INCREMENTED_TOPIC,
+} from "./events";
+export type {
+  OrderFulfilledEventArgs,
+  OrderCancelledEventArgs,
+  OrderValidatedEventArgs,
+  OrdersMatchedEventArgs,
+  CounterIncrementedEventArgs,
+  SeaportEventArgs,
+} from "./events";
