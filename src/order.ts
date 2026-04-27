@@ -28,6 +28,7 @@ import {
   encodeFulfillAdvancedOrder,
   encodeFulfillAvailableOrders,
   encodeFulfillAvailableAdvancedOrders,
+  checkUint120,
 } from "./encode";
 
 /**
@@ -365,6 +366,8 @@ export function buildFulfillAdvancedOrder(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
+  checkUint120(advancedOrder.numerator, "numerator");
+  checkUint120(advancedOrder.denominator, "denominator");
   return {
     to: ctx.address,
     data: encodeFulfillAdvancedOrder(
@@ -444,6 +447,11 @@ export function buildFulfillAvailableAdvancedOrders(
   recipient: `0x${string}` = ZERO_ADDRESS,
   maximumFulfilled: bigint = BigInt(advancedOrders.length),
 ): FulfillmentData {
+  for (const order of advancedOrders) {
+    checkUint120(order.numerator, "numerator");
+    checkUint120(order.denominator, "denominator");
+  }
+
   if (maximumFulfilled > BigInt(advancedOrders.length)) {
     throw new Error(
       `maximumFulfilled (${maximumFulfilled}) exceeds advanced orders length (${advancedOrders.length})`,

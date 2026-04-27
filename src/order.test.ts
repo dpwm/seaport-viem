@@ -597,6 +597,36 @@ describe("buildFulfillAdvancedOrder", () => {
     const result = buildFulfillAdvancedOrder(ctx, advancedOrder);
     expect(result.value).toBe(500n);
   });
+
+  test("throws for numerator > uint120", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 1n << 120n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    expect(() =>
+      buildFulfillAdvancedOrder(ctx, advancedOrder),
+    ).toThrow("uint120");
+  });
+
+  test("throws for denominator > uint120", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n << 120n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    expect(() =>
+      buildFulfillAdvancedOrder(ctx, advancedOrder),
+    ).toThrow("uint120");
+  });
 });
 
 // ── buildFulfillAvailableOrders ───────────────────────────────
@@ -678,6 +708,36 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
     }];
     const result = buildFulfillAvailableAdvancedOrders(ctx, advancedOrders);
     expect(result.value).toBe(800n);
+  });
+
+  test("throws for numerator > uint120", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n << 120n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    expect(() =>
+      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+    ).toThrow("uint120");
+  });
+
+  test("throws for denominator > uint120", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n << 120n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    expect(() =>
+      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+    ).toThrow("uint120");
   });
 
   test("rejects maximumFulfilled exceeding advanced orders length", () => {

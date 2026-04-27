@@ -164,7 +164,15 @@ export function encodeFulfillAvailableAdvancedOrders(
   });
 }
 
-function checkUint120(value: bigint, name: string): void {
+/**
+ * Check that a value fits within a uint120 range (0 to 2^120 - 1).
+ * Seaport uses uint120 for partial fill numerator/denominator.
+ *
+ * @param value - The value to check.
+ * @param name - The parameter name for error messages.
+ * @throws If the value is out of range.
+ */
+export function checkUint120(value: bigint, name: string): void {
   if (value < 0n || value > UINT120_MAX) {
     throw new Error(
       `${name} must be a uint120 (0 to ${UINT120_MAX}), got ${value}`,

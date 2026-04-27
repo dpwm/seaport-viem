@@ -224,7 +224,7 @@ different struct hashes for the same data. The independent computation
 test validates the function against its own spec using the same encoding
 primitives.
 
-### 3.4 `checkUint120` — validation only in encoders, not in builders
+### 3.4 `checkUint120` — validation only in encoders, not in builders ✅ FIXED
 
 **File:** `src/encode.ts` — `checkUint120` is called inside
 `encodeFulfillAdvancedOrder` and `encodeFulfillAvailableAdvancedOrders`, but
@@ -238,6 +238,13 @@ they get validation; if they use the builders, they do too (via the encoder).
 No bug today, but the pattern should be documented or moved to a common
 validation layer so both paths are equally protected. If someone ever adds a
 new builder that calls the encoder indirectly, they might forget to validate.
+
+**Fix applied:** Exported `checkUint120` from `encode.ts` and added explicit
+validation calls at the top of `buildFulfillAdvancedOrder` and
+`buildFulfillAvailableAdvancedOrders` in `order.ts`. Added 4 tests in
+`order.test.ts` verifying that both builders throw when `numerator` or
+`denominator` exceed uint120 range. The encoder-level validation is preserved
+as defense-in-depth (this commit).
 
 ### 3.5 Hardcoded type strings in `hashOrderComponentsStruct` can drift from `EIP712_TYPES` ✅ FIXED
 
