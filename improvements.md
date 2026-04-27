@@ -279,7 +279,7 @@ the same source as the signing types, so they can't diverge.
 hardcoded canonical strings as the reference — if `EIP712_TYPES` ever changes,
 these tests will fail and alert the developer.
 
-### 3.6 No test for `NATIVE_TOKEN` payment path in `buildBasicOrderFulfillment`
+### 3.6 No test for `NATIVE_TOKEN` payment path in `buildBasicOrderFulfillment` ✅ FIXED
 
 **File:** `src/order.ts` — the `isNativePayment` check handles both
 `ZERO_ADDRESS` and `NATIVE_TOKEN` as sentinels for native ETH:
@@ -292,6 +292,11 @@ const isNativePayment =
 
 All existing tests for the native payment path use `ZERO_ADDRESS`. There is no
 test that exercises the `NATIVE_TOKEN` sentinel path, leaving it untested.
+
+**Fix applied:** Added two tests in `order.test.ts` (`buildBasicOrderFulfillment`
+block): one verifying that `NATIVE_TOKEN` as the consideration token produces
+the correct ETH value, and one verifying that tips are correctly included when
+using `NATIVE_TOKEN` (this commit).
 
 ### 3.7 `encodeDomainSeparator` is private, forcing test duplication
 

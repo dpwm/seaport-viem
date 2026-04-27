@@ -5,6 +5,7 @@ import {
   BasicOrderRouteType,
   ZERO_ADDRESS,
   ZERO_BYTES32,
+  NATIVE_TOKEN,
   canFulfillAsBasicOrder,
   detectBasicOrderRouteType,
   toBasicOrderParameters,
@@ -451,6 +452,34 @@ describe("buildBasicOrderFulfillment", () => {
     });
     const result = buildBasicOrderFulfillment(ctx, order);
     expect(result.value).toBe(0n);
+  });
+
+  test("computes ETH value when consideration token is NATIVE_TOKEN", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ token: NATIVE_TOKEN, endAmount: 1000n }),
+        ],
+      }),
+    });
+    const result = buildBasicOrderFulfillment(ctx, order);
+    expect(result.value).toBe(1000n);
+  });
+
+  test("includes tip amounts in ETH value when consideration token is NATIVE_TOKEN", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ token: NATIVE_TOKEN, endAmount: 1000n }),
+        ],
+      }),
+    });
+    const tipRecipient =
+      "0xeeee000000000000000000000000000000000005" as `0x${string}`;
+    const result = buildBasicOrderFulfillment(ctx, order, {
+      tips: [{ amount: 300n, recipient: tipRecipient }],
+    });
+    expect(result.value).toBe(1300n);
   });
 
   test("includes tip amounts in ETH value", () => {
