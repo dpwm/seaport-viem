@@ -57,20 +57,12 @@ Both functions now use a generic constrained type:
 
 ---
 
-## 5. Monolithic `seaportAbi` constant (Low)
+## ~~5. Monolithic `seaportAbi` constant (Low)~~ ✅ Resolved
 
-At ~900 lines, `seaportAbi` is the largest file. The individual function ABI
-definitions are independently useful (encoders only need their specific
-function fragment). Consider splitting into named exports:
-
-```ts
-export const getCounterAbiItem = { … };
-export const fulfillOrderAbiItem = { … };
-// seaportAbi remains the union for consumers that need the full ABI.
-```
-
-This lets tree-shakers eliminate unused entries and makes the file easier to
-navigate. Not urgent — the current `satisfies Abi` pattern is correct.
+`seaportAbi` has been split into individual named exports per function
+(`getCounterAbiItem`, `getOrderHashAbiItem`, …, `validateAbiItem`) while
+keeping `seaportAbi` as the composed union. Encoders and other consumers now
+import only the specific ABI item they need, enabling better tree-shaking.
 
 ---
 

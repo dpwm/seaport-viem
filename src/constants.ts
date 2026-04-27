@@ -12,745 +12,784 @@ export const ZERO_BYTES32 =
 export const NATIVE_TOKEN =
   "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as const;
 
-/** Seaport contract ABI for getCounter, getOrderHash, and fulfillBasicOrder. */
+/** ABI for Seaport's getCounter(address) view function. */
+export const getCounterAbiItem = {
+  type: "function",
+  name: "getCounter",
+  stateMutability: "view",
+  inputs: [{ name: "offerer", type: "address" }],
+  outputs: [{ name: "", type: "uint256" }],
+} as const;
+
+/** ABI for Seaport's getOrderHash(OrderComponents) view function. */
+export const getOrderHashAbiItem = {
+  type: "function",
+  name: "getOrderHash",
+  stateMutability: "view",
+  inputs: [
+    {
+      name: "orderComponents",
+      type: "tuple",
+      components: [
+        { name: "offerer", type: "address" },
+        { name: "zone", type: "address" },
+        {
+          name: "offer",
+          type: "tuple[]",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifierOrCriteria", type: "uint256" },
+            { name: "startAmount", type: "uint256" },
+            { name: "endAmount", type: "uint256" },
+          ],
+        },
+        {
+          name: "consideration",
+          type: "tuple[]",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifierOrCriteria", type: "uint256" },
+            { name: "startAmount", type: "uint256" },
+            { name: "endAmount", type: "uint256" },
+            { name: "recipient", type: "address" },
+          ],
+        },
+        { name: "orderType", type: "uint8" },
+        { name: "startTime", type: "uint256" },
+        { name: "endTime", type: "uint256" },
+        { name: "zoneHash", type: "bytes32" },
+        { name: "salt", type: "uint256" },
+        { name: "conduitKey", type: "bytes32" },
+        { name: "counter", type: "uint256" },
+      ],
+    },
+  ],
+  outputs: [{ name: "", type: "bytes32" }],
+} as const;
+
+/** ABI for Seaport's fulfillBasicOrder(BasicOrderParameters) payable function. */
+export const fulfillBasicOrderAbiItem = {
+  type: "function",
+  name: "fulfillBasicOrder",
+  stateMutability: "payable",
+  inputs: [
+    {
+      name: "parameters",
+      type: "tuple",
+      components: [
+        { name: "considerationToken", type: "address" },
+        { name: "considerationIdentifier", type: "uint256" },
+        { name: "considerationAmount", type: "uint256" },
+        { name: "offerer", type: "address" },
+        { name: "zone", type: "address" },
+        { name: "offerToken", type: "address" },
+        { name: "offerIdentifier", type: "uint256" },
+        { name: "offerAmount", type: "uint256" },
+        { name: "basicOrderType", type: "uint8" },
+        { name: "startTime", type: "uint256" },
+        { name: "endTime", type: "uint256" },
+        { name: "zoneHash", type: "bytes32" },
+        { name: "salt", type: "uint256" },
+        { name: "offererConduitKey", type: "bytes32" },
+        { name: "fulfillerConduitKey", type: "bytes32" },
+        { name: "totalOriginalAdditionalRecipients", type: "uint256" },
+        {
+          name: "additionalRecipients",
+          type: "tuple[]",
+          components: [
+            { name: "amount", type: "uint256" },
+            { name: "recipient", type: "address" },
+          ],
+        },
+        { name: "signature", type: "bytes" },
+      ],
+    },
+  ],
+  outputs: [{ name: "", type: "bool" }],
+} as const;
+
+/** ABI for Seaport's fulfillOrder(Order, bytes32) payable function. */
+export const fulfillOrderAbiItem = {
+  type: "function",
+  name: "fulfillOrder",
+  stateMutability: "payable",
+  inputs: [
+    {
+      name: "order",
+      type: "tuple",
+      components: [
+        {
+          name: "parameters",
+          type: "tuple",
+          components: [
+            { name: "offerer", type: "address" },
+            { name: "zone", type: "address" },
+            {
+              name: "offer",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+              ],
+            },
+            {
+              name: "consideration",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+                { name: "recipient", type: "address" },
+              ],
+            },
+            { name: "orderType", type: "uint8" },
+            { name: "startTime", type: "uint256" },
+            { name: "endTime", type: "uint256" },
+            { name: "zoneHash", type: "bytes32" },
+            { name: "salt", type: "uint256" },
+            { name: "conduitKey", type: "bytes32" },
+            { name: "totalOriginalConsiderationItems", type: "uint256" },
+          ],
+        },
+        { name: "signature", type: "bytes" },
+      ],
+    },
+    { name: "fulfillerConduitKey", type: "bytes32" },
+  ],
+  outputs: [{ name: "fulfilled", type: "bool" }],
+} as const;
+
+/** ABI for Seaport's fulfillAdvancedOrder payable function. */
+export const fulfillAdvancedOrderAbiItem = {
+  type: "function",
+  name: "fulfillAdvancedOrder",
+  stateMutability: "payable",
+  inputs: [
+    {
+      name: "advancedOrder",
+      type: "tuple",
+      components: [
+        {
+          name: "parameters",
+          type: "tuple",
+          components: [
+            { name: "offerer", type: "address" },
+            { name: "zone", type: "address" },
+            {
+              name: "offer",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+              ],
+            },
+            {
+              name: "consideration",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+                { name: "recipient", type: "address" },
+              ],
+            },
+            { name: "orderType", type: "uint8" },
+            { name: "startTime", type: "uint256" },
+            { name: "endTime", type: "uint256" },
+            { name: "zoneHash", type: "bytes32" },
+            { name: "salt", type: "uint256" },
+            { name: "conduitKey", type: "bytes32" },
+            { name: "totalOriginalConsiderationItems", type: "uint256" },
+          ],
+        },
+        { name: "numerator", type: "uint120" },
+        { name: "denominator", type: "uint120" },
+        { name: "signature", type: "bytes" },
+        { name: "extraData", type: "bytes" },
+      ],
+    },
+    {
+      name: "criteriaResolvers",
+      type: "tuple[]",
+      components: [
+        { name: "orderIndex", type: "uint256" },
+        { name: "side", type: "uint8" },
+        { name: "index", type: "uint256" },
+        { name: "identifier", type: "uint256" },
+        { name: "criteriaProof", type: "bytes32[]" },
+      ],
+    },
+    { name: "fulfillerConduitKey", type: "bytes32" },
+    { name: "recipient", type: "address" },
+  ],
+  outputs: [{ name: "fulfilled", type: "bool" }],
+} as const;
+
+/** ABI for Seaport's fulfillAvailableOrders payable function. */
+export const fulfillAvailableOrdersAbiItem = {
+  type: "function",
+  name: "fulfillAvailableOrders",
+  stateMutability: "payable",
+  inputs: [
+    {
+      name: "orders",
+      type: "tuple[]",
+      components: [
+        {
+          name: "parameters",
+          type: "tuple",
+          components: [
+            { name: "offerer", type: "address" },
+            { name: "zone", type: "address" },
+            {
+              name: "offer",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+              ],
+            },
+            {
+              name: "consideration",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+                { name: "recipient", type: "address" },
+              ],
+            },
+            { name: "orderType", type: "uint8" },
+            { name: "startTime", type: "uint256" },
+            { name: "endTime", type: "uint256" },
+            { name: "zoneHash", type: "bytes32" },
+            { name: "salt", type: "uint256" },
+            { name: "conduitKey", type: "bytes32" },
+            { name: "totalOriginalConsiderationItems", type: "uint256" },
+          ],
+        },
+        { name: "signature", type: "bytes" },
+      ],
+    },
+    {
+      name: "offerFulfillments",
+      type: "tuple[][]",
+      components: [
+        { name: "orderIndex", type: "uint256" },
+        { name: "itemIndex", type: "uint256" },
+      ],
+    },
+    {
+      name: "considerationFulfillments",
+      type: "tuple[][]",
+      components: [
+        { name: "orderIndex", type: "uint256" },
+        { name: "itemIndex", type: "uint256" },
+      ],
+    },
+    { name: "fulfillerConduitKey", type: "bytes32" },
+    { name: "maximumFulfilled", type: "uint256" },
+  ],
+  outputs: [
+    { name: "availableOrders", type: "bool[]" },
+    {
+      name: "executions",
+      type: "tuple[]",
+      components: [
+        {
+          name: "item",
+          type: "tuple",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifier", type: "uint256" },
+            { name: "amount", type: "uint256" },
+            { name: "recipient", type: "address" },
+          ],
+        },
+        { name: "offerer", type: "address" },
+        { name: "conduitKey", type: "bytes32" },
+      ],
+    },
+  ],
+} as const;
+
+/** ABI for Seaport's fulfillAvailableAdvancedOrders payable function. */
+export const fulfillAvailableAdvancedOrdersAbiItem = {
+  type: "function",
+  name: "fulfillAvailableAdvancedOrders",
+  stateMutability: "payable",
+  inputs: [
+    {
+      name: "advancedOrders",
+      type: "tuple[]",
+      components: [
+        {
+          name: "parameters",
+          type: "tuple",
+          components: [
+            { name: "offerer", type: "address" },
+            { name: "zone", type: "address" },
+            {
+              name: "offer",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+              ],
+            },
+            {
+              name: "consideration",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+                { name: "recipient", type: "address" },
+              ],
+            },
+            { name: "orderType", type: "uint8" },
+            { name: "startTime", type: "uint256" },
+            { name: "endTime", type: "uint256" },
+            { name: "zoneHash", type: "bytes32" },
+            { name: "salt", type: "uint256" },
+            { name: "conduitKey", type: "bytes32" },
+            { name: "totalOriginalConsiderationItems", type: "uint256" },
+          ],
+        },
+        { name: "numerator", type: "uint120" },
+        { name: "denominator", type: "uint120" },
+        { name: "signature", type: "bytes" },
+        { name: "extraData", type: "bytes" },
+      ],
+    },
+    {
+      name: "criteriaResolvers",
+      type: "tuple[]",
+      components: [
+        { name: "orderIndex", type: "uint256" },
+        { name: "side", type: "uint8" },
+        { name: "index", type: "uint256" },
+        { name: "identifier", type: "uint256" },
+        { name: "criteriaProof", type: "bytes32[]" },
+      ],
+    },
+    {
+      name: "offerFulfillments",
+      type: "tuple[][]",
+      components: [
+        { name: "orderIndex", type: "uint256" },
+        { name: "itemIndex", type: "uint256" },
+      ],
+    },
+    {
+      name: "considerationFulfillments",
+      type: "tuple[][]",
+      components: [
+        { name: "orderIndex", type: "uint256" },
+        { name: "itemIndex", type: "uint256" },
+      ],
+    },
+    { name: "fulfillerConduitKey", type: "bytes32" },
+    { name: "recipient", type: "address" },
+    { name: "maximumFulfilled", type: "uint256" },
+  ],
+  outputs: [
+    { name: "availableOrders", type: "bool[]" },
+    {
+      name: "executions",
+      type: "tuple[]",
+      components: [
+        {
+          name: "item",
+          type: "tuple",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifier", type: "uint256" },
+            { name: "amount", type: "uint256" },
+            { name: "recipient", type: "address" },
+          ],
+        },
+        { name: "offerer", type: "address" },
+        { name: "conduitKey", type: "bytes32" },
+      ],
+    },
+  ],
+} as const;
+
+/** ABI for Seaport's cancel(OrderComponents[]) function. */
+export const cancelAbiItem = {
+  type: "function",
+  name: "cancel",
+  stateMutability: "nonpayable",
+  inputs: [
+    {
+      name: "orders",
+      type: "tuple[]",
+      components: [
+        { name: "offerer", type: "address" },
+        { name: "zone", type: "address" },
+        {
+          name: "offer",
+          type: "tuple[]",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifierOrCriteria", type: "uint256" },
+            { name: "startAmount", type: "uint256" },
+            { name: "endAmount", type: "uint256" },
+          ],
+        },
+        {
+          name: "consideration",
+          type: "tuple[]",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifierOrCriteria", type: "uint256" },
+            { name: "startAmount", type: "uint256" },
+            { name: "endAmount", type: "uint256" },
+            { name: "recipient", type: "address" },
+          ],
+        },
+        { name: "orderType", type: "uint8" },
+        { name: "startTime", type: "uint256" },
+        { name: "endTime", type: "uint256" },
+        { name: "zoneHash", type: "bytes32" },
+        { name: "salt", type: "uint256" },
+        { name: "conduitKey", type: "bytes32" },
+        { name: "counter", type: "uint256" },
+      ],
+    },
+  ],
+  outputs: [{ name: "cancelled", type: "bool" }],
+} as const;
+
+/** ABI for Seaport's incrementCounter() function. */
+export const incrementCounterAbiItem = {
+  type: "function",
+  name: "incrementCounter",
+  stateMutability: "nonpayable",
+  inputs: [],
+  outputs: [{ name: "newCounter", type: "uint256" }],
+} as const;
+
+/** ABI for Seaport's getOrderStatus(bytes32) view function. */
+export const getOrderStatusAbiItem = {
+  type: "function",
+  name: "getOrderStatus",
+  stateMutability: "view",
+  inputs: [{ name: "orderHash", type: "bytes32" }],
+  outputs: [
+    { name: "isValidated", type: "bool" },
+    { name: "isCancelled", type: "bool" },
+    { name: "totalFilled", type: "uint256" },
+    { name: "totalSize", type: "uint256" },
+  ],
+} as const;
+
+/** ABI for Seaport's matchOrders payable function. */
+export const matchOrdersAbiItem = {
+  type: "function",
+  name: "matchOrders",
+  stateMutability: "payable",
+  inputs: [
+    {
+      name: "orders",
+      type: "tuple[]",
+      components: [
+        {
+          name: "parameters",
+          type: "tuple",
+          components: [
+            { name: "offerer", type: "address" },
+            { name: "zone", type: "address" },
+            {
+              name: "offer",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+              ],
+            },
+            {
+              name: "consideration",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+                { name: "recipient", type: "address" },
+              ],
+            },
+            { name: "orderType", type: "uint8" },
+            { name: "startTime", type: "uint256" },
+            { name: "endTime", type: "uint256" },
+            { name: "zoneHash", type: "bytes32" },
+            { name: "salt", type: "uint256" },
+            { name: "conduitKey", type: "bytes32" },
+            { name: "totalOriginalConsiderationItems", type: "uint256" },
+          ],
+        },
+        { name: "signature", type: "bytes" },
+      ],
+    },
+    {
+      name: "fulfillments",
+      type: "tuple[]",
+      components: [
+        {
+          name: "offerComponents",
+          type: "tuple[]",
+          components: [
+            { name: "orderIndex", type: "uint256" },
+            { name: "itemIndex", type: "uint256" },
+          ],
+        },
+        {
+          name: "considerationComponents",
+          type: "tuple[]",
+          components: [
+            { name: "orderIndex", type: "uint256" },
+            { name: "itemIndex", type: "uint256" },
+          ],
+        },
+      ],
+    },
+  ],
+  outputs: [
+    {
+      name: "executions",
+      type: "tuple[]",
+      components: [
+        {
+          name: "item",
+          type: "tuple",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifier", type: "uint256" },
+            { name: "amount", type: "uint256" },
+            { name: "recipient", type: "address" },
+          ],
+        },
+        { name: "offerer", type: "address" },
+        { name: "conduitKey", type: "bytes32" },
+      ],
+    },
+  ],
+} as const;
+
+/** ABI for Seaport's matchAdvancedOrders payable function. */
+export const matchAdvancedOrdersAbiItem = {
+  type: "function",
+  name: "matchAdvancedOrders",
+  stateMutability: "payable",
+  inputs: [
+    {
+      name: "orders",
+      type: "tuple[]",
+      components: [
+        {
+          name: "parameters",
+          type: "tuple",
+          components: [
+            { name: "offerer", type: "address" },
+            { name: "zone", type: "address" },
+            {
+              name: "offer",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+              ],
+            },
+            {
+              name: "consideration",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+                { name: "recipient", type: "address" },
+              ],
+            },
+            { name: "orderType", type: "uint8" },
+            { name: "startTime", type: "uint256" },
+            { name: "endTime", type: "uint256" },
+            { name: "zoneHash", type: "bytes32" },
+            { name: "salt", type: "uint256" },
+            { name: "conduitKey", type: "bytes32" },
+            { name: "totalOriginalConsiderationItems", type: "uint256" },
+          ],
+        },
+        { name: "numerator", type: "uint120" },
+        { name: "denominator", type: "uint120" },
+        { name: "signature", type: "bytes" },
+        { name: "extraData", type: "bytes" },
+      ],
+    },
+    {
+      name: "criteriaResolvers",
+      type: "tuple[]",
+      components: [
+        { name: "orderIndex", type: "uint256" },
+        { name: "side", type: "uint8" },
+        { name: "index", type: "uint256" },
+        { name: "identifier", type: "uint256" },
+        { name: "criteriaProof", type: "bytes32[]" },
+      ],
+    },
+    {
+      name: "fulfillments",
+      type: "tuple[]",
+      components: [
+        {
+          name: "offerComponents",
+          type: "tuple[]",
+          components: [
+            { name: "orderIndex", type: "uint256" },
+            { name: "itemIndex", type: "uint256" },
+          ],
+        },
+        {
+          name: "considerationComponents",
+          type: "tuple[]",
+          components: [
+            { name: "orderIndex", type: "uint256" },
+            { name: "itemIndex", type: "uint256" },
+          ],
+        },
+      ],
+    },
+    { name: "recipient", type: "address" },
+  ],
+  outputs: [
+    {
+      name: "executions",
+      type: "tuple[]",
+      components: [
+        {
+          name: "item",
+          type: "tuple",
+          components: [
+            { name: "itemType", type: "uint8" },
+            { name: "token", type: "address" },
+            { name: "identifier", type: "uint256" },
+            { name: "amount", type: "uint256" },
+            { name: "recipient", type: "address" },
+          ],
+        },
+        { name: "offerer", type: "address" },
+        { name: "conduitKey", type: "bytes32" },
+      ],
+    },
+  ],
+} as const;
+
+/** ABI for Seaport's validate(Order[]) function. */
+export const validateAbiItem = {
+  type: "function",
+  name: "validate",
+  stateMutability: "nonpayable",
+  inputs: [
+    {
+      name: "orders",
+      type: "tuple[]",
+      components: [
+        {
+          name: "parameters",
+          type: "tuple",
+          components: [
+            { name: "offerer", type: "address" },
+            { name: "zone", type: "address" },
+            {
+              name: "offer",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+              ],
+            },
+            {
+              name: "consideration",
+              type: "tuple[]",
+              components: [
+                { name: "itemType", type: "uint8" },
+                { name: "token", type: "address" },
+                { name: "identifierOrCriteria", type: "uint256" },
+                { name: "startAmount", type: "uint256" },
+                { name: "endAmount", type: "uint256" },
+                { name: "recipient", type: "address" },
+              ],
+            },
+            { name: "orderType", type: "uint8" },
+            { name: "startTime", type: "uint256" },
+            { name: "endTime", type: "uint256" },
+            { name: "zoneHash", type: "bytes32" },
+            { name: "salt", type: "uint256" },
+            { name: "conduitKey", type: "bytes32" },
+            { name: "totalOriginalConsiderationItems", type: "uint256" },
+          ],
+        },
+        { name: "signature", type: "bytes" },
+      ],
+    },
+  ],
+  outputs: [{ name: "validated", type: "bool" }],
+} as const;
+
+/** Full Seaport contract ABI, composed from individual named exports. */
 export const seaportAbi = [
-  {
-    type: "function",
-    name: "getCounter",
-    stateMutability: "view",
-    inputs: [{ name: "offerer", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-  {
-    type: "function",
-    name: "getOrderHash",
-    stateMutability: "view",
-    inputs: [
-      {
-        name: "orderComponents",
-        type: "tuple",
-        components: [
-          { name: "offerer", type: "address" },
-          { name: "zone", type: "address" },
-          {
-            name: "offer",
-            type: "tuple[]",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifierOrCriteria", type: "uint256" },
-              { name: "startAmount", type: "uint256" },
-              { name: "endAmount", type: "uint256" },
-            ],
-          },
-          {
-            name: "consideration",
-            type: "tuple[]",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifierOrCriteria", type: "uint256" },
-              { name: "startAmount", type: "uint256" },
-              { name: "endAmount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "orderType", type: "uint8" },
-          { name: "startTime", type: "uint256" },
-          { name: "endTime", type: "uint256" },
-          { name: "zoneHash", type: "bytes32" },
-          { name: "salt", type: "uint256" },
-          { name: "conduitKey", type: "bytes32" },
-          { name: "counter", type: "uint256" },
-        ],
-      },
-    ],
-    outputs: [{ name: "", type: "bytes32" }],
-  },
-  {
-    type: "function",
-    name: "fulfillBasicOrder",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "parameters",
-        type: "tuple",
-        components: [
-          { name: "considerationToken", type: "address" },
-          { name: "considerationIdentifier", type: "uint256" },
-          { name: "considerationAmount", type: "uint256" },
-          { name: "offerer", type: "address" },
-          { name: "zone", type: "address" },
-          { name: "offerToken", type: "address" },
-          { name: "offerIdentifier", type: "uint256" },
-          { name: "offerAmount", type: "uint256" },
-          { name: "basicOrderType", type: "uint8" },
-          { name: "startTime", type: "uint256" },
-          { name: "endTime", type: "uint256" },
-          { name: "zoneHash", type: "bytes32" },
-          { name: "salt", type: "uint256" },
-          { name: "offererConduitKey", type: "bytes32" },
-          { name: "fulfillerConduitKey", type: "bytes32" },
-          { name: "totalOriginalAdditionalRecipients", type: "uint256" },
-          {
-            name: "additionalRecipients",
-            type: "tuple[]",
-            components: [
-              { name: "amount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "signature", type: "bytes" },
-        ],
-      },
-    ],
-    outputs: [{ name: "", type: "bool" }],
-  },
-  {
-    type: "function",
-    name: "fulfillOrder",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "order",
-        type: "tuple",
-        components: [
-          {
-            name: "parameters",
-            type: "tuple",
-            components: [
-              { name: "offerer", type: "address" },
-              { name: "zone", type: "address" },
-              {
-                name: "offer",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                ],
-              },
-              {
-                name: "consideration",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                  { name: "recipient", type: "address" },
-                ],
-              },
-              { name: "orderType", type: "uint8" },
-              { name: "startTime", type: "uint256" },
-              { name: "endTime", type: "uint256" },
-              { name: "zoneHash", type: "bytes32" },
-              { name: "salt", type: "uint256" },
-              { name: "conduitKey", type: "bytes32" },
-              { name: "totalOriginalConsiderationItems", type: "uint256" },
-            ],
-          },
-          { name: "signature", type: "bytes" },
-        ],
-      },
-      { name: "fulfillerConduitKey", type: "bytes32" },
-    ],
-    outputs: [{ name: "fulfilled", type: "bool" }],
-  },
-  {
-    type: "function",
-    name: "fulfillAdvancedOrder",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "advancedOrder",
-        type: "tuple",
-        components: [
-          {
-            name: "parameters",
-            type: "tuple",
-            components: [
-              { name: "offerer", type: "address" },
-              { name: "zone", type: "address" },
-              {
-                name: "offer",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                ],
-              },
-              {
-                name: "consideration",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                  { name: "recipient", type: "address" },
-                ],
-              },
-              { name: "orderType", type: "uint8" },
-              { name: "startTime", type: "uint256" },
-              { name: "endTime", type: "uint256" },
-              { name: "zoneHash", type: "bytes32" },
-              { name: "salt", type: "uint256" },
-              { name: "conduitKey", type: "bytes32" },
-              { name: "totalOriginalConsiderationItems", type: "uint256" },
-            ],
-          },
-          { name: "numerator", type: "uint120" },
-          { name: "denominator", type: "uint120" },
-          { name: "signature", type: "bytes" },
-          { name: "extraData", type: "bytes" },
-        ],
-      },
-      {
-        name: "criteriaResolvers",
-        type: "tuple[]",
-        components: [
-          { name: "orderIndex", type: "uint256" },
-          { name: "side", type: "uint8" },
-          { name: "index", type: "uint256" },
-          { name: "identifier", type: "uint256" },
-          { name: "criteriaProof", type: "bytes32[]" },
-        ],
-      },
-      { name: "fulfillerConduitKey", type: "bytes32" },
-      { name: "recipient", type: "address" },
-    ],
-    outputs: [{ name: "fulfilled", type: "bool" }],
-  },
-  {
-    type: "function",
-    name: "fulfillAvailableOrders",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "orders",
-        type: "tuple[]",
-        components: [
-          {
-            name: "parameters",
-            type: "tuple",
-            components: [
-              { name: "offerer", type: "address" },
-              { name: "zone", type: "address" },
-              {
-                name: "offer",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                ],
-              },
-              {
-                name: "consideration",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                  { name: "recipient", type: "address" },
-                ],
-              },
-              { name: "orderType", type: "uint8" },
-              { name: "startTime", type: "uint256" },
-              { name: "endTime", type: "uint256" },
-              { name: "zoneHash", type: "bytes32" },
-              { name: "salt", type: "uint256" },
-              { name: "conduitKey", type: "bytes32" },
-              { name: "totalOriginalConsiderationItems", type: "uint256" },
-            ],
-          },
-          { name: "signature", type: "bytes" },
-        ],
-      },
-      {
-        name: "offerFulfillments",
-        type: "tuple[][]",
-        components: [
-          { name: "orderIndex", type: "uint256" },
-          { name: "itemIndex", type: "uint256" },
-        ],
-      },
-      {
-        name: "considerationFulfillments",
-        type: "tuple[][]",
-        components: [
-          { name: "orderIndex", type: "uint256" },
-          { name: "itemIndex", type: "uint256" },
-        ],
-      },
-      { name: "fulfillerConduitKey", type: "bytes32" },
-      { name: "maximumFulfilled", type: "uint256" },
-    ],
-    outputs: [
-      { name: "availableOrders", type: "bool[]" },
-      {
-        name: "executions",
-        type: "tuple[]",
-        components: [
-          {
-            name: "item",
-            type: "tuple",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifier", type: "uint256" },
-              { name: "amount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "offerer", type: "address" },
-          { name: "conduitKey", type: "bytes32" },
-        ],
-      },
-    ],
-  },
-  {
-    type: "function",
-    name: "fulfillAvailableAdvancedOrders",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "advancedOrders",
-        type: "tuple[]",
-        components: [
-          {
-            name: "parameters",
-            type: "tuple",
-            components: [
-              { name: "offerer", type: "address" },
-              { name: "zone", type: "address" },
-              {
-                name: "offer",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                ],
-              },
-              {
-                name: "consideration",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                  { name: "recipient", type: "address" },
-                ],
-              },
-              { name: "orderType", type: "uint8" },
-              { name: "startTime", type: "uint256" },
-              { name: "endTime", type: "uint256" },
-              { name: "zoneHash", type: "bytes32" },
-              { name: "salt", type: "uint256" },
-              { name: "conduitKey", type: "bytes32" },
-              { name: "totalOriginalConsiderationItems", type: "uint256" },
-            ],
-          },
-          { name: "numerator", type: "uint120" },
-          { name: "denominator", type: "uint120" },
-          { name: "signature", type: "bytes" },
-          { name: "extraData", type: "bytes" },
-        ],
-      },
-      {
-        name: "criteriaResolvers",
-        type: "tuple[]",
-        components: [
-          { name: "orderIndex", type: "uint256" },
-          { name: "side", type: "uint8" },
-          { name: "index", type: "uint256" },
-          { name: "identifier", type: "uint256" },
-          { name: "criteriaProof", type: "bytes32[]" },
-        ],
-      },
-      {
-        name: "offerFulfillments",
-        type: "tuple[][]",
-        components: [
-          { name: "orderIndex", type: "uint256" },
-          { name: "itemIndex", type: "uint256" },
-        ],
-      },
-      {
-        name: "considerationFulfillments",
-        type: "tuple[][]",
-        components: [
-          { name: "orderIndex", type: "uint256" },
-          { name: "itemIndex", type: "uint256" },
-        ],
-      },
-      { name: "fulfillerConduitKey", type: "bytes32" },
-      { name: "recipient", type: "address" },
-      { name: "maximumFulfilled", type: "uint256" },
-    ],
-    outputs: [
-      { name: "availableOrders", type: "bool[]" },
-      {
-        name: "executions",
-        type: "tuple[]",
-        components: [
-          {
-            name: "item",
-            type: "tuple",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifier", type: "uint256" },
-              { name: "amount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "offerer", type: "address" },
-          { name: "conduitKey", type: "bytes32" },
-        ],
-      },
-    ],
-  },
-  {
-    type: "function",
-    name: "cancel",
-    stateMutability: "nonpayable",
-    inputs: [
-      {
-        name: "orders",
-        type: "tuple[]",
-        components: [
-          { name: "offerer", type: "address" },
-          { name: "zone", type: "address" },
-          {
-            name: "offer",
-            type: "tuple[]",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifierOrCriteria", type: "uint256" },
-              { name: "startAmount", type: "uint256" },
-              { name: "endAmount", type: "uint256" },
-            ],
-          },
-          {
-            name: "consideration",
-            type: "tuple[]",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifierOrCriteria", type: "uint256" },
-              { name: "startAmount", type: "uint256" },
-              { name: "endAmount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "orderType", type: "uint8" },
-          { name: "startTime", type: "uint256" },
-          { name: "endTime", type: "uint256" },
-          { name: "zoneHash", type: "bytes32" },
-          { name: "salt", type: "uint256" },
-          { name: "conduitKey", type: "bytes32" },
-          { name: "counter", type: "uint256" },
-        ],
-      },
-    ],
-    outputs: [{ name: "cancelled", type: "bool" }],
-  },
-  {
-    type: "function",
-    name: "incrementCounter",
-    stateMutability: "nonpayable",
-    inputs: [],
-    outputs: [{ name: "newCounter", type: "uint256" }],
-  },
-  {
-    type: "function",
-    name: "getOrderStatus",
-    stateMutability: "view",
-    inputs: [{ name: "orderHash", type: "bytes32" }],
-    outputs: [
-      { name: "isValidated", type: "bool" },
-      { name: "isCancelled", type: "bool" },
-      { name: "totalFilled", type: "uint256" },
-      { name: "totalSize", type: "uint256" },
-    ],
-  },
-  {
-    type: "function",
-    name: "matchOrders",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "orders",
-        type: "tuple[]",
-        components: [
-          {
-            name: "parameters",
-            type: "tuple",
-            components: [
-              { name: "offerer", type: "address" },
-              { name: "zone", type: "address" },
-              {
-                name: "offer",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                ],
-              },
-              {
-                name: "consideration",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                  { name: "recipient", type: "address" },
-                ],
-              },
-              { name: "orderType", type: "uint8" },
-              { name: "startTime", type: "uint256" },
-              { name: "endTime", type: "uint256" },
-              { name: "zoneHash", type: "bytes32" },
-              { name: "salt", type: "uint256" },
-              { name: "conduitKey", type: "bytes32" },
-              { name: "totalOriginalConsiderationItems", type: "uint256" },
-            ],
-          },
-          { name: "signature", type: "bytes" },
-        ],
-      },
-      {
-        name: "fulfillments",
-        type: "tuple[]",
-        components: [
-          {
-            name: "offerComponents",
-            type: "tuple[]",
-            components: [
-              { name: "orderIndex", type: "uint256" },
-              { name: "itemIndex", type: "uint256" },
-            ],
-          },
-          {
-            name: "considerationComponents",
-            type: "tuple[]",
-            components: [
-              { name: "orderIndex", type: "uint256" },
-              { name: "itemIndex", type: "uint256" },
-            ],
-          },
-        ],
-      },
-    ],
-    outputs: [
-      {
-        name: "executions",
-        type: "tuple[]",
-        components: [
-          {
-            name: "item",
-            type: "tuple",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifier", type: "uint256" },
-              { name: "amount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "offerer", type: "address" },
-          { name: "conduitKey", type: "bytes32" },
-        ],
-      },
-    ],
-  },
-  {
-    type: "function",
-    name: "matchAdvancedOrders",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "orders",
-        type: "tuple[]",
-        components: [
-          {
-            name: "parameters",
-            type: "tuple",
-            components: [
-              { name: "offerer", type: "address" },
-              { name: "zone", type: "address" },
-              {
-                name: "offer",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                ],
-              },
-              {
-                name: "consideration",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                  { name: "recipient", type: "address" },
-                ],
-              },
-              { name: "orderType", type: "uint8" },
-              { name: "startTime", type: "uint256" },
-              { name: "endTime", type: "uint256" },
-              { name: "zoneHash", type: "bytes32" },
-              { name: "salt", type: "uint256" },
-              { name: "conduitKey", type: "bytes32" },
-              { name: "totalOriginalConsiderationItems", type: "uint256" },
-            ],
-          },
-          { name: "numerator", type: "uint120" },
-          { name: "denominator", type: "uint120" },
-          { name: "signature", type: "bytes" },
-          { name: "extraData", type: "bytes" },
-        ],
-      },
-      {
-        name: "criteriaResolvers",
-        type: "tuple[]",
-        components: [
-          { name: "orderIndex", type: "uint256" },
-          { name: "side", type: "uint8" },
-          { name: "index", type: "uint256" },
-          { name: "identifier", type: "uint256" },
-          { name: "criteriaProof", type: "bytes32[]" },
-        ],
-      },
-      {
-        name: "fulfillments",
-        type: "tuple[]",
-        components: [
-          {
-            name: "offerComponents",
-            type: "tuple[]",
-            components: [
-              { name: "orderIndex", type: "uint256" },
-              { name: "itemIndex", type: "uint256" },
-            ],
-          },
-          {
-            name: "considerationComponents",
-            type: "tuple[]",
-            components: [
-              { name: "orderIndex", type: "uint256" },
-              { name: "itemIndex", type: "uint256" },
-            ],
-          },
-        ],
-      },
-      { name: "recipient", type: "address" },
-    ],
-    outputs: [
-      {
-        name: "executions",
-        type: "tuple[]",
-        components: [
-          {
-            name: "item",
-            type: "tuple",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifier", type: "uint256" },
-              { name: "amount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "offerer", type: "address" },
-          { name: "conduitKey", type: "bytes32" },
-        ],
-      },
-    ],
-  },
-  {
-    type: "function",
-    name: "validate",
-    stateMutability: "nonpayable",
-    inputs: [
-      {
-        name: "orders",
-        type: "tuple[]",
-        components: [
-          {
-            name: "parameters",
-            type: "tuple",
-            components: [
-              { name: "offerer", type: "address" },
-              { name: "zone", type: "address" },
-              {
-                name: "offer",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                ],
-              },
-              {
-                name: "consideration",
-                type: "tuple[]",
-                components: [
-                  { name: "itemType", type: "uint8" },
-                  { name: "token", type: "address" },
-                  { name: "identifierOrCriteria", type: "uint256" },
-                  { name: "startAmount", type: "uint256" },
-                  { name: "endAmount", type: "uint256" },
-                  { name: "recipient", type: "address" },
-                ],
-              },
-              { name: "orderType", type: "uint8" },
-              { name: "startTime", type: "uint256" },
-              { name: "endTime", type: "uint256" },
-              { name: "zoneHash", type: "bytes32" },
-              { name: "salt", type: "uint256" },
-              { name: "conduitKey", type: "bytes32" },
-              { name: "totalOriginalConsiderationItems", type: "uint256" },
-            ],
-          },
-          { name: "signature", type: "bytes" },
-        ],
-      },
-    ],
-    outputs: [{ name: "validated", type: "bool" }],
-  },
+  getCounterAbiItem,
+  getOrderHashAbiItem,
+  fulfillBasicOrderAbiItem,
+  fulfillOrderAbiItem,
+  fulfillAdvancedOrderAbiItem,
+  fulfillAvailableOrdersAbiItem,
+  fulfillAvailableAdvancedOrdersAbiItem,
+  cancelAbiItem,
+  incrementCounterAbiItem,
+  getOrderStatusAbiItem,
+  matchOrdersAbiItem,
+  matchAdvancedOrdersAbiItem,
+  validateAbiItem,
 ] as const satisfies Abi;
 
 /** Seaport event ABI definitions for typed log parsing. */

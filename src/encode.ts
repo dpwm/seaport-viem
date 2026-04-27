@@ -8,7 +8,21 @@ import type {
   FulfillmentComponent,
   Fulfillment,
 } from "./types";
-import { seaportAbi } from "./constants";
+import {
+  getCounterAbiItem,
+  getOrderHashAbiItem,
+  fulfillBasicOrderAbiItem,
+  fulfillOrderAbiItem,
+  fulfillAdvancedOrderAbiItem,
+  fulfillAvailableOrdersAbiItem,
+  fulfillAvailableAdvancedOrdersAbiItem,
+  cancelAbiItem,
+  incrementCounterAbiItem,
+  getOrderStatusAbiItem,
+  matchOrdersAbiItem,
+  matchAdvancedOrdersAbiItem,
+  validateAbiItem,
+} from "./constants";
 
 const UINT120_MAX = (1n << 120n) - 1n;
 
@@ -19,7 +33,7 @@ const UINT120_MAX = (1n << 120n) - 1n;
  */
 export function encodeGetCounter(offerer: `0x${string}`): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [getCounterAbiItem],
     functionName: "getCounter",
     args: [offerer],
   });
@@ -34,7 +48,7 @@ export function encodeGetOrderHash(
   orderComponents: OrderComponents,
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [getOrderHashAbiItem],
     functionName: "getOrderHash",
     args: [orderComponents],
   });
@@ -49,7 +63,7 @@ export function encodeFulfillBasicOrder(
   params: BasicOrderParameters,
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [fulfillBasicOrderAbiItem],
     functionName: "fulfillBasicOrder",
     args: [params],
   });
@@ -66,7 +80,7 @@ export function encodeFulfillOrder(
   fulfillerConduitKey: `0x${string}`,
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [fulfillOrderAbiItem],
     functionName: "fulfillOrder",
     args: [order, fulfillerConduitKey],
   });
@@ -90,7 +104,7 @@ export function encodeFulfillAdvancedOrder(
   checkUint120(advancedOrder.numerator, "numerator");
   checkUint120(advancedOrder.denominator, "denominator");
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [fulfillAdvancedOrderAbiItem],
     functionName: "fulfillAdvancedOrder",
     args: [advancedOrder, criteriaResolvers, fulfillerConduitKey, recipient],
   });
@@ -113,7 +127,7 @@ export function encodeFulfillAvailableOrders(
   maximumFulfilled: bigint,
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [fulfillAvailableOrdersAbiItem],
     functionName: "fulfillAvailableOrders",
     args: [
       orders,
@@ -151,7 +165,7 @@ export function encodeFulfillAvailableAdvancedOrders(
     checkUint120(order.denominator, "denominator");
   }
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [fulfillAvailableAdvancedOrdersAbiItem],
     functionName: "fulfillAvailableAdvancedOrders",
     args: [
       advancedOrders,
@@ -174,7 +188,7 @@ export function encodeCancel(
   orders: OrderComponents[],
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [cancelAbiItem],
     functionName: "cancel",
     args: [orders],
   });
@@ -186,7 +200,7 @@ export function encodeCancel(
  */
 export function encodeIncrementCounter(): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [incrementCounterAbiItem],
     functionName: "incrementCounter",
   });
 }
@@ -200,7 +214,7 @@ export function encodeGetOrderStatus(
   orderHash: `0x${string}`,
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [getOrderStatusAbiItem],
     functionName: "getOrderStatus",
     args: [orderHash],
   });
@@ -217,7 +231,7 @@ export function encodeMatchOrders(
   fulfillments: Fulfillment[],
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [matchOrdersAbiItem],
     functionName: "matchOrders",
     args: [orders, fulfillments],
   });
@@ -243,7 +257,7 @@ export function encodeMatchAdvancedOrders(
     checkUint120(order.denominator, "denominator");
   }
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [matchAdvancedOrdersAbiItem],
     functionName: "matchAdvancedOrders",
     args: [advancedOrders, criteriaResolvers, fulfillments, recipient],
   });
@@ -258,7 +272,7 @@ export function encodeValidate(
   orders: { parameters: OrderParameters; signature: `0x${string}` }[],
 ): `0x${string}` {
   return encodeFunctionData({
-    abi: seaportAbi,
+    abi: [validateAbiItem],
     functionName: "validate",
     args: [orders],
   });

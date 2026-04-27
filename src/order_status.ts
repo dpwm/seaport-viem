@@ -1,7 +1,7 @@
 import type { PublicClient } from "viem";
 import { decodeFunctionResult, BaseError } from "viem";
 import type { SeaportContext, OrderStatus } from "./types";
-import { seaportAbi } from "./constants";
+import { getOrderStatusAbiItem } from "./constants";
 import { encodeGetOrderStatus } from "./encode";
 import { validateSeaportContext } from "./validate";
 
@@ -37,7 +37,7 @@ export async function getOrderStatus(
     }
     const [isValidated, isCancelled, totalFilled, totalSize] =
       decodeFunctionResult({
-        abi: seaportAbi,
+        abi: [getOrderStatusAbiItem],
         functionName: "getOrderStatus",
         data: result.data,
       });

@@ -1,7 +1,7 @@
 import type { PublicClient } from "viem";
 import { decodeFunctionResult, BaseError } from "viem";
 import type { SeaportContext } from "./types";
-import { seaportAbi } from "./constants";
+import { getCounterAbiItem } from "./constants";
 import { encodeGetCounter } from "./encode";
 import { validateSeaportContext } from "./validate";
 
@@ -39,7 +39,7 @@ export async function getCounter(
       );
     }
     return decodeFunctionResult({
-      abi: seaportAbi,
+      abi: [getCounterAbiItem],
       functionName: "getCounter",
       data: result.data,
     });
