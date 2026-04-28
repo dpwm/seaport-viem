@@ -5,6 +5,7 @@ import type {
   ReceivedItem,
   OrderParameters,
 } from "./types";
+import { SeaportValidationError } from "./errors";
 
 // ── Event argument types ────────────────────────────────────
 
@@ -165,5 +166,5 @@ export function decodeSeaportEvent(log: Log): SeaportEventArgs {
     return { eventName: "CounterIncremented" as const, ...args };
   }
 
-  throw new Error(`Unknown Seaport event topic: ${topic}`);
+  throw new SeaportValidationError(`Unknown Seaport event topic: ${topic}`);
 }

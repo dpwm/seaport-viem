@@ -20,6 +20,7 @@ import {
 } from "./constants";
 import { hashOrderComponentsStruct } from "./signature";
 import { getEmptyOrderComponents } from "./order";
+import { SeaportValidationError } from "./errors";
 
 /**
  * Compute the merkle tree height for a given number of orders.
@@ -29,7 +30,7 @@ import { getEmptyOrderComponents } from "./order";
  */
 export function computeHeight(orderCount: number): number {
   if (orderCount < 1) {
-    throw new Error(
+    throw new SeaportValidationError(
       `orderCount must be at least 1, got ${orderCount}`,
     );
   }
@@ -38,7 +39,7 @@ export function computeHeight(orderCount: number): number {
     Math.ceil(Math.log2(orderCount)),
   );
   if (height > BULK_ORDER_HEIGHT_MAX) {
-    throw new Error(
+    throw new SeaportValidationError(
       `orderCount (${orderCount}) exceeds maximum bulk order capacity (${2 ** BULK_ORDER_HEIGHT_MAX})`,
     );
   }
@@ -56,7 +57,7 @@ export function padLeaves(
   leaves: `0x${string}`[],
 ): `0x${string}`[] {
   if (leaves.length === 0) {
-    throw new Error("Cannot pad an empty leaf array");
+    throw new SeaportValidationError("Cannot pad an empty leaf array");
   }
   const padded = [...leaves];
   const emptyHash = hashOrderComponentsStruct(getEmptyOrderComponents());
@@ -79,13 +80,13 @@ export function padLeaves(
  */
 export function buildBulkOrderTree(leaves: `0x${string}`[]): `0x${string}`[][] {
   if (leaves.length === 0) {
-    throw new Error("Cannot build a tree from zero leaves");
+    throw new SeaportValidationError("Cannot build a tree from zero leaves");
   }
 
   if ((leaves.length & (leaves.length - 1)) !== 0) {
     const height = computeHeight(leaves.length);
     const capacity = 2 ** height;
-    throw new Error(
+    throw new SeaportValidationError(
       `Leaves must be padded to a power of 2. Expected ${capacity}, got ${leaves.length}. Use padLeaves() first.`,
     );
   }
@@ -113,7 +114,7 @@ export function buildBulkOrderTree(leaves: `0x${string}`[]): `0x${string}`[][] {
  */
 export function getBulkOrderTypeString(height: number): string {
   if (height < BULK_ORDER_HEIGHT_MIN || height > BULK_ORDER_HEIGHT_MAX) {
-    throw new Error(
+    throw new SeaportValidationError(
       `Height must be between ${BULK_ORDER_HEIGHT_MIN} and ${BULK_ORDER_HEIGHT_MAX}, got ${height}`,
     );
   }
@@ -170,7 +171,7 @@ export function getProof(
   index: number,
 ): `0x${string}`[] {
   if (index < 0 || index >= (layers[0]?.length ?? 0)) {
-    throw new Error(`Index ${index} out of range for tree with ${layers[0]?.length ?? 0} leaves`);
+    throw new SeaportValidationError(`Index ${index} out of range for tree with ${layers[0]?.length ?? 0} leaves`);
   }
 
   const proof: `0x${string}`[] = [];
@@ -200,19 +201,19 @@ export function packBulkSignature(
   proof: `0x${string}`[],
 ): `0x${string}` {
   if (proof.length < 1) {
-    throw new Error(
+    throw new SeaportValidationError(
       "Bulk order signature must include at least one proof element",
     );
   }
 
   if (proof.length > BULK_ORDER_HEIGHT_MAX) {
-    throw new Error(
+    throw new SeaportValidationError(
       `Proof height (${proof.length}) exceeds maximum bulk order height (${BULK_ORDER_HEIGHT_MAX})`,
     );
   }
 
   if (orderIndex < 0 || orderIndex > 0xffffff) {
-    throw new Error(
+    throw new SeaportValidationError(
       `orderIndex must fit in 3 bytes (0–16777215), got ${orderIndex}`,
     );
   }
@@ -244,14 +245,14 @@ export function unpackBulkSignature(packed: `0x${string}`): {
   const bytes = toBytes(packed);
 
   if (bytes.length < 67) {
-    throw new Error(
+    throw new SeaportValidationError(
       `Packed signature too short: expected at least 67 bytes, got ${bytes.length}`,
     );
   }
 
   const remainder = (bytes.length - 67) % 32;
   if (remainder !== 0) {
-    throw new Error(
+    throw new SeaportValidationError(
       `Packed signature has invalid length: proof must be a multiple of 32 bytes`,
     );
   }
@@ -259,13 +260,13 @@ export function unpackBulkSignature(packed: `0x${string}`): {
   const height = (bytes.length - 67) / 32;
 
   if (height < 1) {
-    throw new Error(
+    throw new SeaportValidationError(
       "Packed signature must include at least one proof element",
     );
   }
 
   if (height > BULK_ORDER_HEIGHT_MAX) {
-    throw new Error(
+    throw new SeaportValidationError(
       `Packed signature height (${height}) exceeds maximum bulk order height (${BULK_ORDER_HEIGHT_MAX})`,
     );
   }

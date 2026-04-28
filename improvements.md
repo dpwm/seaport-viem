@@ -76,15 +76,16 @@ combinations. The subpath import `seaport-viem/order` already works.
 
 ### 7. No custom error types — consumers can't catch specific errors
 
-Every error is `throw new Error("message")`. Programmatic error discrimination
-requires string-matching on `.message`. Consider adding named error classes:
+**Fixed**: Three named error classes have been added in `src/errors.ts`:
+- `SeaportValidationError` — for input validation failures throughout the library
+- `SeaportEncodingError` — for `checkUint120` overflow and encoding failures
+- `SeaportCallError` — for `safeCall` on-chain read failures
 
-- `SeaportValidationError` — for `validateOrderComponents` / `validateSeaportContext` failures
-- `SeaportEncodingError` — for `checkUint120` / malformed inputs
-- `SeaportCallError` — for `safeCall` failures
-
-This lets consumers write `if (err instanceof SeaportValidationError)` instead
-of fragile `.message.includes(...)` checks.
+All `throw new Error("message")` call sites have been updated to use the
+appropriate error class. The errors are exported from the barrel so consumers
+can write `if (err instanceof SeaportValidationError)` instead of fragile
+`.message.includes(...)` checks. A `SeaportError` base class is also exported
+for catching any Seaport-specific error in one handler.
 
 ### 8. `hashOrderComponentsStruct` encodes struct layout independently of `EIP712_TYPES`
 

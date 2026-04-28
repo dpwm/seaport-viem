@@ -1,6 +1,7 @@
 import type { OrderComponents, SeaportContext, FulfillmentData } from "./types";
 import { encodeCancel } from "./encode";
 import { requireValidContext } from "./validate";
+import { SeaportValidationError } from "./errors";
 
 /**
  * Build a transaction to cancel one or more Seaport orders.
@@ -17,7 +18,7 @@ export function buildCancel(
   requireValidContext(ctx);
 
   if (orders.length === 0) {
-    throw new Error("At least one order must be provided to cancel");
+    throw new SeaportValidationError("At least one order must be provided to cancel");
   }
 
   return {

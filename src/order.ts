@@ -33,6 +33,7 @@ import {
   checkUint120,
 } from "./encode";
 import { requireValidContext } from "./validate";
+import { SeaportValidationError } from "./errors";
 
 /**
  * Convert a high-level Order into the flat BasicOrderParameters needed by
@@ -52,11 +53,11 @@ export function toBasicOrderParameters(
   tips: AdditionalRecipient[] = [],
 ): BasicOrderParameters {
   if (order.parameters.offer.length !== 1) {
-    throw new Error("Basic orders require exactly one offer item");
+    throw new SeaportValidationError("Basic orders require exactly one offer item");
   }
 
   if (order.parameters.consideration.length < 1) {
-    throw new Error("Order must have at least one consideration item");
+    throw new SeaportValidationError("Order must have at least one consideration item");
   }
 
   // biome-ignore lint/style/noNonNullAssertion: guarded by length checks above
@@ -122,7 +123,7 @@ export function buildBasicOrderFulfillment(
 
   const routeType = options.routeType ?? detectBasicOrderRouteType(order);
   if (routeType === null) {
-    throw new Error("Order does not qualify for basic order fulfillment");
+    throw new SeaportValidationError("Order does not qualify for basic order fulfillment");
   }
 
   const params = toBasicOrderParameters(
@@ -477,7 +478,7 @@ export function buildFulfillAvailableOrders(
   requireValidContext(ctx);
 
   if (maximumFulfilled > BigInt(orders.length)) {
-    throw new Error(
+    throw new SeaportValidationError(
       `maximumFulfilled (${maximumFulfilled}) exceeds orders length (${orders.length})`,
     );
   }
@@ -531,7 +532,7 @@ export function buildFulfillAvailableAdvancedOrders(
   }
 
   if (maximumFulfilled > BigInt(advancedOrders.length)) {
-    throw new Error(
+    throw new SeaportValidationError(
       `maximumFulfilled (${maximumFulfilled}) exceeds advanced orders length (${advancedOrders.length})`,
     );
   }

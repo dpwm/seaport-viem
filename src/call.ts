@@ -1,5 +1,6 @@
 import type { PublicClient } from "viem";
 import { BaseError } from "viem";
+import { SeaportCallError } from "./errors";
 
 /**
  * Perform a static call via a viem `PublicClient` with standardized error
@@ -36,7 +37,7 @@ export async function safeCall(
   try {
     const result = await client.call(params);
     if (result.data === undefined || result.data === "0x") {
-      throw new Error(`${fnLabel} returned no data ${details}`);
+      throw new SeaportCallError(`${fnLabel} returned no data ${details}`);
     }
     return result.data;
   } catch (error: unknown) {
@@ -45,11 +46,11 @@ export async function safeCall(
       throw error;
     }
     if (error instanceof BaseError) {
-      throw new Error(
+      throw new SeaportCallError(
         `Failed to ${actionLabel} ${details}: ${error.shortMessage ?? error.message}`,
       );
     }
-    throw new Error(
+    throw new SeaportCallError(
       `Failed to ${actionLabel} ${details}: ${error instanceof Error ? error.message : String(error)}`,
     );
   }

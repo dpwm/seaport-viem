@@ -8,6 +8,7 @@ import type {
   FulfillmentComponent,
   Fulfillment,
 } from "./types";
+import { SeaportEncodingError } from "./errors";
 import {
   getCounterAbiItem,
   getOrderHashAbiItem,
@@ -288,7 +289,7 @@ export function encodeValidate(
  */
 export function checkUint120(value: bigint, name: string): void {
   if (value < 0n || value > UINT120_MAX) {
-    throw new Error(
+    throw new SeaportEncodingError(
       `${name} must be a uint120 (0 to ${UINT120_MAX}), got ${value}`,
     );
   }

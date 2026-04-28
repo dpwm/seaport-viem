@@ -2,6 +2,7 @@ import { isAddress } from "viem";
 import type { SeaportContext, OrderComponents, OrderParameters, FulfillmentData, ValidationResult } from "./types";
 import { ItemType } from "./types";
 import { encodeValidate } from "./encode";
+import { SeaportValidationError } from "./errors";
 
 const VALID_ITEM_TYPES = new Set<number>(Object.values(ItemType));
 
@@ -88,7 +89,7 @@ export function validateSeaportContext(
 export function requireValidContext(ctx: SeaportContext): void {
   const result = validateSeaportContext(ctx);
   if (!result.valid) {
-    throw new Error(result.reason);
+    throw new SeaportValidationError(result.reason);
   }
 }
 
@@ -190,7 +191,7 @@ export function buildValidate(
   requireValidContext(ctx);
 
   if (orders.length === 0) {
-    throw new Error("At least one order must be provided to validate");
+    throw new SeaportValidationError("At least one order must be provided to validate");
   }
 
   return {

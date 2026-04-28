@@ -1,3 +1,6 @@
+// Custom error classes
+export { SeaportError, SeaportValidationError, SeaportEncodingError, SeaportCallError } from "./errors";
+
 // Types
 export type {
   SeaportContext,
