@@ -1,7 +1,23 @@
 import { describe, expect, test } from "bun:test";
 import { keccak256, stringToHex, encodeAbiParameters } from "viem";
-import { hashOrderComponents, hashOrderComponentsStruct, ORDER_COMPONENTS_TYPE_STRING, CONSIDERATION_ITEM_TYPE_STRING, OFFER_ITEM_TYPE_STRING, OFFER_ITEM_COMPONENTS, CONSIDERATION_ITEM_COMPONENTS } from "./index";
-import { ctx, makeOrderComponents, makeOfferItem, makeConsiderationItem } from "./test-fixtures";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import {
+  hashOrderComponents,
+  hashOrderComponentsStruct,
+  verifyOrderSignature,
+  ORDER_COMPONENTS_TYPE_STRING,
+  CONSIDERATION_ITEM_TYPE_STRING,
+  OFFER_ITEM_TYPE_STRING,
+  OFFER_ITEM_COMPONENTS,
+  CONSIDERATION_ITEM_COMPONENTS,
+  EIP712_TYPES,
+} from "./index";
+import {
+  ctx,
+  makeOrderComponents,
+  makeOfferItem,
+  makeConsiderationItem,
+} from "./test-fixtures";
 
 describe("hashOrderComponents", () => {
   test("returns a bytes32 hash", () => {
@@ -167,5 +183,88 @@ describe("hashOrderComponentsStruct", () => {
     expect(hash).toBe(
       "0x166aa709fe9872b896c844105f71b17a764211eef7c9df6c89e3356bb39218e7",
     );
+  });
+});
+
+// ── verifyOrderSignature ─────────────────────────────────────
+
+describe("verifyOrderSignature", () => {
+  async function makeSignedOrder() {
+    const pk = generatePrivateKey();
+    const account = privateKeyToAccount(pk);
+    const components = makeOrderComponents({
+      offerer: account.address,
+      consideration: [
+        {
+          itemType: 0, // NATIVE
+          token: "0x0000000000000000000000000000000000000000" as const,
+          identifierOrCriteria: 0n,
+          startAmount: 1000000000000000000n,
+          endAmount: 1000000000000000000n,
+          recipient: account.address,
+        },
+      ],
+    });
+    const signature = await account.signTypedData({
+      domain: ctx.domain,
+      types: EIP712_TYPES,
+      primaryType: "OrderComponents",
+      message: components,
+    });
+    return { components, signature, account };
+  }
+
+  test("returns true for a valid signature", async () => {
+    const { components, signature } = await makeSignedOrder();
+    const result = await verifyOrderSignature(ctx, {
+      parameters: components,
+      signature,
+    });
+    expect(result).toBe(true);
+  });
+
+  test("returns false for a tampered signature", async () => {
+    const { components, signature } = await makeSignedOrder();
+    // Corrupt the s component (bytes 32-63) but keep the recovery byte (byte 64)
+    // intact so viem can parse the signature format before the crypto check fails
+    // and returns false via the /signature (invalid|mismatch)/ catch.
+    // signature is "0x" + r(64 hex) + s(64 hex) + v(2 hex) = 132 chars
+    const corrupted = (signature.slice(0, 66) + "ab".repeat(32) + signature.slice(130)) as `0x${string}`;
+    const result = await verifyOrderSignature(ctx, {
+      parameters: components,
+      signature: corrupted,
+    });
+    expect(result).toBe(false);
+  });
+
+  test("returns false for a signature from a different offerer", async () => {
+    const { components, signature } = await makeSignedOrder();
+    // Use a different offerer than who signed
+    const modified = { ...components, offerer: "0xbbbb000000000000000000000000000000000002" as `0x${string}` };
+    const result = await verifyOrderSignature(ctx, {
+      parameters: modified,
+      signature,
+    });
+    expect(result).toBe(false);
+  });
+
+  test("returns false when order data differs from signed data", async () => {
+    const { components, signature } = await makeSignedOrder();
+    const modified = { ...components, salt: 999n };
+    const result = await verifyOrderSignature(ctx, {
+      parameters: modified,
+      signature,
+    });
+    expect(result).toBe(false);
+  });
+
+  test("throws for invalid context", async () => {
+    const { components, signature } = await makeSignedOrder();
+    await expect(
+      verifyOrderSignature(
+        { address: "0xinvalid" as `0x${string}`, domain: {} },
+        { parameters: components, signature },
+      ),
+    ).rejects.toThrow();
   });
 });

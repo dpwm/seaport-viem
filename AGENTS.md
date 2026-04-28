@@ -54,7 +54,6 @@ Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { .
 - Tests import from `./index` (the barrel), not individual modules.
 - Shared fixtures live in `src/test-fixtures.ts`: `makeOrder()`, `makeOrderComponents()`, `makeOfferItem()`, `makeConsiderationItem()` — all accept partial overrides.
 - Addresses in fixtures must be valid 20-byte hex (40 hex chars after `0x`). viem rejects fake addresses like `0xAlice...`.
-- `verifyOrderSignature` is not unit-tested (needs mocking or a live client).
 
 ## What the library does NOT cover
 

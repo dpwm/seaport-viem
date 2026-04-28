@@ -23,6 +23,23 @@ is now in the `entry` array in `tsup.config.ts`.
 
 ---
 
+### 1. `verifyOrderSignature` not unit-tested
+
+**Fixed**: Tests have been added to `src/signature.test.ts` under
+describe(`"verifyOrderSignature"`) that cover:
+- Valid signature returns `true` (signs real EIP-712 typed data with a generated
+  private key via `account.signTypedData()`)
+- Tampered signature returns `false` (corrupted s component, valid recovery byte)
+- Signature from a different offerer returns `false`
+- Modified order data returns `false`
+- Invalid context throws
+
+Uses `generatePrivateKey` and `privateKeyToAccount` from `viem/accounts` to
+produce a real secp256k1 key pair per test run — no external signing service
+or live chain required.
+
+---
+
 ## Should fix
 
 ### 2. No tests for `call.ts`, `counter.ts`, or `order_status.ts`
