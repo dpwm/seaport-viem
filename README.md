@@ -107,13 +107,13 @@ const counter = await getCounter(client, ctx, offerer);   // bigint
 ### Call helper
 
 ```ts
-import { safeCall } from "seaport-viem/call";
+import { seaportCall } from "seaport-viem/call";
 
 // Perform a static on-chain call with standardized Seaport error wrapping
-const data = await safeCall(client, params, "getCounter", "fetch counter", "for offerer 0x...");
+const data = await seaportCall(client, params, "getCounter", "fetch counter", "for offerer 0x...");
 ```
 
-`safeCall` wraps viem's `client.call` with consistent error messages for Seaport on-chain reads. It handles no-data responses, viem `BaseError` exceptions, and unexpected thrown values.
+`seaportCall` wraps viem's `client.call` with consistent error messages for Seaport on-chain reads. It handles no-data responses, viem `BaseError` exceptions, and unexpected thrown values.
 
 ### Cancel
 

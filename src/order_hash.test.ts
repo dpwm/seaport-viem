@@ -76,7 +76,7 @@ describe("getOrderHash", () => {
     await expect(getOrderHash(client, badCtx, components)).rejects.toThrow();
   });
 
-  test("propagates safeCall errors", async () => {
+  test("propagates seaportCall errors", async () => {
     const client = mockClient(async () => {
       throw new Error("network error");
     });

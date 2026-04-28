@@ -44,7 +44,7 @@ export class SeaportEncodingError extends SeaportError {
 }
 
 /**
- * Thrown when an on-chain call via `safeCall` fails.
+ * Thrown when an on-chain call via `seaportCall` fails.
  *
  * Covers:
  * - RPC errors / contract reverts (wrapped from viem `BaseError`)

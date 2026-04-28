@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { BaseError, type PublicClient } from "viem";
-import { safeCall } from "./index";
+import { seaportCall } from "./index";
 
 type MockCall = (params: {
   to: `0x${string}`;
@@ -11,10 +11,10 @@ function mockClient(callImpl: MockCall): PublicClient {
   return { call: callImpl } as unknown as PublicClient;
 }
 
-describe("safeCall", () => {
+describe("seaportCall", () => {
   test("returns result data on success", async () => {
     const client = mockClient(async () => ({ data: "0xdeadbeef" }));
-    const result = await safeCall(
+    const result = await seaportCall(
       client,
       { to: "0x0000000000000000000000000000000000000001", data: "0x" },
       "testFn",
@@ -27,7 +27,7 @@ describe("safeCall", () => {
   test("throws when result data is undefined", async () => {
     const client = mockClient(async () => ({}));
     await expect(
-      safeCall(
+      seaportCall(
         client,
         { to: "0x0000000000000000000000000000000000000001", data: "0x" },
         "testFn",
@@ -40,7 +40,7 @@ describe("safeCall", () => {
   test("throws when result data is 0x", async () => {
     const client = mockClient(async () => ({ data: "0x" }));
     await expect(
-      safeCall(
+      seaportCall(
         client,
         { to: "0x0000000000000000000000000000000000000001", data: "0x" },
         "testFn",
@@ -55,7 +55,7 @@ describe("safeCall", () => {
       throw new BaseError("RPC connection failed");
     });
     await expect(
-      safeCall(
+      seaportCall(
         client,
         { to: "0x0000000000000000000000000000000000000001", data: "0x" },
         "testFn",
@@ -70,7 +70,7 @@ describe("safeCall", () => {
       throw new Error("something broke");
     });
     await expect(
-      safeCall(
+      seaportCall(
         client,
         { to: "0x0000000000000000000000000000000000000001", data: "0x" },
         "testFn",
@@ -85,7 +85,7 @@ describe("safeCall", () => {
       throw "string error";
     });
     await expect(
-      safeCall(
+      seaportCall(
         client,
         { to: "0x0000000000000000000000000000000000000001", data: "0x" },
         "testFn",
@@ -100,7 +100,7 @@ describe("safeCall", () => {
       throw new Error("testFn returned no data details");
     });
     await expect(
-      safeCall(
+      seaportCall(
         client,
         { to: "0x0000000000000000000000000000000000000001", data: "0x" },
         "testFn",
@@ -110,7 +110,7 @@ describe("safeCall", () => {
     ).rejects.toThrow("testFn returned no data details");
     // Must NOT contain the "Failed to test action" prefix
     await expect(
-      safeCall(
+      seaportCall(
         client,
         { to: "0x0000000000000000000000000000000000000001", data: "0x" },
         "testFn",
@@ -128,7 +128,7 @@ describe("safeCall", () => {
     });
     const to = "0x0000000000000000000000000000000000000001" as const;
     const data = "0xabcdef" as const;
-    await safeCall(client, { to, data }, "fn", "action", "details");
+    await seaportCall(client, { to, data }, "fn", "action", "details");
     expect(capturedParams).toEqual({ to, data });
   });
 });

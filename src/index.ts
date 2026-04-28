@@ -85,8 +85,8 @@ export { verifyOrderSignature, hashOrderComponents, hashOrderComponentsStruct } 
 // Counter
 export { getCounter } from "./counter";
 
-// Safe call helper
-export { safeCall } from "./call";
+// Seaport-specific call helper
+export { seaportCall } from "./call";
 
 // Validation
 export { validateOrderComponents, validateSeaportContext, requireValidContext, buildValidate } from "./validate";

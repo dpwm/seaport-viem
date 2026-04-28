@@ -50,7 +50,7 @@ describe("getCounter", () => {
     await expect(getCounter(client, badCtx, ALICE)).rejects.toThrow();
   });
 
-  test("propagates safeCall errors", async () => {
+  test("propagates seaportCall errors", async () => {
     const client = mockClient(async () => {
       throw new Error("RPC error");
     });

@@ -36,7 +36,7 @@ covering all the required cases:
 - Generic thrown error wrapping
 - Re-throw of already-enriched errors (the `startsWith` guard)
 - Context validation errors
-- Propagated `safeCall` errors
+- Propagated `seaportCall` errors
 
 ### 3. Event ABIs defined in two places — risk of drift
 
@@ -79,7 +79,7 @@ combinations. The subpath import `seaport-viem/order` already works.
 **Fixed**: Three named error classes have been added in `src/errors.ts`:
 - `SeaportValidationError` — for input validation failures throughout the library
 - `SeaportEncodingError` — for `checkUint120` overflow and encoding failures
-- `SeaportCallError` — for `safeCall` on-chain read failures
+- `SeaportCallError` — for `seaportCall` on-chain read failures
 
 All `throw new Error("message")` call sites have been updated to use the
 appropriate error class. The errors are exported from the barrel so consumers
@@ -107,11 +107,12 @@ README.
 
 ### 10. `safeCall` function name is misleading for a Seaport-specific wrapper
 
-`safeCall` implies a general-purpose viem helper, but it's tightly coupled to
-Seaport's error message format (the `fnLabel`, `actionLabel`, `details`
-convention). If it's public API (it's exported from the barrel), consumers may
-try to use it for non-Seaport calls. Consider renaming to `seaportCall` or
-keeping it internal-only (remove from barrel exports).
+**Fixed**: Renamed `safeCall` to `seaportCall` throughout the codebase. The
+function is still publicly exported as `seaportCall` from the barrel and
+available via `seaport-viem/call`. The new name clearly communicates that
+this is Seaport-specific — consumers will not mistake it for a general-purpose
+viem helper. All internal call sites (`counter.ts`, `order_status.ts`,
+`order_hash.ts`), tests, and documentation have been updated accordingly.
 
 ---
 
@@ -128,7 +129,7 @@ keeping it internal-only (remove from barrel exports).
 
 ### 13. Mark untestable functions with `@internal` or `@private` TSDoc
 
-Functions like `safeCall`, `hashOrderComponentsStruct`, `encodeDomainSeparator`
+Functions like `seaportCall`, `hashOrderComponentsStruct`, `encodeDomainSeparator`
 are internal implementation details that happen to be exported. Marking them
 `@internal` or `@private` in TSDoc helps consumers understand the intended
 public surface area.
@@ -182,7 +183,7 @@ orderComponents)` — an on-chain read function that calls Seaport's
 as `getCounter` and `getOrderStatus`. The subpath import
 `seaport-viem/order-hash` is available. Tests in `order_hash.test.ts`
 cover happy-path return, different inputs, invalid context, and
-propagated `safeCall` errors.
+propagated `seaportCall` errors.
 
 ### 18. tsup `splitting: true` may cause issues with CJS consumers
 

@@ -27,7 +27,7 @@ import { SeaportCallError } from "./errors";
  *   e.g. `"for offerer 0x... at Seaport 0x..."`.
  * @returns The raw result data as hex.
  */
-export async function safeCall(
+export async function seaportCall(
   client: PublicClient,
   params: { to: `0x${string}`; data: `0x${string}` },
   fnLabel: string,

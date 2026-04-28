@@ -37,7 +37,7 @@ All source files live in `src/`.
 | `src/order.test.ts` | Tests for `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `toOrderParameters`, builders |
 | `src/signature.test.ts` | Tests for `hashOrderComponents` |
 | `src/bulk_listings.test.ts` | Tests for bulk order tree building, proofs, type strings, signature packing |
-| `src/call.test.ts` | Tests for `safeCall` error handling and data paths |
+| `src/call.test.ts` | Tests for `seaportCall` error handling and data paths |
 | `src/counter.test.ts` | Tests for `getCounter` with mock client |
 | `src/order_status.test.ts` | Tests for `getOrderStatus` with mock client |
 

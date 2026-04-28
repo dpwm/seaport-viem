@@ -4,7 +4,7 @@ import type { SeaportContext, OrderStatus } from "./types";
 import { getOrderStatusAbiItem } from "./constants";
 import { encodeGetOrderStatus } from "./encode";
 import { requireValidContext } from "./validate";
-import { safeCall } from "./call";
+import { seaportCall } from "./call";
 
 /**
  * Fetch the on-chain status of an order by its hash.
@@ -23,7 +23,7 @@ export async function getOrderStatus(
   requireValidContext(ctx);
 
   const data = encodeGetOrderStatus(orderHash);
-  const resultData = await safeCall(
+  const resultData = await seaportCall(
     client,
     { to: ctx.address, data },
     "getOrderStatus",

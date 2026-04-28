@@ -4,7 +4,7 @@ import type { SeaportContext, OrderComponents } from "./types";
 import { getOrderHashAbiItem } from "./constants";
 import { encodeGetOrderHash } from "./encode";
 import { requireValidContext } from "./validate";
-import { safeCall } from "./call";
+import { seaportCall } from "./call";
 
 /**
  * Fetch the on-chain order hash for a given set of order components.
@@ -28,7 +28,7 @@ export async function getOrderHash(
   requireValidContext(ctx);
 
   const data = encodeGetOrderHash(orderComponents);
-  const resultData = await safeCall(
+  const resultData = await seaportCall(
     client,
     { to: ctx.address, data },
     "getOrderHash",

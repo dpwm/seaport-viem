@@ -4,7 +4,7 @@ import type { SeaportContext } from "./types";
 import { getCounterAbiItem } from "./constants";
 import { encodeGetCounter } from "./encode";
 import { requireValidContext } from "./validate";
-import { safeCall } from "./call";
+import { seaportCall } from "./call";
 
 /**
  * Fetch an offerer's current order counter from the Seaport contract.
@@ -26,7 +26,7 @@ export async function getCounter(
   requireValidContext(ctx);
 
   const data = encodeGetCounter(offerer);
-  const resultData = await safeCall(
+  const resultData = await seaportCall(
     client,
     { to: ctx.address, data },
     "getCounter",
