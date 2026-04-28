@@ -318,3 +318,160 @@ internal helper, not part of the stable public API.
   `error.message.startsWith(...)` with an interpolated `fnLabel` string.
   A sentinel property (e.g., a error code or `cause` field) would be more
   robust than `message` prefix matching.
+
+---
+
+## Simplification opportunities
+
+Opportunities for reducing code size and complexity. Ordered by impact
+(lines saved / maintenance burden removed).
+
+---
+
+### 29. ABI component duplication in `constants.ts` (highest impact)
+
+The 5-field `OfferItem` and 6-field `ConsiderationItem` component definitions
+are repeated **verbatim** inside 13 different ABI items:
+
+- `getOrderHashAbiItem`
+- `fulfillBasicOrderAbiItem`
+- `fulfillOrderAbiItem`
+- `fulfillAdvancedOrderAbiItem`
+- `fulfillAvailableOrdersAbiItem`
+- `fulfillAvailableAdvancedOrdersAbiItem`
+- `cancelAbiItem`
+- `matchOrdersAbiItem`
+- `matchAdvancedOrdersAbiItem`
+- `validateAbiItem`
+- All 5 events in `seaportEventAbi`
+
+Each instance is ~10–20 lines. This accounts for roughly **500 of 870** lines
+in `constants.ts` being duplicated sub-component definitions.
+
+**Fix**: Extract shared component definitions once and reference them:
+
+```ts
+const OFFER_ITEM_ABI_COMPONENTS = [
+  { name: "itemType", type: "uint8" },
+  { name: "token", type: "address" },
+  { name: "identifierOrCriteria", type: "uint256" },
+  { name: "startAmount", type: "uint256" },
+  { name: "endAmount", type: "uint256" },
+] as const;
+
+const CONSIDERATION_ITEM_ABI_COMPONENTS = [
+  ...OFFER_ITEM_ABI_COMPONENTS,
+  { name: "recipient", type: "address" },
+] as const;
+```
+
+Then reference them via `components: OFFER_ITEM_ABI_COMPONENTS` in every ABI
+item. This would cut `constants.ts` from ~870 lines to ~400. It also
+eliminates the primary source of copy-paste drift — forgetting to update one
+of the 13 copies when Seaport's struct changes.
+
+Note: also extract the shared `OrderComponents` and `OrderParameters` tuple
+components (both share the same structure except for `counter` vs
+`totalOriginalConsiderationItems`).
+
+### 30. `encodeDomainSeparator` duplicates viem's `hashDomain`
+
+`src/bulk_listings.ts` contains a 33-line hand-rolled `encodeDomainSeparator`
+that does the same thing as viem's `hashDomain`. It also uses an unsafe type
+assertion (`domain.verifyingContract as \`0x${string}\``) without validation
+(previously noted as item 21).
+
+**Fix**: Replace with `import { hashDomain } from "viem"` and delete
+`encodeDomainSeparator`. This removes the unsafe type assertion and ~30 lines
+of hand-rolled encoding. (Verify `hashDomain` is available in the minimum
+supported viem version before switching, per item 25.)
+
+### 31. Event definitions live in three places (drift risk)
+
+Event information exists in three separate sources:
+
+1. **`seaportEventAbi`** — JSON ABI in `constants.ts`
+2. **`parseAbiItem(...)` strings** — five `*Event` constants in `events.ts`
+3. **Hardcoded topic hashes** — five `*_TOPIC` constants in `events.ts`
+
+Topic matching in `decodeSeaportEvent` uses the hardcoded hashes. These could
+instead be derived at module init from the `parseAbiItem` constants or from
+`seaportEventAbi`, eliminating 5 hand-maintained hex literals. There are
+already cross-check tests (item 3) that catch drift, but reducing to one
+source of truth is better.
+
+**Fix**: In `decodeSeaportEvent`, iterate over the `parseAbiItem` results or
+`seaportEventAbi` entries to match topics, rather than hardcoding five
+`if (topic === ...)` branches. Remove the `*_TOPIC` constants (or compute
+them from the ABI items).
+
+### 32. `encode.ts` functions are mechanically repetitive
+
+All 13 encoder functions follow the identical pattern:
+
+```ts
+export function encodeSomething(args): `0x${string}` {
+  return encodeFunctionData({
+    abi: [someAbiItem],
+    functionName: "someName",
+    args: [args],
+  });
+}
+```
+
+The only variation is the ABI item, function name, and arguments. A generic
+factory could replace all 13 functions:
+
+```ts
+function makeEncoder<T extends readonly unknown[]>(
+  abiItem: object,
+  functionName: string,
+) {
+  return (...args: T) => encodeFunctionData({
+    abi: [abiItem],
+    functionName,
+    args,
+  });
+}
+```
+
+This would reduce `encode.ts` from ~280 to ~100 lines. Tradeoff: the current
+explicit-export-per-function approach aids discoverability and tree-shaking.
+
+### 33. `hashBulkOrder` lacks `requireValidContext`
+
+Every function accepting `SeaportContext` calls `requireValidContext(ctx)`
+except `hashBulkOrder` in `bulk_listings.ts` (previously noted as item 20).
+One-line fix: add `requireValidContext(ctx)` at the top of the function.
+
+### 34. Structural duplication in `order.ts` fulfillment builders
+
+`buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders` share
+~90% of their structure (validate context, validate maximumFulfilled, sum
+native value across orders, build return object). `buildMatchOrders` and
+`buildMatchAdvancedOrders` follow the same pattern. A private helper could
+reduce ~40 lines.
+
+### 35. `seaportCall` re-throw guard uses fragile string matching
+
+The catch block in `src/call.ts` checks
+`error.message.startsWith(\`${fnLabel} returned no data\`)` to avoid
+re-wrapping already-enriched errors. This breaks if the message format ever
+changes (previously noted as item 28). A custom error class or sentinel
+property would be more robust. Minimal code change (~3 lines).
+
+---
+
+## Summary of simplification impact
+
+| Item | Lines saved | Complexity reduction |
+|------|-------------|---------------------|
+| 29 — ABI component deduplication | ~500 | Large — no copy-paste maintenance |
+| 30 — Replace encodeDomainSeparator | ~30 | Medium — removes unsafe type assertion |
+| 31 — Single source of event definitions | ~20 | Medium — eliminates drift risk |
+| 32 — Encoder factory | ~180 | Medium — discoverability tradeoff |
+| 33 — hashBulkOrder validation | 0 (add 1) | Small — consistency |
+| 34 — order.ts deduplication | ~40 | Small — structural cleanup |
+| 35 — seaportCall string-matching guard | ~3 | Small — robustness |
+
+Total potential: ~750 lines eliminated (of ~3,549 non-test lines, or ~21%).
