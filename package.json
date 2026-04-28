@@ -74,6 +74,12 @@
         "default": "./dist/order_status.js"
       }
     },
+    "./order-hash": {
+      "import": {
+        "types": "./dist/order_hash.d.ts",
+        "default": "./dist/order_hash.js"
+      }
+    },
     "./match": {
       "import": {
         "types": "./dist/match.d.ts",

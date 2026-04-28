@@ -127,6 +127,9 @@ export { buildCancel } from "./cancel";
 // Order status
 export { getOrderStatus } from "./order_status";
 
+// Order hash
+export { getOrderHash } from "./order_hash";
+
 // Two-sided matching
 export { buildMatchOrders, buildMatchAdvancedOrders } from "./match";
 

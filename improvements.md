@@ -156,10 +156,13 @@ step or documentation note would help.
 
 ### 17. Add `getOrderHash` on-chain read function
 
-The library has `encodeGetOrderHash` (encoder) and `hashOrderComponents`
-(off-chain EIP-712) but no `getOrderHash(client, ctx, orderComponents)` for
-calling Seaport's on-chain `getOrderHash`. This is a common operation for
-verifying order hashes match the contract's computation.
+**Fixed**: `src/order_hash.ts` now exports `getOrderHash(client, ctx,
+orderComponents)` — an on-chain read function that calls Seaport's
+`getOrderHash(OrderComponents)` view function. Follows the same pattern
+as `getCounter` and `getOrderStatus`. The subpath import
+`seaport-viem/order-hash` is available. Tests in `order_hash.test.ts`
+cover happy-path return, different inputs, invalid context, and
+propagated `safeCall` errors.
 
 ### 18. tsup `splitting: true` may cause issues with CJS consumers
 

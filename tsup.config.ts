@@ -13,6 +13,7 @@ export default defineConfig({
     "src/bulk_listings.ts",
     "src/cancel.ts",
     "src/order_status.ts",
+    "src/order_hash.ts",
     "src/match.ts",
     "src/increment_counter.ts",
     "src/call.ts",
