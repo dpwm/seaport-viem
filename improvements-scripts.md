@@ -188,7 +188,9 @@ These are the script's raison d'être and should remain in full detail.
 
 ---
 
-### ST4. Simplify `scripts/collection-offer-erc20.ts`
+### ST4. Simplify `scripts/collection-offer-erc20.ts` ✅
+
+**Status**: Done.
 
 Same pattern. This script has an additional `wethAbi` that is not shared
 (it is unique to the ERC20 flow). Keep it inline or export from helpers —
