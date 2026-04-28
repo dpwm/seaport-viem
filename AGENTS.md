@@ -48,6 +48,7 @@ All source files live in `src/`.
 | `src/events.ts` | Event parsing: `decodeSeaportEvent`, event type exports, topic constants |
 | `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `getEmptyOrderComponents`, `aggregateOfferItems`, `aggregateConsiderationItems`, `computeNativeValue`, `buildFulfillOrder`, `buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders` |
 | `src/bulk_listings.ts` | Bulk order signing: `computeHeight`, `padLeaves`, `buildBulkOrderTree`, `getBulkOrderTypeString`, `hashBulkOrder`, `getProof`, `packBulkSignature`, `unpackBulkSignature`, `encodeDomainSeparator` |
+| `src/criteria.ts` | Criteria merkle trees for trait/collection offers: `hashCriteriaLeaf`, `buildCriteriaTree`, `getCriteriaRoot`, `getCriteriaProof`, `verifyCriteriaProof` |
 | `src/index.ts` | Barrel re-export only — no logic lives here |
 | `src/test-fixtures.ts` | Shared test fixtures (`makeOrder`, `makeOrderComponents`, etc.) |
 | `src/constants.test.ts` | Tests for enum values, ABI, EIP-712 types, canonical type strings |
@@ -64,8 +65,9 @@ All source files live in `src/`.
 | `src/increment_counter.test.ts` | Tests for `buildIncrementCounter` |
 | `src/match.test.ts` | Tests for `buildMatchOrders`, `buildMatchAdvancedOrders` |
 | `src/events.test.ts` | Tests for event decoding, ABI cross-checks |
+| `src/criteria.test.ts` | Tests for criteria tree building, proofs, verification, edge cases |
 
-Subpath imports work for all 15 entry points: `seaport-viem`, `seaport-viem/types`, `seaport-viem/constants`, `seaport-viem/encode`, `seaport-viem/signature`, `seaport-viem/counter`, `seaport-viem/validate`, `seaport-viem/order`, `seaport-viem/bulk-listings`, `seaport-viem/cancel`, `seaport-viem/order-status`, `seaport-viem/order-hash`, `seaport-viem/match`, `seaport-viem/increment-counter`, `seaport-viem/call`, `seaport-viem/events`. See the `exports` map in `package.json`.
+Subpath imports work for all 16 entry points: `seaport-viem`, `seaport-viem/types`, `seaport-viem/constants`, `seaport-viem/encode`, `seaport-viem/signature`, `seaport-viem/counter`, `seaport-viem/validate`, `seaport-viem/order`, `seaport-viem/bulk-listings`, `seaport-viem/criteria`, `seaport-viem/cancel`, `seaport-viem/order-status`, `seaport-viem/order-hash`, `seaport-viem/match`, `seaport-viem/increment-counter`, `seaport-viem/call`, `seaport-viem/events`. See the `exports` map in `package.json`.
 
 ## TypeScript quirks
 
@@ -90,13 +92,19 @@ The library provides complete support for:
 - Event parsing and decoding (`decodeSeaportEvent`)
 - Order signing and signature verification
 - Bulk order/listing creation and signing
+- Criteria merkle trees for trait offers and collection offers (`buildCriteriaTree`, `getCriteriaProof`, `verifyCriteriaProof`)
 - On-chain read operations via `seaportCall`
 
 `matchAdvancedOrders` via criteria resolvers is implemented and tested.
 
+Trait offer fulfillment works end-to-end: build a criteria merkle tree from
+eligible token IDs, sign an order with the merkle root as
+`identifierOrCriteria`, then submit a `CriteriaResolver` with a proof for
+the specific token being sold.
+
 ## Build output
 
-tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 15 subpath entry points, one per source module.
+tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 16 subpath entry points, one per source module.
 
 ## Guides
 

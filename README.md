@@ -186,6 +186,30 @@ import {
 } from "seaport-viem/bulk-listings";
 ```
 
+### Criteria merkle trees
+
+Build sorted-pair merkle trees from token IDs for trait offers and
+collection offers. Used to construct `CriteriaResolver` proofs for
+`buildFulfillAdvancedOrder` and `buildMatchAdvancedOrders`.
+
+```ts
+import {
+  hashCriteriaLeaf,      // keccak256 of ABI-encoded uint256 token ID
+  buildCriteriaTree,     // sorted-pair merkle tree from token IDs
+  getCriteriaRoot,       // root from tree layers
+  getCriteriaProof,      // proof for a specific token ID
+  verifyCriteriaProof,   // verify proof against root (pure, no chain call)
+} from "seaport-viem/criteria";
+
+const tree = buildCriteriaTree([42n, 101n, 305n]);
+const root = getCriteriaRoot(tree);
+const proof = getCriteriaProof(tree, 305n);
+const isValid = verifyCriteriaProof(hashCriteriaLeaf(305n), root, proof);
+```
+
+See the [Offers in Seaport](./offers.md) guide for the complete trait offer
+flow.
+
 ### Event parsing
 
 ```ts
@@ -252,6 +276,7 @@ Every module is available as a subpath import for tree-shaking:
 ```ts
 import { buildBasicOrderFulfillment } from "seaport-viem/order";
 import { validateOrderComponents } from "seaport-viem/validate";
+import { buildCriteriaTree, getCriteriaProof } from "seaport-viem/criteria";
 ```
 
 ## Guides

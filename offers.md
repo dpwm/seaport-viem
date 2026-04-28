@@ -93,21 +93,22 @@ Apes"). The set of eligible token IDs is committed to via a merkle root.
 
 ### Step 1: Build the merkle tree (off-chain)
 
+Use the built-in `criteria` module — no external merkle tree library needed.
+
 ```typescript
-import { MerkleTree } from "merkletreejs";
-import { keccak256 } from "viem";
+import {
+  buildCriteriaTree,
+  getCriteriaRoot,
+  getCriteriaProof,
+  hashCriteriaLeaf,
+} from "seaport-viem/criteria";
 
 // Token IDs that have the trait
 const eligibleTokenIds = [42n, 101n, 305n, 888n, 1337n];
 
-// Leaves must be hashed as uint256
-const leaves = eligibleTokenIds.map(id =>
-  keccak256(encodeAbiParameters([{ type: "uint256" }], [id]))
-);
-
-// Sorted pairs (Seaport criteria uses sorted hashing)
-const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
-const merkleRoot = tree.getRoot();
+// Build a sorted-pair merkle tree (matches Seaport's _verifyProof)
+const tree = buildCriteriaTree(eligibleTokenIds);
+const merkleRoot = getCriteriaRoot(tree);
 ```
 
 ### Step 2: Sign the order with the merkle root
@@ -134,8 +135,11 @@ A seller who owns token ID `305` computes the proof:
 
 ```typescript
 const tokenId = 305n;
-const leaf = keccak256(encodeAbiParameters([{ type: "uint256" }], [tokenId]));
-const proof = tree.getProof(leaf).map(p => p.data as Hex);
+const proof = getCriteriaProof(tree, tokenId);
+
+// Optionally verify the proof before submitting
+const leafHash = hashCriteriaLeaf(tokenId);
+const isValid = verifyCriteriaProof(leafHash, merkleRoot, proof);
 ```
 
 Then calls `fulfillAdvancedOrder` with a `CriteriaResolver`:

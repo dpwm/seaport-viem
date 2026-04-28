@@ -98,6 +98,12 @@
         "default": "./dist/call.js"
       }
     },
+    "./criteria": {
+      "import": {
+        "types": "./dist/criteria.d.ts",
+        "default": "./dist/criteria.js"
+      }
+    },
     "./events": {
       "import": {
         "types": "./dist/events.d.ts",

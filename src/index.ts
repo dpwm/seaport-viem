@@ -144,6 +144,16 @@ export { buildMatchOrders, buildMatchAdvancedOrders } from "./match";
 // Counter management
 export { buildIncrementCounter } from "./increment_counter";
 
+// Criteria merkle trees
+
+export {
+  hashCriteriaLeaf,
+  buildCriteriaTree,
+  getCriteriaRoot,
+  getCriteriaProof,
+  verifyCriteriaProof,
+} from "./criteria";
+
 // Event parsing
 export {
   decodeSeaportEvent,
