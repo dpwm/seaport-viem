@@ -12,6 +12,89 @@ export const ZERO_BYTES32 =
 export const NATIVE_TOKEN =
   "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as const;
 
+// ═══════════════════════════════════════════════════════════
+// Shared ABI component definitions
+// ═══════════════════════════════════════════════════════════
+
+/** ABI component definitions for an OfferItem in an order struct. */
+export const OFFER_ITEM_ABI_COMPONENTS = [
+  { name: "itemType", type: "uint8" },
+  { name: "token", type: "address" },
+  { name: "identifierOrCriteria", type: "uint256" },
+  { name: "startAmount", type: "uint256" },
+  { name: "endAmount", type: "uint256" },
+] as const;
+
+/** ABI component definitions for a ConsiderationItem in an order struct. */
+export const CONSIDERATION_ITEM_ABI_COMPONENTS = [
+  ...OFFER_ITEM_ABI_COMPONENTS,
+  { name: "recipient", type: "address" },
+] as const;
+
+/** ABI component definitions for a SpentItem in an event. */
+export const SPENT_ITEM_ABI_COMPONENTS = [
+  { name: "itemType", type: "uint8" },
+  { name: "token", type: "address" },
+  { name: "identifier", type: "uint256" },
+  { name: "amount", type: "uint256" },
+] as const;
+
+/** ABI component definitions for a ReceivedItem in an event. */
+export const RECEIVED_ITEM_ABI_COMPONENTS = [
+  ...SPENT_ITEM_ABI_COMPONENTS,
+  { name: "recipient", type: "address" },
+] as const;
+
+/** ABI component definitions for the OrderParameters tuple. */
+export const ORDER_PARAMETERS_ABI_COMPONENTS = [
+  { name: "offerer", type: "address" },
+  { name: "zone", type: "address" },
+  {
+    name: "offer",
+    type: "tuple[]",
+    components: OFFER_ITEM_ABI_COMPONENTS,
+  },
+  {
+    name: "consideration",
+    type: "tuple[]",
+    components: CONSIDERATION_ITEM_ABI_COMPONENTS,
+  },
+  { name: "orderType", type: "uint8" },
+  { name: "startTime", type: "uint256" },
+  { name: "endTime", type: "uint256" },
+  { name: "zoneHash", type: "bytes32" },
+  { name: "salt", type: "uint256" },
+  { name: "conduitKey", type: "bytes32" },
+  { name: "totalOriginalConsiderationItems", type: "uint256" },
+] as const;
+
+/** ABI component definitions for the OrderComponents tuple. */
+export const ORDER_COMPONENTS_ABI_COMPONENTS = [
+  { name: "offerer", type: "address" },
+  { name: "zone", type: "address" },
+  {
+    name: "offer",
+    type: "tuple[]",
+    components: OFFER_ITEM_ABI_COMPONENTS,
+  },
+  {
+    name: "consideration",
+    type: "tuple[]",
+    components: CONSIDERATION_ITEM_ABI_COMPONENTS,
+  },
+  { name: "orderType", type: "uint8" },
+  { name: "startTime", type: "uint256" },
+  { name: "endTime", type: "uint256" },
+  { name: "zoneHash", type: "bytes32" },
+  { name: "salt", type: "uint256" },
+  { name: "conduitKey", type: "bytes32" },
+  { name: "counter", type: "uint256" },
+] as const;
+
+// ═══════════════════════════════════════════════════════════
+// ABI items
+// ═══════════════════════════════════════════════════════════
+
 /** ABI for Seaport's getCounter(address) view function. */
 export const getCounterAbiItem = {
   type: "function",
@@ -30,40 +113,7 @@ export const getOrderHashAbiItem = {
     {
       name: "orderComponents",
       type: "tuple",
-      components: [
-        { name: "offerer", type: "address" },
-        { name: "zone", type: "address" },
-        {
-          name: "offer",
-          type: "tuple[]",
-          components: [
-            { name: "itemType", type: "uint8" },
-            { name: "token", type: "address" },
-            { name: "identifierOrCriteria", type: "uint256" },
-            { name: "startAmount", type: "uint256" },
-            { name: "endAmount", type: "uint256" },
-          ],
-        },
-        {
-          name: "consideration",
-          type: "tuple[]",
-          components: [
-            { name: "itemType", type: "uint8" },
-            { name: "token", type: "address" },
-            { name: "identifierOrCriteria", type: "uint256" },
-            { name: "startAmount", type: "uint256" },
-            { name: "endAmount", type: "uint256" },
-            { name: "recipient", type: "address" },
-          ],
-        },
-        { name: "orderType", type: "uint8" },
-        { name: "startTime", type: "uint256" },
-        { name: "endTime", type: "uint256" },
-        { name: "zoneHash", type: "bytes32" },
-        { name: "salt", type: "uint256" },
-        { name: "conduitKey", type: "bytes32" },
-        { name: "counter", type: "uint256" },
-      ],
+      components: ORDER_COMPONENTS_ABI_COMPONENTS,
     },
   ],
   outputs: [{ name: "", type: "bytes32" }],
@@ -123,40 +173,7 @@ export const fulfillOrderAbiItem = {
         {
           name: "parameters",
           type: "tuple",
-          components: [
-            { name: "offerer", type: "address" },
-            { name: "zone", type: "address" },
-            {
-              name: "offer",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-              ],
-            },
-            {
-              name: "consideration",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-                { name: "recipient", type: "address" },
-              ],
-            },
-            { name: "orderType", type: "uint8" },
-            { name: "startTime", type: "uint256" },
-            { name: "endTime", type: "uint256" },
-            { name: "zoneHash", type: "bytes32" },
-            { name: "salt", type: "uint256" },
-            { name: "conduitKey", type: "bytes32" },
-            { name: "totalOriginalConsiderationItems", type: "uint256" },
-          ],
+          components: ORDER_PARAMETERS_ABI_COMPONENTS,
         },
         { name: "signature", type: "bytes" },
       ],
@@ -179,40 +196,7 @@ export const fulfillAdvancedOrderAbiItem = {
         {
           name: "parameters",
           type: "tuple",
-          components: [
-            { name: "offerer", type: "address" },
-            { name: "zone", type: "address" },
-            {
-              name: "offer",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-              ],
-            },
-            {
-              name: "consideration",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-                { name: "recipient", type: "address" },
-              ],
-            },
-            { name: "orderType", type: "uint8" },
-            { name: "startTime", type: "uint256" },
-            { name: "endTime", type: "uint256" },
-            { name: "zoneHash", type: "bytes32" },
-            { name: "salt", type: "uint256" },
-            { name: "conduitKey", type: "bytes32" },
-            { name: "totalOriginalConsiderationItems", type: "uint256" },
-          ],
+          components: ORDER_PARAMETERS_ABI_COMPONENTS,
         },
         { name: "numerator", type: "uint120" },
         { name: "denominator", type: "uint120" },
@@ -250,40 +234,7 @@ export const fulfillAvailableOrdersAbiItem = {
         {
           name: "parameters",
           type: "tuple",
-          components: [
-            { name: "offerer", type: "address" },
-            { name: "zone", type: "address" },
-            {
-              name: "offer",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-              ],
-            },
-            {
-              name: "consideration",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-                { name: "recipient", type: "address" },
-              ],
-            },
-            { name: "orderType", type: "uint8" },
-            { name: "startTime", type: "uint256" },
-            { name: "endTime", type: "uint256" },
-            { name: "zoneHash", type: "bytes32" },
-            { name: "salt", type: "uint256" },
-            { name: "conduitKey", type: "bytes32" },
-            { name: "totalOriginalConsiderationItems", type: "uint256" },
-          ],
+          components: ORDER_PARAMETERS_ABI_COMPONENTS,
         },
         { name: "signature", type: "bytes" },
       ],
@@ -344,40 +295,7 @@ export const fulfillAvailableAdvancedOrdersAbiItem = {
         {
           name: "parameters",
           type: "tuple",
-          components: [
-            { name: "offerer", type: "address" },
-            { name: "zone", type: "address" },
-            {
-              name: "offer",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-              ],
-            },
-            {
-              name: "consideration",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-                { name: "recipient", type: "address" },
-              ],
-            },
-            { name: "orderType", type: "uint8" },
-            { name: "startTime", type: "uint256" },
-            { name: "endTime", type: "uint256" },
-            { name: "zoneHash", type: "bytes32" },
-            { name: "salt", type: "uint256" },
-            { name: "conduitKey", type: "bytes32" },
-            { name: "totalOriginalConsiderationItems", type: "uint256" },
-          ],
+          components: ORDER_PARAMETERS_ABI_COMPONENTS,
         },
         { name: "numerator", type: "uint120" },
         { name: "denominator", type: "uint120" },
@@ -449,40 +367,7 @@ export const cancelAbiItem = {
     {
       name: "orders",
       type: "tuple[]",
-      components: [
-        { name: "offerer", type: "address" },
-        { name: "zone", type: "address" },
-        {
-          name: "offer",
-          type: "tuple[]",
-          components: [
-            { name: "itemType", type: "uint8" },
-            { name: "token", type: "address" },
-            { name: "identifierOrCriteria", type: "uint256" },
-            { name: "startAmount", type: "uint256" },
-            { name: "endAmount", type: "uint256" },
-          ],
-        },
-        {
-          name: "consideration",
-          type: "tuple[]",
-          components: [
-            { name: "itemType", type: "uint8" },
-            { name: "token", type: "address" },
-            { name: "identifierOrCriteria", type: "uint256" },
-            { name: "startAmount", type: "uint256" },
-            { name: "endAmount", type: "uint256" },
-            { name: "recipient", type: "address" },
-          ],
-        },
-        { name: "orderType", type: "uint8" },
-        { name: "startTime", type: "uint256" },
-        { name: "endTime", type: "uint256" },
-        { name: "zoneHash", type: "bytes32" },
-        { name: "salt", type: "uint256" },
-        { name: "conduitKey", type: "bytes32" },
-        { name: "counter", type: "uint256" },
-      ],
+      components: ORDER_COMPONENTS_ABI_COMPONENTS,
     },
   ],
   outputs: [{ name: "cancelled", type: "bool" }],
@@ -524,40 +409,7 @@ export const matchOrdersAbiItem = {
         {
           name: "parameters",
           type: "tuple",
-          components: [
-            { name: "offerer", type: "address" },
-            { name: "zone", type: "address" },
-            {
-              name: "offer",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-              ],
-            },
-            {
-              name: "consideration",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-                { name: "recipient", type: "address" },
-              ],
-            },
-            { name: "orderType", type: "uint8" },
-            { name: "startTime", type: "uint256" },
-            { name: "endTime", type: "uint256" },
-            { name: "zoneHash", type: "bytes32" },
-            { name: "salt", type: "uint256" },
-            { name: "conduitKey", type: "bytes32" },
-            { name: "totalOriginalConsiderationItems", type: "uint256" },
-          ],
+          components: ORDER_PARAMETERS_ABI_COMPONENTS,
         },
         { name: "signature", type: "bytes" },
       ],
@@ -621,40 +473,7 @@ export const matchAdvancedOrdersAbiItem = {
         {
           name: "parameters",
           type: "tuple",
-          components: [
-            { name: "offerer", type: "address" },
-            { name: "zone", type: "address" },
-            {
-              name: "offer",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-              ],
-            },
-            {
-              name: "consideration",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-                { name: "recipient", type: "address" },
-              ],
-            },
-            { name: "orderType", type: "uint8" },
-            { name: "startTime", type: "uint256" },
-            { name: "endTime", type: "uint256" },
-            { name: "zoneHash", type: "bytes32" },
-            { name: "salt", type: "uint256" },
-            { name: "conduitKey", type: "bytes32" },
-            { name: "totalOriginalConsiderationItems", type: "uint256" },
-          ],
+          components: ORDER_PARAMETERS_ABI_COMPONENTS,
         },
         { name: "numerator", type: "uint120" },
         { name: "denominator", type: "uint120" },
@@ -733,40 +552,7 @@ export const validateAbiItem = {
         {
           name: "parameters",
           type: "tuple",
-          components: [
-            { name: "offerer", type: "address" },
-            { name: "zone", type: "address" },
-            {
-              name: "offer",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-              ],
-            },
-            {
-              name: "consideration",
-              type: "tuple[]",
-              components: [
-                { name: "itemType", type: "uint8" },
-                { name: "token", type: "address" },
-                { name: "identifierOrCriteria", type: "uint256" },
-                { name: "startAmount", type: "uint256" },
-                { name: "endAmount", type: "uint256" },
-                { name: "recipient", type: "address" },
-              ],
-            },
-            { name: "orderType", type: "uint8" },
-            { name: "startTime", type: "uint256" },
-            { name: "endTime", type: "uint256" },
-            { name: "zoneHash", type: "bytes32" },
-            { name: "salt", type: "uint256" },
-            { name: "conduitKey", type: "bytes32" },
-            { name: "totalOriginalConsiderationItems", type: "uint256" },
-          ],
+          components: ORDER_PARAMETERS_ABI_COMPONENTS,
         },
         { name: "signature", type: "bytes" },
       ],
@@ -805,23 +591,12 @@ export const seaportEventAbi = [
       {
         name: "offer",
         type: "tuple[]",
-        components: [
-          { name: "itemType", type: "uint8" },
-          { name: "token", type: "address" },
-          { name: "identifier", type: "uint256" },
-          { name: "amount", type: "uint256" },
-        ],
+        components: SPENT_ITEM_ABI_COMPONENTS,
       },
       {
         name: "consideration",
         type: "tuple[]",
-        components: [
-          { name: "itemType", type: "uint8" },
-          { name: "token", type: "address" },
-          { name: "identifier", type: "uint256" },
-          { name: "amount", type: "uint256" },
-          { name: "recipient", type: "address" },
-        ],
+        components: RECEIVED_ITEM_ABI_COMPONENTS,
       },
     ],
   },
@@ -842,40 +617,7 @@ export const seaportEventAbi = [
       {
         name: "orderParameters",
         type: "tuple",
-        components: [
-          { name: "offerer", type: "address" },
-          { name: "zone", type: "address" },
-          {
-            name: "offer",
-            type: "tuple[]",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifierOrCriteria", type: "uint256" },
-              { name: "startAmount", type: "uint256" },
-              { name: "endAmount", type: "uint256" },
-            ],
-          },
-          {
-            name: "consideration",
-            type: "tuple[]",
-            components: [
-              { name: "itemType", type: "uint8" },
-              { name: "token", type: "address" },
-              { name: "identifierOrCriteria", type: "uint256" },
-              { name: "startAmount", type: "uint256" },
-              { name: "endAmount", type: "uint256" },
-              { name: "recipient", type: "address" },
-            ],
-          },
-          { name: "orderType", type: "uint8" },
-          { name: "startTime", type: "uint256" },
-          { name: "endTime", type: "uint256" },
-          { name: "zoneHash", type: "bytes32" },
-          { name: "salt", type: "uint256" },
-          { name: "conduitKey", type: "bytes32" },
-          { name: "totalOriginalConsiderationItems", type: "uint256" },
-        ],
+        components: ORDER_PARAMETERS_ABI_COMPONENTS,
       },
     ],
   },

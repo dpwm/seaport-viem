@@ -328,51 +328,29 @@ Opportunities for reducing code size and complexity. Ordered by impact
 
 ---
 
-### 29. ABI component duplication in `constants.ts` (highest impact)
+### 29. ABI component duplication in `constants.ts` (highest impact) — **DONE**
 
-The 5-field `OfferItem` and 6-field `ConsiderationItem` component definitions
-are repeated **verbatim** inside 13 different ABI items:
+**Fixed**: Six shared ABI component constants have been extracted in
+`src/constants.ts`:
 
-- `getOrderHashAbiItem`
-- `fulfillBasicOrderAbiItem`
-- `fulfillOrderAbiItem`
-- `fulfillAdvancedOrderAbiItem`
-- `fulfillAvailableOrdersAbiItem`
-- `fulfillAvailableAdvancedOrdersAbiItem`
-- `cancelAbiItem`
-- `matchOrdersAbiItem`
-- `matchAdvancedOrdersAbiItem`
-- `validateAbiItem`
-- All 5 events in `seaportEventAbi`
+- `OFFER_ITEM_ABI_COMPONENTS` — 5 fields (itemType, token, identifierOrCriteria,
+  startAmount, endAmount)
+- `CONSIDERATION_ITEM_ABI_COMPONENTS` — spreads `OFFER_ITEM_ABI_COMPONENTS` +
+  recipient
+- `SPENT_ITEM_ABI_COMPONENTS` — 4 fields (itemType, token, identifier, amount)
+  for event SpentItem / execution offer items
+- `RECEIVED_ITEM_ABI_COMPONENTS` — spreads `SPENT_ITEM_ABI_COMPONENTS` +
+  recipient, for event ReceivedItem / execution consideration items
+- `ORDER_PARAMETERS_ABI_COMPONENTS` — full 11-field tuple with
+  `totalOriginalConsiderationItems`, used by all fulfilling/matching ABI items
+- `ORDER_COMPONENTS_ABI_COMPONENTS` — same tuple with `counter` instead, used
+  by `getOrderHashAbiItem` and `cancelAbiItem`
 
-Each instance is ~10–20 lines. This accounts for roughly **500 of 870** lines
-in `constants.ts` being duplicated sub-component definitions.
-
-**Fix**: Extract shared component definitions once and reference them:
-
-```ts
-const OFFER_ITEM_ABI_COMPONENTS = [
-  { name: "itemType", type: "uint8" },
-  { name: "token", type: "address" },
-  { name: "identifierOrCriteria", type: "uint256" },
-  { name: "startAmount", type: "uint256" },
-  { name: "endAmount", type: "uint256" },
-] as const;
-
-const CONSIDERATION_ITEM_ABI_COMPONENTS = [
-  ...OFFER_ITEM_ABI_COMPONENTS,
-  { name: "recipient", type: "address" },
-] as const;
-```
-
-Then reference them via `components: OFFER_ITEM_ABI_COMPONENTS` in every ABI
-item. This would cut `constants.ts` from ~870 lines to ~400. It also
-eliminates the primary source of copy-paste drift — forgetting to update one
-of the 13 copies when Seaport's struct changes.
-
-Note: also extract the shared `OrderComponents` and `OrderParameters` tuple
-components (both share the same structure except for `counter` vs
-`totalOriginalConsiderationItems`).
+All 13 ABI function items and the 2 event definitions (`OrderFulfilled`,
+`OrderValidated`) now reference these shared constants via
+`components: SHARED_NAME`. `constants.ts` shrank from 987 to 729 lines (258 fewer, ~26% reduction).
+Copy-paste drift between the 13 copies is eliminated — a change to
+Seaport's struct layout requires updating only one definition.
 
 ### 30. `encodeDomainSeparator` duplicates viem's `hashDomain`
 
