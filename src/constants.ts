@@ -1,4 +1,5 @@
 import type { Abi } from "viem";
+import type { SeaportContext } from "./types";
 
 /** The zero address (0x0000...0000). */
 export const ZERO_ADDRESS =
@@ -11,6 +12,21 @@ export const ZERO_BYTES32 =
 /** Sentinel address used by Seaport to represent native ETH. */
 export const NATIVE_TOKEN =
   "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as const;
+
+/** Canonical Seaport 1.6 deployment address (Ethereum mainnet). */
+export const SEAPORT_ADDRESS =
+  "0x0000000000000068F116a894984e2DB1123eB395" as const;
+
+/** Pre-built {@link SeaportContext} for the canonical Seaport 1.6 mainnet deployment. */
+export const SEAPORT_CTX: SeaportContext = {
+  address: SEAPORT_ADDRESS,
+  domain: {
+    name: "Seaport",
+    version: "1.6",
+    chainId: 1,
+    verifyingContract: SEAPORT_ADDRESS,
+  },
+};
 
 // ═══════════════════════════════════════════════════════════
 // Shared ABI component definitions

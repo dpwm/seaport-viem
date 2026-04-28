@@ -7,6 +7,8 @@ import {
   ZERO_ADDRESS,
   ZERO_BYTES32,
   NATIVE_TOKEN,
+  SEAPORT_ADDRESS,
+  SEAPORT_CTX,
   seaportAbi,
   EIP712_TYPES,
   ORDER_COMPONENTS_TYPE_STRING,
@@ -58,6 +60,22 @@ describe("constants", () => {
 
   test("NATIVE_TOKEN is a valid address", () => {
     expect(NATIVE_TOKEN).toMatch(/^0x[0-9a-fA-F]{40}$/);
+  });
+
+  test("SEAPORT_ADDRESS is the canonical Seaport 1.6 mainnet address", () => {
+    expect(SEAPORT_ADDRESS).toBe(
+      "0x0000000000000068F116a894984e2DB1123eB395",
+    );
+    expect(SEAPORT_ADDRESS).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(SEAPORT_ADDRESS).toHaveLength(42);
+  });
+
+  test("SEAPORT_CTX is a valid SeaportContext", () => {
+    expect(SEAPORT_CTX.address).toBe(SEAPORT_ADDRESS);
+    expect(SEAPORT_CTX.domain.name).toBe("Seaport");
+    expect(SEAPORT_CTX.domain.version).toBe("1.6");
+    expect(SEAPORT_CTX.domain.chainId).toBe(1);
+    expect(SEAPORT_CTX.domain.verifyingContract).toBe(SEAPORT_ADDRESS);
   });
 });
 

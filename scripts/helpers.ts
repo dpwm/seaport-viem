@@ -12,7 +12,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mainnet } from "viem/chains";
-import type { SeaportContext } from "../src/index";
+export { SEAPORT_ADDRESS, SEAPORT_CTX } from "../src/index";
 
 // ── Keys and accounts ──────────────────────────────────────────
 
@@ -26,21 +26,6 @@ export const FEE_RECIPIENT_KEY =
 export const sellerAccount = privateKeyToAccount(SELLER_KEY);
 export const buyerAccount = privateKeyToAccount(BUYER_KEY);
 export const feeRecipientAccount = privateKeyToAccount(FEE_RECIPIENT_KEY);
-
-// ── Seaport constants ──────────────────────────────────────────
-
-export const SEAPORT_ADDRESS =
-  "0x0000000000000068F116a894984e2DB1123eB395" as `0x${string}`;
-
-export const SEAPORT_CTX: SeaportContext = {
-  address: SEAPORT_ADDRESS,
-  domain: {
-    name: "Seaport",
-    version: "1.6",
-    chainId: 1,
-    verifyingContract: SEAPORT_ADDRESS,
-  },
-};
 
 // ── RPC URL ────────────────────────────────────────────────────
 
