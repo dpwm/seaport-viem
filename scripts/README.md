@@ -21,6 +21,7 @@ anvil --fork-url $ETH_RPC_URL --fork-block-number 22200000
 bun run scripts/list-and-buy.ts
 bun run scripts/bulk-list-and-buy.ts
 bun run scripts/collection-offer-erc20.ts
+bun run scripts/bulk-offer-and-sell.ts
 ```
 
 All scripts target `http://127.0.0.1:8545` (Anvil's default port).
@@ -87,6 +88,25 @@ seller fulfills it piecemeal. Demonstrates advanced order features:
 6. Each fill uses `buildFulfillAdvancedOrder`
 7. Verify all 4 BAYCs transferred to the buyer, WETH transferred to seller
    and fee recipient
+
+### `bulk-offer-and-sell.ts`
+
+A buyer creates a **criteria-based** bulk offer for a specific set of token
+IDs (not wildcard). The seller fulfills some tokens via the offer (with
+merkle proofs), then lists the remaining tokens for sale as standard
+listings. Demonstrates criteria merkle trees end-to-end:
+
+1. Setup: transfer BAYCs to seller, mint WETH to buyer
+2. Build a criteria merkle tree from the eligible token IDs and compute the
+   merkle root (`buildCriteriaTree`, `getCriteriaRoot`)
+3. Buyer builds and signs a `PARTIAL_OPEN` order with `ERC721_WITH_CRITERIA`
+   consideration where `identifierOrCriteria` is the merkle root
+4. Seller fulfills 2 of the tokens via `buildFulfillAdvancedOrder` with
+   `CriteriaResolver` entries containing merkle proofs (`getCriteriaProof`)
+5. Seller creates standard `FULL_OPEN` listings for the remaining 2 tokens
+   and the buyer purchases them via `buildBasicOrderFulfillment`
+6. Verify all 4 BAYCs now owned by the buyer — 2 via criteria offer, 2 via
+   standard listings
 
 ## Caveats
 
