@@ -69,11 +69,10 @@ who need to check validity without throwing.
 
 ### 6. `computeNativeValue` exported but no standalone subpath
 
-`computeNativeValue` is publicly exported from `order.ts` and the barrel
-`index.ts`, but there is no `"seaport-viem/order"` → `computeNativeValue` gap
-(it's under `order` which is fine). However, the README doesn't list it. Either
-add it to the README or evaluate whether it should be public (it's used
-internally and may not need to be a public API).
+**Fixed**: Added `computeNativeValue` to the README's "Order fulfillment"
+section with usage documentation. The function is a legitimate public API
+that lets consumers compute the required `msg.value` for arbitrary order
+combinations. The subpath import `seaport-viem/order` already works.
 
 ### 7. `AGENTS.md` test count is stale
 

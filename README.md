@@ -63,6 +63,7 @@ import {
   detectBasicOrderRouteType,
   toBasicOrderParameters,
   buildBasicOrderFulfillment,
+  computeNativeValue,
 } from "seaport-viem/order";
 
 // Check eligibility
@@ -72,6 +73,9 @@ detectBasicOrderRouteType(order);        // BasicOrderRouteTypeValue | null
 // Build parameters or full transaction
 toBasicOrderParameters(order, routeType, fulfillerConduitKey?, tips?);
 buildBasicOrderFulfillment(ctx, order, { routeType?, fulfillerConduitKey?, tips? });
+
+// Compute msg.value from NATIVE consideration items
+computeNativeValue(order.parameters.consideration);  // bigint
 ```
 
 ### Validation
