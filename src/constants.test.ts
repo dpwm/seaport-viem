@@ -9,6 +9,9 @@ import {
   NATIVE_TOKEN,
   seaportAbi,
   EIP712_TYPES,
+  ORDER_COMPONENTS_TYPE_STRING,
+  OFFER_ITEM_TYPE_STRING,
+  CONSIDERATION_ITEM_TYPE_STRING,
 } from "./index";
 
 describe("constants", () => {
@@ -100,5 +103,25 @@ describe("EIP712_TYPES", () => {
 
   test("ConsiderationItem has 6 fields (OfferItem + recipient)", () => {
     expect(EIP712_TYPES.ConsiderationItem).toHaveLength(6);
+  });
+});
+
+describe("canonical EIP-712 type strings", () => {
+  test("ORDER_COMPONENTS_TYPE_STRING matches canonical Seaport format", () => {
+    expect(ORDER_COMPONENTS_TYPE_STRING).toBe(
+      "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)",
+    );
+  });
+
+  test("OFFER_ITEM_TYPE_STRING matches canonical Seaport format", () => {
+    expect(OFFER_ITEM_TYPE_STRING).toBe(
+      "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)",
+    );
+  });
+
+  test("CONSIDERATION_ITEM_TYPE_STRING matches canonical Seaport format", () => {
+    expect(CONSIDERATION_ITEM_TYPE_STRING).toBe(
+      "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)",
+    );
   });
 });

@@ -135,16 +135,17 @@ public surface area.
 
 ### 14. Test `ORDER_COMPONENTS_TYPE_STRING` output against canonical Seaport
 
-The `EIP712_TYPES` → type string conversion is tested indirectly through
-`hashOrderComponentsStruct` tests and the `getBulkOrderTypeString` cross-check
-tests, but there's no standalone test verifying that
-`ORDER_COMPONENTS_TYPE_STRING` matches Seaport's canonical
-`OrderComponents(address offerer,...)` format. This is a single assertion away.
+**Fixed**: A new `describe("canonical EIP-712 type strings")` block in
+`constants.test.ts` now tests `ORDER_COMPONENTS_TYPE_STRING`,
+`OFFER_ITEM_TYPE_STRING`, and `CONSIDERATION_ITEM_TYPE_STRING` against
+hardcoded canonical string literals that match Seaport's Solidity source.
+If a field is added, removed, or reordered in `EIP712_TYPES`, the matching
+string-literal assertion will fail immediately, preventing silent drift of
+the struct hash.
 
 ### 15. Test `CONSIDERATION_ITEM_TYPE_STRING` and `OFFER_ITEM_TYPE_STRING` output
 
-Like item 15 — these are generated programmatically from `EIP712_TYPES` and
-should have explicit format tests to catch accidental reordering of fields.
+**Fixed**: Covered by the same cross-check test added for item 14.
 
 ### 16. `buildBasicOrderFulfillment` inflates value with non-NATIVE additional recipients
 
