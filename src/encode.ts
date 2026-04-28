@@ -283,6 +283,9 @@ export function encodeValidate(
  * Check that a value fits within a uint120 range (0 to 2^120 - 1).
  * Seaport uses uint120 for partial fill numerator/denominator.
  *
+ * @internal This is an internal validation helper used by several encoders. It
+ *   is exported for advanced use cases but is not part of the stable public API.
+ *
  * @param value - The value to check.
  * @param name - The parameter name for error messages.
  * @throws If the value is out of range.

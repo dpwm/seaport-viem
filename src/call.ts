@@ -17,6 +17,10 @@ import { SeaportCallError } from "./errors";
  * identifies the Seaport address, the function being called, and the argument
  * value that caused the failure.
  *
+ * @internal This is an internal utility used by `getCounter`, `getOrderStatus`,
+ *   and `getOrderHash`. It is exported for advanced use cases but is not part
+ *   of the stable public API.
+ *
  * @param client - A viem PublicClient.
  * @param params - Static call parameters (`to` address and encoded `data`).
  * @param fnLabel - Short name of the contract function, e.g. `"getCounter"`.

@@ -87,6 +87,10 @@ const ORDER_TYPEHASH = keccak256(
  * Compute the Seaport order hash (struct hash only, without EIP-712 domain separator).
  * This matches what Seaport's getOrderHash() and _deriveOrderHash() return.
  * Use this for merkle tree leaves in bulk orders.
+ *
+ * @internal This is a low-level struct-hash utility used internally by the bulk
+ *   listings module. It is exported for advanced use cases but is not part of
+ *   the stable public API.
  */
 export function hashOrderComponentsStruct(
   orderComponents: OrderComponents,

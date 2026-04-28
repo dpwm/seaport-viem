@@ -129,10 +129,12 @@ viem helper. All internal call sites (`counter.ts`, `order_status.ts`,
 
 ### 13. Mark untestable functions with `@internal` or `@private` TSDoc
 
-Functions like `seaportCall`, `hashOrderComponentsStruct`, `encodeDomainSeparator`
-are internal implementation details that happen to be exported. Marking them
-`@internal` or `@private` in TSDoc helps consumers understand the intended
-public surface area.
+**Fixed**: `seaportCall` (call.ts), `hashOrderComponentsStruct` (signature.ts),
+`encodeDomainSeparator` (bulk_listings.ts), `checkUint120` (encode.ts), and
+`ORDER_COMPONENTS_STRUCT_ABI_TYPES` (constants.ts) now carry `@internal` TSDoc
+annotations explaining they are internal implementation details. The annotation
+helps consumers scanning IDE tooltips or generated docs identify which exports
+are part of the stable public surface area.
 
 ### 14. Test `ORDER_COMPONENTS_TYPE_STRING` output against canonical Seaport
 

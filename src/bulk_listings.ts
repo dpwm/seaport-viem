@@ -293,6 +293,9 @@ export function unpackBulkSignature(packed: `0x${string}`): {
 /**
  * Encode an EIP-712 domain separator as bytes32.
  *
+ * @internal This is an internal utility used by `hashBulkOrder`. It is exported
+ *   for advanced use cases but is not part of the stable public API.
+ *
  * @param domain - The EIP-712 domain to encode.
  * @returns The domain separator hash (bytes32).
  */

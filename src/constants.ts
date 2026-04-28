@@ -975,7 +975,11 @@ export const CONSIDERATION_ITEM_COMPONENTS = EIP712_TYPES.ConsiderationItem;
  * Derived from EIP712_TYPES.OrderComponents so the encoding stays in sync
  * automatically. Array-typed fields (offer, consideration) map to bytes32
  * (their keccak256 hash), matching the struct hash convention.
- * The ORDER_TYPEHASH is prepended separately in hashOrderComponentsStruct. */
+ * The ORDER_TYPEHASH is prepended separately in hashOrderComponentsStruct.
+ *
+ * @internal This is an internal ABI-encoding helper used by `hashOrderComponentsStruct`.
+ *   It is exported from the module for access by `signature.ts` but is not part
+ *   of the stable public API. */
 export const ORDER_COMPONENTS_STRUCT_ABI_TYPES = EIP712_TYPES.OrderComponents.map(
   (field) => ({
     type: field.type.endsWith("[]") ? "bytes32" : field.type,
