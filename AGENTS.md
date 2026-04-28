@@ -55,11 +55,11 @@ Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { .
 
 ## What the library does NOT cover
 
-`fulfillOrder`, `fulfillAdvancedOrder`, `fulfillAvailableOrders`, and `fulfillAvailableAdvancedOrders` are supported (encoders + builders). `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`, `matchAdvancedOrders`, and event parsing are not yet implemented.
+`cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`, `matchAdvancedOrders`, and event parsing are all now implemented. `matchAdvancedOrders` via criteria resolvers is not yet implemented.
 
 ## Build output
 
-tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 9 subpath entry points, one per source module.
+tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 15 subpath entry points, one per source module.
 
 ## Open issues
 

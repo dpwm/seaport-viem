@@ -15,6 +15,7 @@ export default defineConfig({
     "src/order_status.ts",
     "src/match.ts",
     "src/increment_counter.ts",
+    "src/call.ts",
     "src/events.ts",
   ],
   format: ["esm"],
