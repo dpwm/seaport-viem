@@ -214,7 +214,9 @@ script's domain purpose.
 
 ---
 
-### ST5. Update `scripts/README.md`
+### ST5. Update `scripts/README.md` ✅
+
+**Status**: Done.
 
 After ST1–ST4, update the README to:
 

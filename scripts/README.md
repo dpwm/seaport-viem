@@ -25,6 +25,25 @@ bun run scripts/collection-offer-erc20.ts
 
 All scripts target `http://127.0.0.1:8545` (Anvil's default port).
 
+## Shared infrastructure (`helpers.ts`)
+
+All three scripts import shared setup from `helpers.ts`. This keeps each
+script focused on the Seaport flow it demonstrates, with boilerplate
+(keys, clients, ABI, Anvil impersonation) delegated to a single module.
+
+`helpers.ts` provides:
+
+| Export | Purpose |
+|--------|---------|
+| `SELLER_KEY`, `BUYER_KEY`, `FEE_RECIPIENT_KEY` | Hardcoded private keys for the three actors |
+| `sellerAccount`, `buyerAccount`, `feeRecipientAccount` | Pre-built viem accounts |
+| `SEAPORT_ADDRESS`, `SEAPORT_CTX` | Seaport 1.6 address and EIP-712 domain context |
+| `RPC_URL` | Anvil's default HTTP endpoint (`http://127.0.0.1:8545`) |
+| `erc721Abi` | Minimal ERC721 ABI (`ownerOf`, `approve`, `setApprovalForAll`, `transferFrom`) |
+| `createAnvilClients()` | Returns `{ testClient, publicClient, seller, buyer }` — preconfigured viem clients |
+| `transferNftTo(…)` | Transfers an ERC721 token to a target address via Anvil impersonation |
+| `getBlockTimestamp(…)` | Returns `block.timestamp` from the latest block |
+
 ## What each script does
 
 ### `list-and-buy.ts`
