@@ -18,9 +18,11 @@ import type {
   OrderFulfilledEventArgs,
   OrderCancelledEventArgs,
   CounterIncrementedEventArgs,
+  OrderValidatedEventArgs,
+  OrdersMatchedEventArgs,
 } from "./events";
-import { seaportEventAbi, ItemType, ZERO_ADDRESS, ZERO_BYTES32 } from "./index";
-import { ALICE } from "./test-fixtures";
+import { seaportEventAbi, ItemType, OrderType, ZERO_ADDRESS, ZERO_BYTES32 } from "./index";
+import { ALICE, NFT } from "./test-fixtures";
 
 describe("seaportEventAbi", () => {
   test("has 5 events", () => {
@@ -222,6 +224,91 @@ describe("decodeSeaportEvent", () => {
     const args = decoded as CounterIncrementedEventArgs;
     expect(args.newCounter).toBe(42n);
     expect(args.offerer).toBeDefined();
+  });
+
+  test("decodes OrderValidated event", () => {
+    const data = encodeAbiParameters(
+      seaportEventAbi[2].inputs as any,
+      [
+        ZERO_BYTES32,
+        {
+          offerer: ALICE,
+          zone: ZERO_ADDRESS,
+          offer: [
+            {
+              itemType: ItemType.ERC721,
+              token: NFT,
+              identifierOrCriteria: 1n,
+              startAmount: 1n,
+              endAmount: 1n,
+            },
+          ],
+          consideration: [
+            {
+              itemType: ItemType.NATIVE,
+              token: ZERO_ADDRESS,
+              identifierOrCriteria: 0n,
+              startAmount: 1000000000000000000n,
+              endAmount: 1000000000000000000n,
+              recipient: ALICE,
+            },
+          ],
+          orderType: OrderType.FULL_OPEN,
+          startTime: 1000n,
+          endTime: 2000n,
+          zoneHash: ZERO_BYTES32,
+          salt: 1n,
+          conduitKey: ZERO_BYTES32,
+          totalOriginalConsiderationItems: 1n,
+        },
+      ],
+    );
+
+    const topics = encodeEventTopics({
+      abi: [OrderValidatedEvent],
+      eventName: "OrderValidated",
+    }) as `0x${string}`[];
+
+    const decoded = decodeSeaportEvent(makeLog(data, topics));
+    expect(decoded.eventName).toBe("OrderValidated");
+    const args = decoded as OrderValidatedEventArgs;
+    expect(args.orderHash).toBe(ZERO_BYTES32);
+    expect(args.orderParameters.offerer.toLowerCase()).toBe(ALICE.toLowerCase());
+    expect(args.orderParameters.offer).toHaveLength(1);
+    expect(args.orderParameters.consideration).toHaveLength(1);
+    expect(args.orderParameters.orderType).toBe(OrderType.FULL_OPEN);
+    expect(args.orderParameters.offer[0]!.token.toLowerCase()).toBe(NFT.toLowerCase());
+    expect(args.orderParameters.offer[0]!.itemType).toBe(ItemType.ERC721);
+    expect(
+      args.orderParameters.consideration[0]!.recipient.toLowerCase(),
+    ).toBe(ALICE.toLowerCase());
+    expect(args.orderParameters.totalOriginalConsiderationItems).toBe(1n);
+  });
+
+  test("decodes OrdersMatched event", () => {
+    const orderHashes: `0x${string}`[] = [
+      ZERO_BYTES32,
+      "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`,
+    ];
+
+    const data = encodeAbiParameters(
+      parseAbiParameters("bytes32[]"),
+      [orderHashes],
+    );
+
+    const topics = encodeEventTopics({
+      abi: [OrdersMatchedEvent],
+      eventName: "OrdersMatched",
+    }) as `0x${string}`[];
+
+    const decoded = decodeSeaportEvent(makeLog(data, topics));
+    expect(decoded.eventName).toBe("OrdersMatched");
+    const args = decoded as OrdersMatchedEventArgs;
+    expect(args.orderHashes).toHaveLength(2);
+    expect(args.orderHashes[0]).toBe(ZERO_BYTES32);
+    expect(args.orderHashes[1]).toBe(
+      "0x0000000000000000000000000000000000000000000000000000000000000001",
+    );
   });
 
   test("throws for unknown event topic", () => {

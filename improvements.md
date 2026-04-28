@@ -50,14 +50,11 @@ updating the other will cause at least one test to fail.
 
 ### 4. Missing event decoding tests for `OrderValidated` and `OrdersMatched`
 
-`decodeSeaportEvent` is tested for three of five event types. The two most
-complex events are untested:
-- `OrderValidated` — includes a nested `OrderParameters` tuple with its own
-  nested offer/consideration arrays.
-- `OrdersMatched` — dynamic `bytes32[]` argument.
-
-**Fix**: Add `OrderValidated` and `OrdersMatched` decoding tests to
-`events.test.ts`.
+**Fixed**: `src/events.test.ts` now includes decoding tests for both events:
+- `OrderValidated` — encodes a complete `OrderParameters` tuple with nested
+  offer and consideration arrays, then decodes and verifies all fields.
+- `OrdersMatched` — encodes a `bytes32[]` with two order hashes, then decodes
+  and verifies the array length and values.
 
 ### 5. Context validation boilerplate repeated 17 times
 
