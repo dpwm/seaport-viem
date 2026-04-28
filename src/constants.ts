@@ -970,3 +970,14 @@ export const OFFER_ITEM_COMPONENTS = EIP712_TYPES.OfferItem;
  * Keeps ABI encoding in hashOrderComponentsStruct in sync with the EIP-712 type
  * definitions automatically. */
 export const CONSIDERATION_ITEM_COMPONENTS = EIP712_TYPES.ConsiderationItem;
+
+/** ABI parameter types for the OrderComponents struct hash in hashOrderComponentsStruct.
+ * Derived from EIP712_TYPES.OrderComponents so the encoding stays in sync
+ * automatically. Array-typed fields (offer, consideration) map to bytes32
+ * (their keccak256 hash), matching the struct hash convention.
+ * The ORDER_TYPEHASH is prepended separately in hashOrderComponentsStruct. */
+export const ORDER_COMPONENTS_STRUCT_ABI_TYPES = EIP712_TYPES.OrderComponents.map(
+  (field) => ({
+    type: field.type.endsWith("[]") ? "bytes32" : field.type,
+  }),
+);

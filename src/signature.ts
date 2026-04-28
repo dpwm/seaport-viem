@@ -7,6 +7,7 @@ import {
   OFFER_ITEM_TYPE_STRING,
   OFFER_ITEM_COMPONENTS,
   CONSIDERATION_ITEM_COMPONENTS,
+  ORDER_COMPONENTS_STRUCT_ABI_TYPES,
 } from "./constants";
 import { requireValidContext } from "./validate";
 
@@ -108,23 +109,12 @@ export function hashOrderComponentsStruct(
     ),
   );
 
-  // Encode the full order struct
+  // Encode the full order struct using ABI types derived from EIP712_TYPES.OrderComponents.
+  // The types array stays in sync automatically — if a field is added/removed/reordered
+  // in EIP712_TYPES, the encoding follows suit. The ORDER_TYPEHASH is prepended.
   return keccak256(
     encodeAbiParameters(
-      [
-        { type: "bytes32" },
-        { type: "address" },
-        { type: "address" },
-        { type: "bytes32" },
-        { type: "bytes32" },
-        { type: "uint8" },
-        { type: "uint256" },
-        { type: "uint256" },
-        { type: "bytes32" },
-        { type: "uint256" },
-        { type: "bytes32" },
-        { type: "uint256" },
-      ],
+      [{ type: "bytes32" }, ...ORDER_COMPONENTS_STRUCT_ABI_TYPES],
       [
         ORDER_TYPEHASH,
         orderComponents.offerer,

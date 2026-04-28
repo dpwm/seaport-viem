@@ -89,18 +89,15 @@ for catching any Seaport-specific error in one handler.
 
 ### 8. `hashOrderComponentsStruct` encodes struct layout independently of `EIP712_TYPES`
 
-The function hardcodes a 12-field ABI parameter list (`bytes32`, `address`,
-`address`, `bytes32`, `bytes32`, `uint8`, `uint256`, `uint256`, `bytes32`,
-`uint256`, `bytes32`, `uint256`) that mirrors `EIP712_TYPES.OrderComponents`.
-If the EIP-712 type definition changes (e.g., a new field is added), this
-function won't automatically update — the tests would catch it, but it's a
-maintenance hazard.
-
-**Fix**: Derive the ABI parameter types programmatically from
-`EIP712_TYPES.OrderComponents` so the struct encoding stays in sync
-automatically. The offer/consideration sub-arrays already use
-`OFFER_ITEM_COMPONENTS` / `CONSIDERATION_ITEM_COMPONENTS` which are derived
-from `EIP712_TYPES` — extend this pattern to the top-level struct.
+**Fixed**: Added `ORDER_COMPONENTS_STRUCT_ABI_TYPES` to `constants.ts`,
+derived from `EIP712_TYPES.OrderComponents` via `.map()`. Array-typed
+fields (`offer`, `consideration`) are automatically mapped to `bytes32`
+(matching the struct hash convention). The `hashOrderComponentsStruct`
+function in `signature.ts` now spreads these derived types instead of
+hardcoding a 12-field ABI parameter list. If a field is added, removed,
+or reordered in `EIP712_TYPES.OrderComponents`, the encoding follows
+suit automatically — same pattern as the existing `OFFER_ITEM_COMPONENTS`
+and `CONSIDERATION_ITEM_COMPONENTS`.
 
 ### 9. README subpath import table is incomplete
 
