@@ -166,7 +166,9 @@ Every remaining line is domain-relevant to the "list and buy" flow.
 
 ---
 
-### ST3. Simplify `scripts/bulk-list-and-buy.ts`
+### ST3. Simplify `scripts/bulk-list-and-buy.ts` ✅
+
+**Status**: Done.
 
 Same pattern as ST2. Replace inline boilerplate with helpers imports.
 
