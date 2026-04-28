@@ -104,6 +104,17 @@ import { getCounter } from "seaport-viem/counter";
 const counter = await getCounter(client, ctx, offerer);   // bigint
 ```
 
+### Call helper
+
+```ts
+import { safeCall } from "seaport-viem/call";
+
+// Perform a static on-chain call with standardized Seaport error wrapping
+const data = await safeCall(client, params, "getCounter", "fetch counter", "for offerer 0x...");
+```
+
+`safeCall` wraps viem's `client.call` with consistent error messages for Seaport on-chain reads. It handles no-data responses, viem `BaseError` exceptions, and unexpected thrown values.
+
 ### Cancel
 
 ```ts
@@ -138,6 +149,22 @@ import { buildMatchOrders, buildMatchAdvancedOrders } from "seaport-viem/match";
 
 const tx = buildMatchOrders(ctx, orders, fulfillments);
 const tx2 = buildMatchAdvancedOrders(ctx, advancedOrders, criteriaResolvers, fulfillments, recipient);
+```
+
+### Bulk listings
+
+```ts
+import {
+  computeHeight,       // minimum tree height for N orders
+  padLeaves,           // pad leaf array to next power of 2
+  buildBulkOrderTree,  // build unsorted merkle tree from leaves
+  getBulkOrderTypeString, // EIP-712 type string for a bulk order at a given height
+  hashBulkOrder,       // EIP-712 digest for a bulk order
+  getProof,            // extract merkle proof for a leaf at the given index
+  packBulkSignature,   // pack signature + proof into compact form (67 + height*32 bytes)
+  unpackBulkSignature, // unpack a compact bulk signature back into components
+  encodeDomainSeparator, // encode EIP-712 domain separator as bytes32
+} from "seaport-viem/bulk-listings";
 ```
 
 ### Event parsing
@@ -207,6 +234,11 @@ Every module is available as a subpath import for tree-shaking:
 import { buildBasicOrderFulfillment } from "seaport-viem/order";
 import { validateOrderComponents } from "seaport-viem/validate";
 ```
+
+## Guides
+
+- **[N Listings Under One Signature](./n-listings-one-signature.md)** — Sign multiple Seaport listings with a single ECDSA signature using bulk order merkle trees.
+- **[Offers in Seaport](./offers.md)** — Collection offers, trait offers, and criteria resolution for buyer-initiated orders.
 
 ## Scope
 

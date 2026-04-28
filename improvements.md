@@ -101,11 +101,9 @@ and `CONSIDERATION_ITEM_COMPONENTS`.
 
 ### 9. README subpath import table is incomplete
 
-The README lists only a subset of available subpath imports. Missing from the
-API section: `events`, `bulk-listings`, `call`, `order-status`, `match`,
-`increment-counter`. The "Subpath imports" section correctly states "every
-module is available," but the API section should enumerate all available
-subpaths for discoverability.
+**Fixed**: Added missing API sections for `bulk-listings` and `call` (the two
+that were absent). Every subpath module now has a dedicated API section in the
+README.
 
 ### 10. `safeCall` function name is misleading for a Seaport-specific wrapper
 
@@ -121,13 +119,12 @@ keeping it internal-only (remove from barrel exports).
 
 ### 11. Add bulk listings / bulk order example to README
 
-The `n-listings-one-signature.md` guide is comprehensive and well-written.
-Consider linking it from the README so users discover it.
+**Fixed**: Added a "Guides" section to the README with a link to
+`n-listings-one-signature.md` alongside `offers.md`.
 
 ### 12. Add criteria resolver / offer fulfillment example to README
 
-The `offers.md` guide documents collection/trait offers and criteria
-resolution. Link it from the README alongside `n-listings-one-signature.md`.
+**Fixed**: Added a "Guides" section to the README with a link to `offers.md`.
 
 ### 13. Mark untestable functions with `@internal` or `@private` TSDoc
 
