@@ -37,6 +37,9 @@ All source files live in `src/`.
 | `src/order.test.ts` | Tests for `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `toOrderParameters`, builders |
 | `src/signature.test.ts` | Tests for `hashOrderComponents` |
 | `src/bulk_listings.test.ts` | Tests for bulk order tree building, proofs, type strings, signature packing |
+| `src/call.test.ts` | Tests for `safeCall` error handling and data paths |
+| `src/counter.test.ts` | Tests for `getCounter` with mock client |
+| `src/order_status.test.ts` | Tests for `getOrderStatus` with mock client |
 
 Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { ... } from "seaport-viem/bulk-listings"`.
 
@@ -51,7 +54,7 @@ Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { .
 - Tests import from `./index` (the barrel), not individual modules.
 - Shared fixtures live in `src/test-fixtures.ts`: `makeOrder()`, `makeOrderComponents()`, `makeOfferItem()`, `makeConsiderationItem()` — all accept partial overrides.
 - Addresses in fixtures must be valid 20-byte hex (40 hex chars after `0x`). viem rejects fake addresses like `0xAlice...`.
-- `verifyOrderSignature` and `getCounter` are not unit-tested (they need mocking or a live client).
+- `verifyOrderSignature` is not unit-tested (needs mocking or a live client).
 
 ## What the library does NOT cover
 

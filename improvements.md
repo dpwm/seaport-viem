@@ -27,22 +27,16 @@ is now in the `entry` array in `tsup.config.ts`.
 
 ### 2. No tests for `call.ts`, `counter.ts`, or `order_status.ts`
 
-These three modules (`safeCall`, `getCounter`, `getOrderStatus`) are entirely
-untested. `safeCall` is a pure wrapper around `client.call` — it can be tested
-with a mock `PublicClient` that returns controlled data/errors. `getCounter`
-and `getOrderStatus` can then be tested via the same mock.
-
-Because `safeCall` is the error-handling foundation for all on-chain reads,
-untested error paths here could mask bugs in `getCounter`, `getOrderStatus`,
-and any future read functions.
-
-**Fix**: Add `src/call.test.ts`, `src/counter.test.ts`, and
-`src/order_status.test.ts` with mock PublicClient instances. At minimum test:
+**Fixed**: `src/call.test.ts`, `src/counter.test.ts`, and
+`src/order_status.test.ts` have been added with mock PublicClient instances
+covering all the required cases:
 - Happy-path return data
 - Empty return data (`undefined` / `"0x"`)
 - viem `BaseError` wrapping
 - Generic thrown error wrapping
 - Re-throw of already-enriched errors (the `startsWith` guard)
+- Context validation errors
+- Propagated `safeCall` errors
 
 ### 3. Event ABIs defined in two places — risk of drift
 
