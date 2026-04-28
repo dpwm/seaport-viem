@@ -12,7 +12,7 @@ import {
   encodeMatchAdvancedOrders,
   checkUint120,
 } from "./encode";
-import { validateSeaportContext } from "./validate";
+import { requireValidContext } from "./validate";
 import { computeNativeValue } from "./order";
 
 /**
@@ -30,10 +30,7 @@ export function buildMatchOrders(
   orders: { parameters: OrderParameters; signature: `0x${string}` }[],
   fulfillments: Fulfillment[],
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   let value = 0n;
   for (const order of orders) {
@@ -66,10 +63,7 @@ export function buildMatchAdvancedOrders(
   fulfillments: Fulfillment[] = [],
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");

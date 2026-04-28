@@ -58,31 +58,14 @@ updating the other will cause at least one test to fail.
 
 ### 5. Context validation boilerplate repeated 17 times
 
-Every builder (`buildBasicOrderFulfillment`, `buildFulfillOrder`,
-`buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`,
-`buildFulfillAvailableAdvancedOrders`, `buildCancel`, `buildIncrementCounter`,
-`buildValidate`, `buildMatchOrders`, `buildMatchAdvancedOrders`), every on-chain
-read (`getCounter`, `getOrderStatus`), and both signature functions
-(`verifyOrderSignature`, `hashOrderComponents`) repeats the same pattern:
-
-```ts
-const ctxValid = validateSeaportContext(ctx);
-if (!ctxValid.valid) throw new Error(ctxValid.reason);
-```
-
-**Fix**: Extract a small `requireValidContext(ctx)` helper that validates and
-throws (or returns the validated context as a narrowed type):
-
-```ts
-function requireValidContext(ctx: SeaportContext): void {
-  const result = validateSeaportContext(ctx);
-  if (!result.valid) throw new Error(result.reason);
-}
-```
-
-This drops each call-site from 3 lines to 1 and removes the risk of
-accidentally swallowing the invalid result. The helper can live in
-`validate.ts` and be re-exported from the barrel.
+**Fixed**: A `requireValidContext(ctx)` helper has been added to `validate.ts`
+and exported from the barrel. It validates the context and throws immediately
+if invalid. All 14 internal call sites across 8 files (`order.ts`,
+`signature.ts`, `counter.ts`, `cancel.ts`, `order_status.ts`, `match.ts`,
+`increment_counter.ts`, `validate.ts`) have been updated from the 3-line
+pattern to a single `requireValidContext(ctx)` call. The original
+`validateSeaportContext` function remains publicly exported for consumers
+who need to check validity without throwing.
 
 ### 6. `computeNativeValue` exported but no standalone subpath
 

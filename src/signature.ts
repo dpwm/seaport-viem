@@ -8,7 +8,7 @@ import {
   OFFER_ITEM_COMPONENTS,
   CONSIDERATION_ITEM_COMPONENTS,
 } from "./constants";
-import { validateSeaportContext } from "./validate";
+import { requireValidContext } from "./validate";
 
 /**
  * Verify an order's EIP-712 signature against the offerer's address.
@@ -20,10 +20,7 @@ export async function verifyOrderSignature(
   ctx: SeaportContext,
   order: Order,
 ): Promise<boolean> {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   try {
     return await verifyTypedData({
@@ -62,10 +59,7 @@ export function hashOrderComponents(
   ctx: SeaportContext,
   orderComponents: OrderComponents,
 ): `0x${string}` {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   return hashTypedData({
     domain: ctx.domain,

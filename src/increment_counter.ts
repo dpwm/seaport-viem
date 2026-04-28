@@ -1,6 +1,6 @@
 import type { SeaportContext, FulfillmentData } from "./types";
 import { encodeIncrementCounter } from "./encode";
-import { validateSeaportContext } from "./validate";
+import { requireValidContext } from "./validate";
 
 /**
  * Build a transaction to increment the offerer's counter, cancelling
@@ -12,10 +12,7 @@ import { validateSeaportContext } from "./validate";
 export function buildIncrementCounter(
   ctx: SeaportContext,
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   return {
     to: ctx.address,

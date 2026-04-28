@@ -32,7 +32,7 @@ import {
   encodeFulfillAvailableAdvancedOrders,
   checkUint120,
 } from "./encode";
-import { validateSeaportContext } from "./validate";
+import { requireValidContext } from "./validate";
 
 /**
  * Convert a high-level Order into the flat BasicOrderParameters needed by
@@ -118,10 +118,7 @@ export function buildBasicOrderFulfillment(
   order: Order,
   options: FulfillmentOptions = {},
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   const routeType = options.routeType ?? detectBasicOrderRouteType(order);
   if (routeType === null) {
@@ -415,10 +412,7 @@ export function buildFulfillOrder(
   order: { parameters: OrderParameters; signature: `0x${string}` },
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   return {
     to: ctx.address,
@@ -444,10 +438,7 @@ export function buildFulfillAdvancedOrder(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   checkUint120(advancedOrder.numerator, "numerator");
   checkUint120(advancedOrder.denominator, "denominator");
@@ -483,10 +474,7 @@ export function buildFulfillAvailableOrders(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   maximumFulfilled: bigint = BigInt(orders.length),
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   if (maximumFulfilled > BigInt(orders.length)) {
     throw new Error(
@@ -535,10 +523,7 @@ export function buildFulfillAvailableAdvancedOrders(
   recipient: `0x${string}` = ZERO_ADDRESS,
   maximumFulfilled: bigint = BigInt(advancedOrders.length),
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");

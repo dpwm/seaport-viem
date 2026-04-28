@@ -3,7 +3,7 @@ import { decodeFunctionResult } from "viem";
 import type { SeaportContext } from "./types";
 import { getCounterAbiItem } from "./constants";
 import { encodeGetCounter } from "./encode";
-import { validateSeaportContext } from "./validate";
+import { requireValidContext } from "./validate";
 import { safeCall } from "./call";
 
 /**
@@ -23,10 +23,7 @@ export async function getCounter(
   ctx: SeaportContext,
   offerer: `0x${string}`,
 ): Promise<bigint> {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   const data = encodeGetCounter(offerer);
   const resultData = await safeCall(

@@ -3,7 +3,7 @@ import { decodeFunctionResult } from "viem";
 import type { SeaportContext, OrderStatus } from "./types";
 import { getOrderStatusAbiItem } from "./constants";
 import { encodeGetOrderStatus } from "./encode";
-import { validateSeaportContext } from "./validate";
+import { requireValidContext } from "./validate";
 import { safeCall } from "./call";
 
 /**
@@ -20,10 +20,7 @@ export async function getOrderStatus(
   ctx: SeaportContext,
   orderHash: `0x${string}`,
 ): Promise<OrderStatus> {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   const data = encodeGetOrderStatus(orderHash);
   const resultData = await safeCall(

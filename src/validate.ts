@@ -76,6 +76,23 @@ export function validateSeaportContext(
 }
 
 /**
+ * Validate a SeaportContext and throw immediately if invalid.
+ *
+ * Use this to avoid repeating the 3-line validation pattern at every call site.
+ * The plain `validateSeaportContext` function is also exported for consumers
+ * who need to check validity without throwing.
+ *
+ * @param ctx - The Seaport deployment context to validate.
+ * @throws {Error} If the context is invalid, with the validation reason as the message.
+ */
+export function requireValidContext(ctx: SeaportContext): void {
+  const result = validateSeaportContext(ctx);
+  if (!result.valid) {
+    throw new Error(result.reason);
+  }
+}
+
+/**
  * Validate order components client-side before submission.
  *
  * Checks:
@@ -170,10 +187,7 @@ export function buildValidate(
   ctx: SeaportContext,
   orders: { parameters: OrderParameters; signature: `0x${string}` }[],
 ): FulfillmentData {
-  const ctxValid = validateSeaportContext(ctx);
-  if (!ctxValid.valid) {
-    throw new Error(ctxValid.reason);
-  }
+  requireValidContext(ctx);
 
   if (orders.length === 0) {
     throw new Error("At least one order must be provided to validate");
