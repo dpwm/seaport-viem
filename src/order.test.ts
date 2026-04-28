@@ -139,6 +139,54 @@ describe("canFulfillAsBasicOrder", () => {
     expect(canFulfillAsBasicOrder(order)).toBe(false);
   });
 
+  test("rejects mixed-type considerations (NATIVE + ERC20)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ itemType: ItemType.NATIVE }),
+          makeConsiderationItem({
+            itemType: ItemType.ERC20,
+            token: TOKEN,
+            recipient: BOB,
+          }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("rejects mixed-type considerations (ERC20 primary + ERC721 extra)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [makeOfferItem({ itemType: ItemType.ERC721 })],
+        consideration: [
+          makeConsiderationItem({
+            itemType: ItemType.ERC20,
+            token: TOKEN,
+          }),
+          makeConsiderationItem({
+            itemType: ItemType.ERC721,
+            token: NFT,
+            recipient: BOB,
+          }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("accepts single-type NATIVE considerations with extras", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ endAmount: 1000n }),
+          makeConsiderationItem({ recipient: BOB, endAmount: 200n }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(true);
+  });
+
   test("ETH_TO_ERC1155: ERC1155 offer + NATIVE consideration", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
@@ -288,6 +336,22 @@ describe("detectBasicOrderRouteType", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         orderType: OrderType.CONTRACT,
+      }),
+    });
+    expect(detectBasicOrderRouteType(order)).toBeNull();
+  });
+
+  test("returns null for mixed-type considerations (NATIVE + ERC20)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ itemType: ItemType.NATIVE }),
+          makeConsiderationItem({
+            itemType: ItemType.ERC20,
+            token: TOKEN,
+            recipient: BOB,
+          }),
+        ],
       }),
     });
     expect(detectBasicOrderRouteType(order)).toBeNull();
@@ -454,6 +518,28 @@ describe("buildBasicOrderFulfillment", () => {
     });
     const result = buildBasicOrderFulfillment(ctx, order);
     expect(result.value).toBe(0n);
+  });
+
+  test("explicit route type with ERC20 extra consideration does not inflate value", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ endAmount: 1000n }),
+          makeConsiderationItem({
+            itemType: ItemType.ERC20,
+            token: TOKEN,
+            endAmount: 500n,
+            recipient: BOB,
+          }),
+        ],
+      }),
+    });
+    const result = buildBasicOrderFulfillment(ctx, order, {
+      routeType: BasicOrderRouteType.ETH_TO_ERC721,
+    });
+    // Only the NATIVE consideration (1000n) counts toward msg.value,
+    // not the ERC20 extra consideration item.
+    expect(result.value).toBe(1000n);
   });
 
   test("computes ETH value when consideration token is NATIVE_TOKEN", () => {

@@ -146,13 +146,32 @@ tests, but there's no standalone test verifying that
 Like item 15 — these are generated programmatically from `EIP712_TYPES` and
 should have explicit format tests to catch accidental reordering of fields.
 
-### 16. Verify `buildBasicOrderFulfillment` handles mixed NATIVE/ERC20 tips
+### 16. `buildBasicOrderFulfillment` inflates value with non-NATIVE additional recipients
 
-The basic order value computation loops over `params.additionalRecipients` and
-adds all amounts to ETH value when the primary consideration is NATIVE. This
-assumes tips are also NATIVE. If a caller passes an ERC20 tip alongside a
-NATIVE primary consideration, the ETH value would be incorrect. A validation
-step or documentation note would help.
+**Fixed**: Two-part fix:
+
+1. **`isBasicOrderEligible` now rejects mixed-type considerations.** The basic
+   order path in Seaport treats all additional recipients as the same token
+   type as the primary consideration. If any non-primary consideration item
+   has a different `itemType`, the order no longer qualifies for basic order
+   fulfillment. This prevents orders with, e.g., a NATIVE primary and ERC20
+   royalty fee from being incorrectly routed through the basic order path.
+
+2. **`buildBasicOrderFulfillment` now uses `computeNativeValue()`** on the
+   full consideration array (consistent with all other fulfillment builders)
+   instead of blindly summing `additionalRecipients`. Only items with
+   `itemType === ItemType.NATIVE` count toward `msg.value`. Tips are added
+   separately, only when the primary consideration is NATIVE (since tips in
+   the basic order protocol are implicitly the same token type as the primary
+   consideration).
+
+Tests added for:
+- `canFulfillAsBasicOrder` rejects mixed-type considerations (NATIVE + ERC20)
+- `canFulfillAsBasicOrder` rejects mixed-type considerations (ERC20 + ERC721)
+- `canFulfillAsBasicOrder` accepts single-type NATIVE considerations with extras
+- `detectBasicOrderRouteType` returns null for mixed-type considerations
+- `buildBasicOrderFulfillment` with explicit route type and ERC20 extra
+  consideration does not inflate ETH value
 
 ### 17. Add `getOrderHash` on-chain read function
 

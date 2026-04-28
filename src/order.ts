@@ -135,18 +135,19 @@ export function buildBasicOrderFulfillment(
 
   const data = encodeFulfillBasicOrder(params);
 
-  // Seaport identifies native (ETH) transfers by itemType, not token address.
-  // All other builders (buildFulfillOrder, etc.) use computeNativeValue()
-  // which checks item.itemType === ItemType.NATIVE. Unify on that here.
-  let value = 0n;
+  // Use computeNativeValue on the full consideration array (consistent with
+  // all other fulfillment builders) rather than blindly summing additional
+  // recipients — those don't carry itemType info and could include ERC20
+  // amounts that don't belong in msg.value.
+  let value = computeNativeValue(order.parameters.consideration);
+
+  // Tips in the basic order path are implicitly the same token type as the
+  // primary consideration. Add them to msg.value only if that type is NATIVE.
   // biome-ignore lint/style/noNonNullAssertion: basic orders have ≥1 consideration
   const primaryConsideration = order.parameters.consideration[0]!;
-  const isNativePayment = primaryConsideration.itemType === ItemType.NATIVE;
-
-  if (isNativePayment) {
-    value = primaryConsideration.endAmount;
-    for (const recipient of params.additionalRecipients) {
-      value += recipient.amount;
+  if (primaryConsideration.itemType === ItemType.NATIVE && options.tips) {
+    for (const tip of options.tips) {
+      value += tip.amount;
     }
   }
 
@@ -168,6 +169,8 @@ export function buildBasicOrderFulfillment(
  * - No criteria-based items (ERC721_WITH_CRITERIA or ERC1155_WITH_CRITERIA)
  *   in the offer or any consideration item
  * - Primary consideration recipient must be the offerer
+ * - All consideration items must have the same itemType (basic order path treats
+ *   all additional recipients as the same token type as the primary consideration)
  */
 function isBasicOrderEligible(
   order: Order,
@@ -210,6 +213,17 @@ function isBasicOrderEligible(
 
   if (primaryConsideration.recipient !== order.parameters.offerer) {
     return null;
+  }
+
+  // Basic order path treats all additional recipients as the same token type
+  // as the primary consideration. If any non-primary consideration item has a
+  // different itemType, the order cannot use the basic order path.
+  for (let i = 1; i < order.parameters.consideration.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: guarded by length check above
+    const item = order.parameters.consideration[i]!;
+    if (item.itemType !== primaryConsideration.itemType) {
+      return null;
+    }
   }
 
   return { offerItem, primaryConsideration };
