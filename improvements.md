@@ -10,7 +10,7 @@ impact; address the highest-priority items first.
 Per `AGENTS.md`:
 
 ```sh
-bun test              # all 238 tests must pass
+bun test              # all tests must pass
 bun run typecheck     # tsc --noEmit must pass
 ```
 
@@ -74,15 +74,7 @@ section with usage documentation. The function is a legitimate public API
 that lets consumers compute the required `msg.value` for arbitrary order
 combinations. The subpath import `seaport-viem/order` already works.
 
-### 7. `AGENTS.md` test count is stale
-
-AGENTS.md says "all 229 tests must pass" — the suite currently has **238**
-tests. This will drift again as tests are added/removed.
-
-**Fix**: Replace the static count with `bun test` output guidance, or
-remove the number and just say "all tests must pass."
-
-### 8. No custom error types — consumers can't catch specific errors
+### 7. No custom error types — consumers can't catch specific errors
 
 Every error is `throw new Error("message")`. Programmatic error discrimination
 requires string-matching on `.message`. Consider adding named error classes:
@@ -94,7 +86,7 @@ requires string-matching on `.message`. Consider adding named error classes:
 This lets consumers write `if (err instanceof SeaportValidationError)` instead
 of fragile `.message.includes(...)` checks.
 
-### 9. `hashOrderComponentsStruct` encodes struct layout independently of `EIP712_TYPES`
+### 8. `hashOrderComponentsStruct` encodes struct layout independently of `EIP712_TYPES`
 
 The function hardcodes a 12-field ABI parameter list (`bytes32`, `address`,
 `address`, `bytes32`, `bytes32`, `uint8`, `uint256`, `uint256`, `bytes32`,
@@ -109,7 +101,7 @@ automatically. The offer/consideration sub-arrays already use
 `OFFER_ITEM_COMPONENTS` / `CONSIDERATION_ITEM_COMPONENTS` which are derived
 from `EIP712_TYPES` — extend this pattern to the top-level struct.
 
-### 10. README subpath import table is incomplete
+### 9. README subpath import table is incomplete
 
 The README lists only a subset of available subpath imports. Missing from the
 API section: `events`, `bulk-listings`, `call`, `order-status`, `match`,
@@ -117,7 +109,7 @@ API section: `events`, `bulk-listings`, `call`, `order-status`, `match`,
 module is available," but the API section should enumerate all available
 subpaths for discoverability.
 
-### 11. `safeCall` function name is misleading for a Seaport-specific wrapper
+### 10. `safeCall` function name is misleading for a Seaport-specific wrapper
 
 `safeCall` implies a general-purpose viem helper, but it's tightly coupled to
 Seaport's error message format (the `fnLabel`, `actionLabel`, `details`
@@ -129,24 +121,24 @@ keeping it internal-only (remove from barrel exports).
 
 ## Nice to have
 
-### 12. Add bulk listings / bulk order example to README
+### 11. Add bulk listings / bulk order example to README
 
 The `n-listings-one-signature.md` guide is comprehensive and well-written.
 Consider linking it from the README so users discover it.
 
-### 13. Add criteria resolver / offer fulfillment example to README
+### 12. Add criteria resolver / offer fulfillment example to README
 
 The `offers.md` guide documents collection/trait offers and criteria
 resolution. Link it from the README alongside `n-listings-one-signature.md`.
 
-### 14. Mark untestable functions with `@internal` or `@private` TSDoc
+### 13. Mark untestable functions with `@internal` or `@private` TSDoc
 
 Functions like `safeCall`, `hashOrderComponentsStruct`, `encodeDomainSeparator`
 are internal implementation details that happen to be exported. Marking them
 `@internal` or `@private` in TSDoc helps consumers understand the intended
 public surface area.
 
-### 15. Test `ORDER_COMPONENTS_TYPE_STRING` output against canonical Seaport
+### 14. Test `ORDER_COMPONENTS_TYPE_STRING` output against canonical Seaport
 
 The `EIP712_TYPES` → type string conversion is tested indirectly through
 `hashOrderComponentsStruct` tests and the `getBulkOrderTypeString` cross-check
@@ -154,12 +146,12 @@ tests, but there's no standalone test verifying that
 `ORDER_COMPONENTS_TYPE_STRING` matches Seaport's canonical
 `OrderComponents(address offerer,...)` format. This is a single assertion away.
 
-### 16. Test `CONSIDERATION_ITEM_TYPE_STRING` and `OFFER_ITEM_TYPE_STRING` output
+### 15. Test `CONSIDERATION_ITEM_TYPE_STRING` and `OFFER_ITEM_TYPE_STRING` output
 
 Like item 15 — these are generated programmatically from `EIP712_TYPES` and
 should have explicit format tests to catch accidental reordering of fields.
 
-### 17. Verify `buildBasicOrderFulfillment` handles mixed NATIVE/ERC20 tips
+### 16. Verify `buildBasicOrderFulfillment` handles mixed NATIVE/ERC20 tips
 
 The basic order value computation loops over `params.additionalRecipients` and
 adds all amounts to ETH value when the primary consideration is NATIVE. This
@@ -167,14 +159,14 @@ assumes tips are also NATIVE. If a caller passes an ERC20 tip alongside a
 NATIVE primary consideration, the ETH value would be incorrect. A validation
 step or documentation note would help.
 
-### 18. Add `getOrderHash` on-chain read function
+### 17. Add `getOrderHash` on-chain read function
 
 The library has `encodeGetOrderHash` (encoder) and `hashOrderComponents`
 (off-chain EIP-712) but no `getOrderHash(client, ctx, orderComponents)` for
 calling Seaport's on-chain `getOrderHash`. This is a common operation for
 verifying order hashes match the contract's computation.
 
-### 19. tsup `splitting: true` may cause issues with CJS consumers
+### 18. tsup `splitting: true` may cause issues with CJS consumers
 
 The build uses `splitting: true` which emits shared chunks. Some bundlers
 struggle with code-split ESM when imported from CJS contexts. Since the
