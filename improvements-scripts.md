@@ -16,10 +16,12 @@ independently.
 
 ---
 
-### ST1. Create `scripts/helpers.ts` — shared infrastructure
+### ST1. Create `scripts/helpers.ts` — shared infrastructure ✅
 
 Extract the following into a single shared module. Every value below is
 identical across all three scripts.
+
+**Status**: Done.
 
 **a) Keys and accounts**
 
