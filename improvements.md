@@ -40,24 +40,13 @@ covering all the required cases:
 
 ### 3. Event ABIs defined in two places — risk of drift
 
-`seaportEventAbi` (JSON format in `constants.ts`) and `parseAbiItem()` calls
-(string format in `events.ts`) define the same five event signatures. A change
-to any event's parameters must be updated in both places, and nothing enforces
-consistency. The `decodeSeaportEvent` function ignores `seaportEventAbi`
-entirely — it uses hardcoded `parseAbiItem` references plus hardcoded topic
-hash constants.
-
-The test file validates that the topic hashes match the `parseAbiItem`
-definitions, but no test validates `parseAbiItem` against `seaportEventAbi`.
-
-**Fix alternatives**:
-- (A) Derive the parsed event ABIs from `seaportEventAbi` using viem's
-  `formatAbi` / `parseAbi`, so there's a single source of truth.
-- (B) Delete `seaportEventAbi` and use only `parseAbiItem` strings if the JSON
-  ABI isn't needed by consumers.
-- (C) At minimum, add a test cross-checking that `parseAbiItem` strings and
-  `seaportEventAbi` entries produce the same topic hashes and decode
-  identically.
+**Fixed** (option C): Cross-check tests have been added to `events.test.ts`
+under `describe("event ABI cross-check")` that verify the JSON ABI
+(`seaportEventAbi` in `constants.ts`) and the `parseAbiItem()` strings (in
+`events.ts`) produce identical topic hashes for all five events. For each
+event, both definitions are compared against each other and against the
+hardcoded `ORDER_*_TOPIC` constants. A change to either definition without
+updating the other will cause at least one test to fail.
 
 ### 4. Missing event decoding tests for `OrderValidated` and `OrdersMatched`
 

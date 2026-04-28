@@ -37,6 +37,67 @@ describe("seaportEventAbi", () => {
   });
 });
 
+describe("event ABI cross-check", () => {
+  // Verify that the JSON ABI (seaportEventAbi) and the parseAbiItem() strings
+  // produce identical topic hashes. If either definition is changed without
+  // updating the other, at least one of these tests will fail.
+
+  const eventNames = [
+    "OrderFulfilled",
+    "OrderCancelled",
+    "OrderValidated",
+    "OrdersMatched",
+    "CounterIncremented",
+  ] as const;
+
+  // Map from JSON ABI event name to corresponding parseAbiItem export
+  const parsedEvents: Record<string, unknown> = {
+    OrderFulfilled: OrderFulfilledEvent,
+    OrderCancelled: OrderCancelledEvent,
+    OrderValidated: OrderValidatedEvent,
+    OrdersMatched: OrdersMatchedEvent,
+    CounterIncremented: CounterIncrementedEvent,
+  };
+
+  for (const name of eventNames) {
+    test(`${name} topic hash matches between JSON ABI and parseAbiItem`, () => {
+      const jsonAbiItem = seaportEventAbi.find((e) => e.name === name);
+      expect(jsonAbiItem).toBeDefined();
+
+      const fromJson = encodeEventTopics({
+        abi: [jsonAbiItem!],
+        eventName: name,
+      })[0]!;
+
+      const fromParsed = encodeEventTopics({
+        abi: [parsedEvents[name]] as any,
+        eventName: name,
+      })[0]!;
+
+      expect(String(fromJson)).toBe(String(fromParsed));
+    });
+  }
+
+  // Also verify that both definitions match the hardcoded topic constants
+  const topicConstants: Record<string, string> = {
+    OrderFulfilled: ORDER_FULFILLED_TOPIC,
+    OrderCancelled: ORDER_CANCELLED_TOPIC,
+    OrderValidated: ORDER_VALIDATED_TOPIC,
+    OrdersMatched: ORDERS_MATCHED_TOPIC,
+    CounterIncremented: COUNTER_INCREMENTED_TOPIC,
+  };
+
+  for (const name of eventNames) {
+    test(`${name} hardcoded topic constant matches ABI definitions`, () => {
+      const fromJson = encodeEventTopics({
+        abi: [seaportEventAbi.find((e) => e.name === name)!],
+        eventName: name,
+      })[0]!;
+      expect(String(fromJson)).toBe(String(topicConstants[name]));
+    });
+  }
+});
+
 describe("topic hashes", () => {
   test("ORDER_FULFILLED_TOPIC matches parsed event", () => {
     const computed = encodeEventTopics({
