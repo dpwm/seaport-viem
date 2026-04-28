@@ -171,6 +171,9 @@ export function buildBasicOrderFulfillment(
  * - Primary consideration recipient must be the offerer
  * - All consideration items must have the same itemType (basic order path treats
  *   all additional recipients as the same token type as the primary consideration)
+ *
+ * @private This is an internal helper used by `canFulfillAsBasicOrder` and
+ *   `detectBasicOrderRouteType`. It is not part of the stable public API.
  */
 function isBasicOrderEligible(
   order: Order,
@@ -324,10 +327,9 @@ export function toOrderParameters(
  * Return a canonical empty OrderComponents struct used to pad bulk order
  * merkle trees to the required capacity.
  *
- * The returned struct uses sentinel values (`startTime: 1n, endTime: 2n`)
- * rather than zeros so it passes {@link validateOrderComponents}. The
- * struct is never submitted on-chain — only its EIP-712 hash is used
- * as a padding leaf in bulk order merkle trees.
+ * The returned struct is not intended to be validated or submitted on-chain.
+ * It is only used as a padding leaf in bulk order merkle trees, where its
+ * EIP-712 hash fills unused leaf slots.
  */
 export function getEmptyOrderComponents(): OrderComponents {
   return {

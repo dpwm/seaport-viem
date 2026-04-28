@@ -21,27 +21,42 @@ All source files live in `src/`.
 
 | File | Purpose |
 |------|---------|
+| File | Purpose |
+|------|---------|
 | `src/types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`, `Side`) |
 | `src/constants.ts` | ABI (JSON format), EIP-712 types, address constants, bulk order height limits |
-| `src/encode.ts` | `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfillBasicOrder`, `encodeFulfillOrder`, `encodeFulfillAdvancedOrder`, `encodeFulfillAvailableOrders`, `encodeFulfillAvailableAdvancedOrders` |
-| `src/signature.ts` | `verifyOrderSignature`, `hashOrderComponents` |
+| `src/errors.ts` | Custom error classes (`SeaportError`, `SeaportValidationError`, `SeaportEncodingError`, `SeaportCallError`) |
+| `src/encode.ts` | Calldata encoders: `encodeGetCounter`, `encodeGetOrderHash`, `encodeFulfill*`, `encodeCancel`, `encodeIncrementCounter`, `encodeGetOrderStatus`, `encodeMatch*`, `encodeValidate` |
+| `src/signature.ts` | `verifyOrderSignature`, `hashOrderComponents`, `hashOrderComponentsStruct` |
+| `src/validate.ts` | `validateOrderComponents`, `validateSeaportContext`, `requireValidContext`, `buildValidate` |
+| `src/call.ts` | `seaportCall` — Seaport-specific on-chain read helper (wraps viem error handling) |
 | `src/counter.ts` | `getCounter` (on-chain call via `PublicClient`) |
-| `src/validate.ts` | `validateOrderComponents` (client-side checks) |
-| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `getEmptyOrderComponents`, `buildFulfillOrder`, `buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders` |
-| `src/bulk_listings.ts` | Bulk order signing: `computeHeight`, `padLeaves`, `buildBulkOrderTree`, `getBulkOrderTypeString`, `hashBulkOrder`, `getProof`, `packBulkSignature`, `unpackBulkSignature` |
+| `src/order_status.ts` | `getOrderStatus` (on-chain call via `PublicClient`) |
+| `src/order_hash.ts` | `getOrderHash` (on-chain call via `PublicClient`) |
+| `src/cancel.ts` | `buildCancel` — build transaction data for `cancel` |
+| `src/increment_counter.ts` | `buildIncrementCounter` — build transaction data for `incrementCounter` |
+| `src/match.ts` | Two-sided matching: `buildMatchOrders`, `buildMatchAdvancedOrders` |
+| `src/events.ts` | Event parsing: `decodeSeaportEvent`, event type exports, topic constants |
+| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `getEmptyOrderComponents`, `aggregateOfferItems`, `aggregateConsiderationItems`, `computeNativeValue`, `buildFulfillOrder`, `buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders` |
+| `src/bulk_listings.ts` | Bulk order signing: `computeHeight`, `padLeaves`, `buildBulkOrderTree`, `getBulkOrderTypeString`, `hashBulkOrder`, `getProof`, `packBulkSignature`, `unpackBulkSignature`, `encodeDomainSeparator` |
 | `src/index.ts` | Barrel re-export only — no logic lives here |
 | `src/test-fixtures.ts` | Shared test fixtures (`makeOrder`, `makeOrderComponents`, etc.) |
-| `src/constants.test.ts` | Tests for enum values, ABI, EIP-712 types |
+| `src/constants.test.ts` | Tests for enum values, ABI, EIP-712 types, canonical type strings |
 | `src/encode.test.ts` | Tests for calldata encoders |
 | `src/validate.test.ts` | Tests for `validateOrderComponents` |
-| `src/order.test.ts` | Tests for `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `toOrderParameters`, builders |
-| `src/signature.test.ts` | Tests for `hashOrderComponents` |
+| `src/order.test.ts` | Tests for basic/standard/advanced fulfillment builders, eligibility, route detection |
+| `src/signature.test.ts` | Tests for `verifyOrderSignature`, `hashOrderComponents` |
 | `src/bulk_listings.test.ts` | Tests for bulk order tree building, proofs, type strings, signature packing |
 | `src/call.test.ts` | Tests for `seaportCall` error handling and data paths |
 | `src/counter.test.ts` | Tests for `getCounter` with mock client |
 | `src/order_status.test.ts` | Tests for `getOrderStatus` with mock client |
+| `src/order_hash.test.ts` | Tests for `getOrderHash` with mock client |
+| `src/cancel.test.ts` | Tests for `buildCancel` |
+| `src/increment_counter.test.ts` | Tests for `buildIncrementCounter` |
+| `src/match.test.ts` | Tests for `buildMatchOrders`, `buildMatchAdvancedOrders` |
+| `src/events.test.ts` | Tests for event decoding, ABI cross-checks |
 
-Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { ... } from "seaport-viem/bulk-listings"`.
+Subpath imports work for all 15 entry points: `seaport-viem`, `seaport-viem/types`, `seaport-viem/constants`, `seaport-viem/encode`, `seaport-viem/signature`, `seaport-viem/counter`, `seaport-viem/validate`, `seaport-viem/order`, `seaport-viem/bulk-listings`, `seaport-viem/cancel`, `seaport-viem/order-status`, `seaport-viem/order-hash`, `seaport-viem/match`, `seaport-viem/increment-counter`, `seaport-viem/call`, `seaport-viem/events`. See the `exports` map in `package.json`.
 
 ## TypeScript quirks
 
@@ -55,19 +70,29 @@ Subpath imports work: `import { ... } from "seaport-viem/order"` and `import { .
 - Shared fixtures live in `src/test-fixtures.ts`: `makeOrder()`, `makeOrderComponents()`, `makeOfferItem()`, `makeConsiderationItem()` — all accept partial overrides.
 - Addresses in fixtures must be valid 20-byte hex (40 hex chars after `0x`). viem rejects fake addresses like `0xAlice...`.
 
-## What the library does NOT cover
+## What the library covers
 
-`cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders`, `matchAdvancedOrders`, and event parsing are all now implemented. `matchAdvancedOrders` via criteria resolvers is not yet implemented.
+The library provides complete support for:
+- Order fulfillment (basic, standard, advanced, available orders)
+- Order cancellation (`buildCancel`)
+- Counter management (`buildIncrementCounter`, `getCounter`)
+- Order status and hash queries (`getOrderStatus`, `getOrderHash`)
+- Two-sided matching (`buildMatchOrders`, `buildMatchAdvancedOrders` with criteria resolvers)
+- Event parsing and decoding (`decodeSeaportEvent`)
+- Order signing and signature verification
+- Bulk order/listing creation and signing
+- On-chain read operations via `seaportCall`
+
+`matchAdvancedOrders` via criteria resolvers is implemented and tested.
 
 ## Build output
 
 tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 15 subpath entry points, one per source module.
 
-## Open issues
+## Known issues
 
-See [`improvements.md`](./improvements.md) for known issues, action items, and
-recommended fixes from the latest code review. Check it before starting new
-work to avoid overlapping with known problems.
+See [`improvements.md`](./improvements.md) for all known issues, action items, and
+recommended fixes. Some items remain open — check it before starting new work.
 
 ## Related projects
 

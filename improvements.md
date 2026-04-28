@@ -217,19 +217,8 @@ noting if consumers report issues.
 
 ### 19. `getEmptyOrderComponents()` JSDoc is misleading
 
-The JSDoc on `getEmptyOrderComponents()` in `src/order.ts` says:
-
-> The returned struct uses sentinel values (`startTime: 1n, endTime: 2n`)
-> rather than zeros so it passes `validateOrderComponents`.
-
-But the struct has `salt: 0n`, `offer: []`, and `consideration: []` — all
-three independently fail `validateOrderComponents()`. The struct is never
-passed through validation (it is only used in `padLeaves()` →
-`hashOrderComponentsStruct()`), so there is no functional bug, but the
-comment is misleading.
-
-**Fix**: Correct the JSDoc to state that the struct is only used for merkle
-tree padding and is not validated.
+**Fixed**: The JSDoc has been corrected to state that the struct is only used
+for merkle tree padding and is not validated.
 
 ### 20. `hashBulkOrder` skips context validation (inconsistency)
 
@@ -262,18 +251,10 @@ added per item 20). Consider replacing with viem's `hashDomain` utility.
 
 ### 22. `AGENTS.md` is outdated
 
-The file has not kept pace with module additions. Several sections are stale:
-
-| Issue | Detail |
-|---|---|
-| Source layout table | Missing `errors.ts`, `call.ts`, `events.ts`, `increment_counter.ts`, `match.ts`, `order_hash.ts`, `order_status.ts`, `cancel.ts` |
-| Subpath imports | Says only `order` and `bulk-listings` — there are now 15 subpath entry points in `package.json` |
-| "What not covered" | Lists `cancel`, `incrementCounter`, `getOrderStatus`, `matchOrders` as not implemented — all are implemented |
-| "matchAdvancedOrders via criteria resolvers not implemented" | `buildMatchAdvancedOrders` exists and is tested |
-| "Open issues" section | References `improvements.md` items that are all marked fixed — should be updated or removed |
-
-**Fix**: Audit `AGENTS.md` against current source tree and correct each
-section.
+**Fixed**: All sections of `AGENTS.md` have been updated to match the current
+source tree: file table includes all modules, subpath imports list all 15
+entry points, coverage section accurately reflects what is implemented, and
+the known issues section references `improvements.md`.
 
 ### 23. `buildFulfillAvailableOrders` / `buildFulfillAvailableAdvancedOrders` untested
 
@@ -325,10 +306,8 @@ it from the constants subpath module entirely.
 
 ### 27. `isBasicOrderEligible` naming convention
 
-This is a private function (not exported / not in barrel) that reads like a
-public predicate akin to `canFulfillAsBasicOrder`. Consider renaming to
-`checkBasicOrderEligibility` or adding an explicit `@private` TSDoc to
-signal intent.
+**Fixed**: Added a `@private` TSDoc annotation clarifying that this is an
+internal helper, not part of the stable public API.
 
 ### 28. Minor quality-of-life items
 
