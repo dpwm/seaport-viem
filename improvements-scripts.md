@@ -134,7 +134,9 @@ of duplicated code across the three scripts.
 
 ---
 
-### ST2. Simplify `scripts/list-and-buy.ts`
+### ST2. Simplify `scripts/list-and-buy.ts` ✅
+
+**Status**: Done.
 
 After ST1 is in place, rewrite `list-and-buy.ts` to import from
 `helpers.ts`. The script should consist of:
