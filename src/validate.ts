@@ -103,9 +103,10 @@ export function requireValidContext(ctx: SeaportContext): void {
  * - counter is non-negative (negative counters revert on-chain).
  * - salt is non-zero (a zero salt is unusual and likely a mistake).
  *
- * NOTE: This performs structural validation only. It does not validate
- * address fields — callers are responsible for ensuring offerer, zone,
- * token, and recipient addresses are well-formed.
+ * **This performs structural validation only.** It does not validate
+ * address fields (offerer, zone, token, recipient) or on-chain state
+ * (counter freshness, conduit approvals). See {@link OrderComponents}
+ * for detailed semantics of each field and what can go wrong.
  *
  * @param components - The order components to validate.
  * @returns A result indicating validity, with a reason string on failure.

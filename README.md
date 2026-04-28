@@ -47,13 +47,32 @@ import {
 
 import type {
   SeaportContext,     // { address, domain }
-  OrderComponents,   // core order fields
-  Order,             // parameters + signature
+  OrderComponents,   // core order fields — see "Dangerous fields" below
+  Order,              // parameters + signature
   BasicOrderParameters,
-  FulfillmentData,   // { to, data, value }
+  FulfillmentData,    // { to, data, value }
   FulfillmentOptions,
 } from "seaport-viem";
 ```
+
+### Dangerous fields in OrderComponents
+
+Several fields have security and correctness implications that aren't obvious
+from their types alone. Getting any of these wrong produces an order that is
+unfulfillable, cancellable by anyone, or silently rejected by the zone:
+
+| Field | Safe default / rule | Gone wrong if… |
+|--------|---------------------|----------------|
+| `counter` | Always read from chain via `getCounter()` | Wrong value → order hash mismatch, signature won't verify |
+| `salt` | Unique per order, non-zero | Reuse → hash collision, `cancel()` on one order cancels both |
+| `zone` | `0x0000…0000` for open orders | Set to a contract but `zoneHash` is wrong → rejected by `validateOrder` |
+| `zoneHash` | `0x0000…0000` for open orders | Non-zero with no zone → meaningless but still part of the signed hash |
+| `conduitKey` | `0x0000…0000` (direct transfer) | References a conduit the offerer hasn't approved → transfer fails |
+| `startTime` | `0` (active immediately) | `startTime > endTime` → permanently invalid |
+| `endTime` | `2^256 - 1` (never expires) | Too narrow a window → expires before fulfillment |
+
+The full field semantics with Solidity source references are documented in
+[JSDoc on `OrderComponents`](./src/types.ts) and in [the backend flow guide](./backend-flow.md).
 
 ### Order fulfillment
 
@@ -237,6 +256,7 @@ import { validateOrderComponents } from "seaport-viem/validate";
 
 ## Guides
 
+- **[Backend → Client Architecture](./backend-flow.md)** — How to use seaport-viem in server-orchestrated flows: construct orders and calldata on the backend, sign and submit from the browser.
 - **[N Listings Under One Signature](./n-listings-one-signature.md)** — Sign multiple Seaport listings with a single ECDSA signature using bulk order merkle trees.
 - **[Offers in Seaport](./offers.md)** — Collection offers, trait offers, and criteria resolution for buyer-initiated orders.
 

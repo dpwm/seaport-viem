@@ -4,6 +4,15 @@
 
 Lightweight viem-based toolkit for Seaport NFT marketplace orders. Single runtime dependency: `viem`.
 
+## Design constraint: backend → client
+
+This library is **backend-first by design**. Every `build*` function returns
+plain `FulfillmentData` (`{ to, data, value }`) — no wallet calls, no
+`sendTransaction`, no React hooks. The server constructs and encodes; the
+client only signs typed data and submits transactions.
+
+See [`backend-flow.md`](./backend-flow.md) for the full architecture guide.
+
 ## Commands
 
 ```sh
@@ -88,6 +97,17 @@ The library provides complete support for:
 ## Build output
 
 tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 15 subpath entry points, one per source module.
+
+## Guides
+
+- **[Backend → Client Architecture](./backend-flow.md)** — How to use this
+  library in server-orchestrated flows: construct orders and calldata on the
+  backend, sign and submit from the browser.
+- **[N Listings Under One Signature](./n-listings-one-signature.md)** — Sign
+  multiple Seaport listings with a single ECDSA signature using bulk order
+  merkle trees.
+- **[Offers in Seaport](./offers.md)** — Collection offers, trait offers, and
+  criteria resolution for buyer-initiated orders.
 
 ## Known issues
 

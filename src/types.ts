@@ -48,32 +48,216 @@ export const BasicOrderRouteType = {
 export type BasicOrderRouteTypeValue =
   (typeof BasicOrderRouteType)[keyof typeof BasicOrderRouteType];
 
-/** An item being offered in a Seaport order. */
+/**
+ * An item being offered in a Seaport order.
+ *
+ * Mirrors the Solidity `OfferItem` struct in
+ * [ConsiderationStructs.sol](https://github.com/ProjectOpenSea/seaport-core/blob/main/src/lib/ConsiderationStructs.sol).
+ */
 export type OfferItem = {
   itemType: ItemTypeValue;
   token: `0x${string}`;
+  /**
+   * For concrete items (NATIVE, ERC20, ERC721, ERC1155): the exact
+   * token ID or amount.
+   *
+   * For criteria-based items (ERC721_WITH_CRITERIA, ERC1155_WITH_CRITERIA):
+   * the merkle root of the criteria tree. `identifierOrCriteria = 0` means
+   * "any token in the collection" (the default OpenSea criteria).
+   */
   identifierOrCriteria: bigint;
   startAmount: bigint;
   endAmount: bigint;
 };
 
-/** A consideration item (payment/fee) in a Seaport order. */
+/**
+ * A consideration item (payment/fee) in a Seaport order.
+ *
+ * Extends {@link OfferItem} with a `recipient` — the address that
+ * receives this item when the order is fulfilled.
+ *
+ * Mirrors the Solidity `ConsiderationItem` struct.
+ */
 export type ConsiderationItem = OfferItem & {
   recipient: `0x${string}`;
 };
 
-/** The core components of a Seaport order. */
+/**
+ * The core components of a Seaport order that get EIP-712 signed.
+ *
+ * Mirrors the Solidity `OrderComponents` struct defined in
+ * [ConsiderationStructs.sol](https://github.com/ProjectOpenSea/seaport-core/blob/main/src/lib/ConsiderationStructs.sol).
+ *
+ * ## Fields that can ruin your order if wrong
+ *
+ * Several fields have security and correctness implications that aren't
+ * obvious from their types alone. Getting any of these wrong produces an
+ * order that is unfulfillable, cancellable by anyone, or silently rejected
+ * by the zone:
+ *
+ * | Field | Gone wrong if… |
+ * |--------|----------------|
+ * | `counter` | Wrong value → signature mismatch. Must be the offerer's
+ *   current on-chain counter (use {@link getCounter}). |
+ * | `salt` | Not unique per order → order hash collision, cancellable by
+ *   anyone via `cancel()` with the colliding components. |
+ * | `zone` | Set to a zone address but `zoneHash` doesn't match → zone
+ *   rejects the order during `validateOrder`. |
+ * | `zoneHash` | Non-zero on a non-restricted order → ignored but still
+ *   part of the signed hash. Non-zero with zero `zone` → meaningless. |
+ * | `conduitKey` | References a conduit the offerer hasn't approved →
+ *   token transfer fails. Zero key = direct transfer (no conduit). |
+ * | `startTime` / `endTime` | `startTime > endTime` → order is always
+ *   invalid. Too narrow a window → expires before fulfillment. |
+ *
+ * All of these are included in the EIP-712 signature. The contract
+ * computes the order hash as:
+ *
+ * ```
+ * keccak256(ORDER_TYPEHASH ‖ offerer ‖ zone ‖ offerHash ‖
+ *            considerationHash ‖ orderType ‖ startTime ‖ endTime ‖
+ *            zoneHash ‖ salt ‖ conduitKey ‖ counter)
+ * ```
+ *
+ * If any field differs from what was signed, the signature won't verify.
+ */
 export type OrderComponents = {
+  /**
+   * The address that created and signed the order. Must match the
+   * signer or the signature verification in `validateOrder` will fail.
+   */
   offerer: `0x${string}`;
+
+  /**
+   * The zone address for restricted orders (order type 2–3) and contract
+   * orders (type 4).
+   *
+   * For **full open** and **partial open** orders (type 0–1), this should
+   * be the zero address (`0x0000…0000`). No zone validation is performed.
+   *
+   * For **restricted orders** (type 2–3), the zone is a contract that
+   * implements `validateOrder`. After execution, Seaport calls
+   * `validateOrder` on the zone with the order hash, offerer, fulfiller,
+   * and `zoneHash`. The zone must return a magic value (`0x0b2a4e1c`)
+   * or the order is rejected. The zone itself can also cancel the order.
+   *
+   * For **contract orders** (type 4), the zone is the offerer contract
+   * that implements `ratifyOrder`.
+   *
+   * @see {@link https://github.com/ProjectOpenSea/seaport-core/blob/main/src/lib/ZoneInteraction.sol Seaport ZoneInteraction.sol}
+   */
   zone: `0x${string}`;
+
+  /**
+   * The items the offerer is offering (spending).
+   *
+   * For listings, these are the NFTs being sold. For offers, these are
+   * the items the buyer wants to receive.
+   */
   offer: OfferItem[];
+
+  /**
+   * The items the offerer wants in return (receiving).
+   *
+   * For listings, the first item is what the seller receives
+   * (typically ETH/ERC20). Additional items are royalties and fees.
+   */
   consideration: ConsiderationItem[];
+
+  /**
+   * Order type controlling partial fills and restriction.
+   *
+   * - `FULL_OPEN (0)` — anyone fulfills, no partial fills.
+   * - `PARTIAL_OPEN (1)` — anyone fulfills, partial fills allowed.
+   * - `FULL_RESTRICTED (2)` — only offerer or zone fulfills, no partial fills.
+   * - `PARTIAL_RESTRICTED (3)` — only offerer or zone fulfills, partial fills
+   *   allowed.
+   * - `CONTRACT (4)` — contract offerer with `numerator = denominator = 1`.
+   *
+   * @see {@link OrderType}
+   * @see {@link https://github.com/ProjectOpenSea/seaport-types/blob/main/src/lib/ConsiderationEnums.sol ConsiderationEnums.sol}
+   */
   orderType: OrderTypeValue;
+
+  /**
+   * Unix timestamp (seconds) when the order becomes fillable.
+   *
+   * Must be ≤ the current block timestamp when `validate` or any
+   * fulfillment function is called. Use `0` for immediately active.
+   *
+   * Must be `< endTime`. If `startTime >= endTime`, the order is
+   * permanently invalid.
+   */
   startTime: bigint;
+
+  /**
+   * Unix timestamp (seconds) when the order expires.
+   *
+   * Must be ≥ the current block timestamp when `validate` or any
+   * fulfillment function is called. Use `type(uint256).max`
+   * (`0xffff…ffff` as a bigint) for never-expiring.
+   */
   endTime: bigint;
+
+  /**
+   * An arbitrary 32-byte value passed to the zone during
+   * `validateOrder` for restricted orders (type 2–3).
+   *
+   * For non-restricted orders (type 0–1), this field is ignored by
+   * the contract but is still part of the signed EIP-712 hash. Set
+   * it to `0x0000…0000` unless your zone expects a specific value.
+   *
+   * @see {@link ZoneParameters} in ConsiderationStructs.sol
+   */
   zoneHash: `0x${string}`;
+
+  /**
+   * A unique value used to differentiate orders with otherwise
+   * identical parameters.
+   *
+   * **Critical**: If two orders share the same offerer, same
+   * parameters, and same `salt`, they produce the same order hash.
+   * This means `cancel([components])` on one order cancels both.
+   * Always use a unique salt per order.
+   *
+   * Seaport 1.6 requires `salt != 0` — the zero salt is reserved
+   * as an errant value.
+   */
   salt: bigint;
+
+  /**
+   * The conduit key identifying which conduit to use for token
+   * transfers.
+   *
+   * - `0x0000…0000` — direct transfer (no conduit). Tokens must be
+   *   approved to the Seaport contract directly.
+   * - Non-zero — the conduit derived from this key is used. The
+   *   offerer must have approved the conduit via `ConduitController`.
+   *
+   * Conduits batch token approvals and transfers, saving gas when
+   * making many listings. The key is the `salt` passed to
+   * `CREATE2` when the conduit controller deploys the conduit.
+   *
+   * @see {@link https://github.com/ProjectOpenSea/seaport-core/blob/main/src/lib/GettersAndDerivers.sol GettersAndDerivers.sol} `_deriveConduit`
+   */
   conduitKey: `0x${string}`;
+
+  /**
+   * The offerer's counter at the time the order was signed.
+   *
+   * **Must match the current on-chain counter value** for the
+   * offerer. Seaport uses this to bind the order hash to a
+   * specific counter state, so incrementing the counter
+   * (`incrementCounter()`) invalidates all orders signed with
+   * the previous counter value.
+   *
+   * Always read the current counter via {@link getCounter}
+   * before signing. Never hardcode this to `0` — the counter
+   * may have been incremented by a previous order.
+   *
+   * @see {@link getCounter}
+   * @see {@link https://github.com/ProjectOpenSea/seaport-core/blob/main/src/lib/CounterManager.sol CounterManager.sol}
+   */
   counter: bigint;
 };
 
