@@ -65,6 +65,12 @@ All 319 tests pass; `tsc --noEmit` passes.
 
 ### 23. `buildFulfillAvailableOrders` / `buildFulfillAvailableAdvancedOrders` untested
 
+**Resolved**: Tests were already present in `src/order.test.ts` covering all
+key paths listed — `maximumFulfilled` validation, ETH value computation across
+multiple orders, happy-path with defaults, and `checkUint120` propagation for
+advanced orders. All 8 tests pass. The issue entry was simply never marked
+"Resolved" when the tests were added.
+
 `src/order.ts` exports `buildFulfillAvailableOrders` and
 `buildFulfillAvailableAdvancedOrders` but `src/order.test.ts` has no
 test cases for them. They are the only two public fulfillment builders
