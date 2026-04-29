@@ -104,7 +104,18 @@ the specific token being sold.
 
 ## Build output
 
-tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports` map in package.json defines 16 subpath entry points, one per source module.
+tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports`
+map in package.json defines 16 subpath entry points, one per source module.
+
+### Code splitting
+
+The tsup config enables `splitting: true`, which produces shared chunk files
+(e.g., `chunk-*.js`) alongside each entry point. Shared dependencies (ABI
+constants, EIP-712 types, etc.) are extracted into these chunks rather than
+being duplicated across every entry point. This is an intentional
+optimization — modern bundlers (Vite, webpack, Rollup, esbuild) handle ESM
+code splitting natively. If a consumer reports issues with older bundlers,
+`import "seaport-viem"` (the barrel) can be used instead of deep imports.
 
 ## Guides
 

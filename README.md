@@ -279,6 +279,22 @@ import { validateOrderComponents } from "seaport-viem/validate";
 import { buildCriteriaTree, getCriteriaProof } from "seaport-viem/criteria";
 ```
 
+## Build output
+
+tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS bundle is produced.
+The `exports` map in `package.json` defines subpath entries for all 17
+modules — see [AGENTS.md](./AGENTS.md#build-output) for the full list.
+
+### Code splitting
+
+The build uses `splitting: true` in tsup. Shared code (ABI constants,
+EIP-712 types, etc.) is extracted into `chunk-*.js` files rather than
+duplicated across every entry point. This is an intentional optimization for
+an ESM-only library — modern bundlers (Vite, webpack, Rollup, esbuild)
+handle ESM code splitting natively. If you encounter issues with an older
+bundler, prefer importing from the barrel (`"seaport-viem"`) over deep
+subpath imports.
+
 ## Guides
 
 - **[Backend → Client Architecture](./backend-flow.md)** — How to use seaport-viem in server-orchestrated flows: construct orders and calldata on the backend, sign and submit from the browser.

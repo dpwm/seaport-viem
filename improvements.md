@@ -18,12 +18,16 @@ bun run typecheck     # tsc --noEmit must pass
 
 ## Bugs
 
-### 18. tsup `splitting: true` may cause issues with CJS consumers
+### 18. tsup `splitting: true` — intentional, documented
 
-The build uses `splitting: true` which emits shared chunks. Some bundlers
-struggle with code-split ESM when imported from CJS contexts. Since the
-library targets ESM-only (`"type": "module"`), this is low risk but worth
-noting if consumers report issues.
+**Resolved**: After review we opted to keep `splitting: true`. The shared
+chunks are an intentional optimization for ESM-only output: tsup code-splits
+shared dependencies (ABI, constants, types) into reusable chunks rather than
+duplicating them across 17 entry points. Modern bundlers (Vite, webpack,
+Rollup, esbuild) handle ESM code splitting natively.
+
+The tradeoff is documented in `README.md` and `AGENTS.md` so consumers are
+aware of the shared chunk files in `dist/`.
 
 ### 20. `hashBulkOrder` skips context validation (inconsistency)
 
