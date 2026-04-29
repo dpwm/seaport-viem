@@ -453,3 +453,41 @@ property would be more robust. Minimal code change (~3 lines).
 | 35 — seaportCall string-matching guard | ~3 | Small — robustness |
 
 Total potential: ~750 lines eliminated (of ~3,549 non-test lines, or ~21%).
+
+---
+
+## Done
+
+### 36. Seaport event handling scope confirmed
+
+**Done**: All five Seaport-specific events from the canonical
+`ConsiderationEventsAndErrors` interface (in
+`seaport-types/src/interfaces/ConsiderationEventsAndErrors.sol`) are already
+handled by the library in `src/events.ts`. The following table documents each
+event, its relevance, and implementation status.
+
+| Event | Signature | Relevance | Status |
+|-------|-----------|-----------|--------|
+| `OrderFulfilled` | `(bytes32 orderHash, address indexed offerer, address indexed zone, address recipient, SpentItem[] offer, ReceivedItem[] consideration)` | **Core** — tracking order execution: what was spent (offer) and received (consideration) | ✅ Decoded via `decodeSeaportEvent`, typed as `OrderFulfilledEventArgs`, topic constant `ORDER_FULFILLED_TOPIC`, cross-checked in tests |
+| `OrderCancelled` | `(bytes32 orderHash, address indexed offerer, address indexed zone)` | **Core** — checking whether an order has been cancelled on-chain | ✅ Decoded, typed as `OrderCancelledEventArgs`, topic constant `ORDER_CANCELLED_TOPIC` |
+| `OrderValidated` | `(bytes32 orderHash, OrderParameters orderParameters)` | **Core** — tracking explicit validation of orders | ✅ Decoded, typed as `OrderValidatedEventArgs` with nested `OrderParameters`, topic constant `ORDER_VALIDATED_TOPIC` |
+| `OrdersMatched` | `(bytes32[] orderHashes)` | **Core** — tracking matched order groups via `matchOrders`/`matchAdvancedOrders` | ✅ Decoded, typed as `OrdersMatchedEventArgs`, topic constant `ORDERS_MATCHED_TOPIC` |
+| `CounterIncremented` | `(uint256 newCounter, address indexed offerer)` | **Advisory** — detecting counter changes for invalidation of stale signatures | ✅ Decoded, typed as `CounterIncrementedEventArgs`, topic constant `COUNTER_INCREMENTED_TOPIC` |
+
+**Excluded (intentionally out of scope):**
+- Conduit and ConduitController events (`NewConduit`, `OwnershipTransferred`,
+  `PotentialOwnerUpdated`) — these are infrastructure-level and orthogonal to
+  order lifecycle tracking.
+- Zone events (`Paused`, `Unpaused`, `OperatorUpdated`) — zone-specific
+  lifecycle, not Seaport order events.
+- ERC20/ERC721/ERC1155 `Transfer` and `Approval` events — these are token
+  contract events, not Seaport events. Consumers should use dedicated
+  libraries (e.g. viem's ERC20 ABI) for token transfer events.
+
+These five events cover the complete order lifecycle:
+1. **CounterIncremented** — offerer invalidates old orders
+2. **OrderValidated** — offerer pre-validates an order off-chain
+3. **OrderFulfilled** — order is filled (offer items leave, consideration items
+   arrive)
+4. **OrderCancelled** — order is cancelled before fulfillment
+5. **OrdersMatched** — two or more orders are matched atomically
