@@ -443,3 +443,63 @@ belt-and-suspenders checks in the encoders are acceptable too.
 orders always have valid fractions, but library correctness should not
 depend on caller discipline — especially for on-chain transactions where
 a bad fraction wastes gas.
+
+### 7. `verifyOrderSignature` error classification depends on fragile `@noble/curves` error message regex
+
+`verifyOrderSignature` in `src/signature.ts` (lines 38–44) catches errors
+thrown by viem's `verifyTypedData` and uses a regex to distinguish
+signature-verification failures from infrastructure errors:
+
+```ts
+} catch (error: unknown) {
+  // Re-throw viem infrastructure errors (bad address, bad domain, etc.)
+  if (error instanceof BaseError) {
+    throw error;
+  }
+  // Signature recovery failures from @noble/curves produce Error instances
+  // with messages indicating an invalid/unrecoverable signature.
+  // Only swallow signature-related errors; rethrow everything else.
+  // Narrow match to known signature-recovery failure messages from
+  // @noble/curves; avoid swallowing infrastructure errors that happen
+  // to contain the word "signature" (e.g., invalid curve points).
+  if (error instanceof Error && /signature (invalid|mismatch)|unrecoverable signature/i.test(error.message)) {
+    return false;
+  }
+  throw error;
+}
+```
+
+This regex matches error message text from `@noble/curves`, a transitive
+dependency of viem used internally for ECDSA recovery. The approach has
+two fragility concerns:
+
+1. **Transitive dependency coupling**: The library's behavior depends on
+   the exact phrasing of error messages in `@noble/curves`. If viem
+   upgrades to a newer version of noble-curves, switches to a different
+   crypto library, or noble changes its error messages, the regex will
+   stop matching. In the failure case, `verifyOrderSignature` re-throws
+   instead of returning `false` — which is safer than silently swallowing
+   a real error, but breaks the expected `Promise<boolean>` contract for
+   signature validation.
+
+2. **No positive test for error message patterns**: The test suite
+   (`src/signature.test.ts`) tests tampered signatures and mismatched
+   offerers, both of which exercise the `return false` path. But these
+   tests pass because viem's `verifyTypedData` internally handles the
+   failure (returning `false` or throwing). There is no test that
+   verifies the specific noble error messages are matched by the regex —
+   the thrown-error path is implicitly tested but not explicitly
+   validated against known message strings.
+
+A more robust approach would be to validate the signature format
+(parsing r, s, v components) before calling `verifyTypedData`, or to
+use viem's `recoverTypedDataAddress` and compare addresses, avoiding
+the throw/catch control flow entirely.
+
+**Context**: The function works correctly with the current viem and
+noble versions. This is a maintenance risk — a dependency upgrade could
+silently change behavior. The existing `return false` tests protect
+against regressions in the normal case; a noble message format change
+would likely cause `verifyOrderSignature` to throw (failing the test
+suite), alerting maintainers. But the coupling to internal error text
+is an unnecessary fragility that could be eliminated.
