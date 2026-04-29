@@ -223,3 +223,84 @@ pass empty arrays — which is unlikely in production but happens during
 development and integration testing. The fix aligns these builders with
 the validation patterns already established by `buildCancel` and
 `buildValidate`.
+
+### 4. Fulfillment builders lack structural input validation consistent with other builders
+
+Four fulfillment builders in `src/order.ts` accept orders without validating
+that the order structures are semantically valid before encoding:
+
+| Builder | What it doesn't validate | Line |
+|---------|-------------------------|------|
+| `buildFulfillOrder` | Order has at least one offer and one consideration item | 424 |
+| `buildFulfillAdvancedOrder` | Order has at least one offer and one consideration item | 459 |
+| `buildFulfillAvailableOrders` | Orders array is non-empty | 487 |
+| `buildFulfillAvailableAdvancedOrders` | Advanced orders array is non-empty | 530 |
+
+For example, `buildFulfillOrder` (lines 424–440) accepts a single order but
+never checks that `order.parameters.offer.length > 0` or
+`order.parameters.consideration.length > 0`:
+
+```ts
+export function buildFulfillOrder(
+  ctx: SeaportContext,
+  order: { parameters: OrderParameters; signature: `0x${string}` },
+  fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
+): FulfillmentData {
+  requireValidContext(ctx);
+
+  return {
+    to: ctx.address,
+    data: encodeFulfillOrder(order, fulfillerConduitKey),
+    value: computeNativeValue(order.parameters.consideration),
+  };
+}
+```
+
+And `buildFulfillAvailableOrders` (lines 487–513) validates
+`maximumFulfilled > orders.length` but not that `orders` is non-empty:
+
+```ts
+export function buildFulfillAvailableOrders(
+  ctx: SeaportContext,
+  orders: { parameters: OrderParameters; signature: `0x${string}` }[],
+  ...
+  maximumFulfilled: bigint = BigInt(orders.length),
+): FulfillmentData {
+  if (maximumFulfilled > BigInt(orders.length)) {
+    throw new SeaportValidationError(
+      `maximumFulfilled (${maximumFulfilled}) exceeds orders length (${orders.length})`,
+    );
+  }
+  // ... no check for orders.length === 0
+```
+
+When `orders` is `[]`, `maximumFulfilled` defaults to `0n` and the check
+`0n > 0n` passes silently. The function encodes and returns calldata for
+an empty orders array, which the Seaport contract processes as a no-op.
+
+The other builders in the same module establish a contrasting pattern:
+
+| Function | Offer/array validation |
+|----------|----------------------|
+| `buildBasicOrderFulfillment` (`order.ts:104–112`) | `offer.length !== 1` → throws, `consideration.length < 1` → throws |
+| `buildCancel` (`cancel.ts:20`) | `orders.length === 0` → throws |
+| `buildValidate` (`validate.ts:194–198`) | `orders.length === 0` → throws |
+
+**Fix**: Add the following validations before encoding:
+
+- `buildFulfillOrder`: check `order.parameters.offer.length === 0` or
+  `order.parameters.consideration.length === 0` and throw
+  `SeaportValidationError`.
+- `buildFulfillAdvancedOrder`: same structural checks on the order's
+  `parameters.offer` and `parameters.consideration`.
+- `buildFulfillAvailableOrders`: check `orders.length === 0` and throw
+  `SeaportValidationError` (matching `buildValidate`).
+- `buildFulfillAvailableAdvancedOrders`: same check for
+  `advancedOrders.length === 0`.
+
+**Context**: All test fixtures in `src/test-fixtures.ts` use orders with
+single offer and consideration items (`makeOfferItem`, `makeConsiderationItem`
+with defaults), so this gap is never exercised. The fix aligns the fulfill
+builders with the validation conventions already established by
+`buildCancel`, `buildValidate`, and `buildBasicOrderFulfillment` in the same
+codebase.
