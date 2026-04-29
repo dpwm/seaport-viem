@@ -10,6 +10,7 @@ import {
 } from "viem";
 import type { TypedDataDomain } from "viem";
 import type { SeaportContext } from "./types";
+import { requireValidContext } from "./validate";
 import {
   BULK_ORDER_HEIGHT_MIN,
   BULK_ORDER_HEIGHT_MAX,
@@ -144,6 +145,7 @@ export function hashBulkOrder(
   root: `0x${string}`,
   height: number,
 ): `0x${string}` {
+  requireValidContext(ctx);
   const typeString = getBulkOrderTypeString(height);
   const typeHash = keccak256(stringToHex(typeString));
 

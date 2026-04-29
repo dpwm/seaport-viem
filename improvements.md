@@ -29,12 +29,15 @@ See `tsdown.config.ts` and `package.json` for the current build setup.
 
 ### 20. `hashBulkOrder` skips context validation (inconsistency)
 
+**Resolved**: Added `requireValidContext(ctx)` at the top of `hashBulkOrder`.
+Imported from `./validate`. All 319 tests pass; `tsc --noEmit` passes.
+
 `hashOrderComponents()` in `signature.ts` calls `requireValidContext(ctx)`,
-but `hashBulkOrder()` in `bulk_listings.ts` does not — it silently accepts
+but `hashBulkOrder()` in `bulk_listings.ts` did not — it silently accepted
 an invalid context. While `hashBulkOrder` only uses `ctx.domain` (not
 `ctx.address`), a garbage domain produces an undetectably wrong hash.
 
-**Fix**: Add `requireValidContext(ctx)` at the top of `hashBulkOrder` for
+**Fix**: Added `requireValidContext(ctx)` at the top of `hashBulkOrder` for
 consistency with every other function that accepts a `SeaportContext`.
 
 ---
@@ -189,9 +192,8 @@ explicit-export-per-function approach aids discoverability and tree-shaking.
 
 ### 33. `hashBulkOrder` lacks `requireValidContext`
 
-Every function accepting `SeaportContext` calls `requireValidContext(ctx)`
-except `hashBulkOrder` in `bulk_listings.ts` (previously noted as item 20).
-One-line fix: add `requireValidContext(ctx)` at the top of the function.
+**Resolved**: Same fix as item 20. Added `requireValidContext(ctx)` at the
+top of `hashBulkOrder` in `bulk_listings.ts`.
 
 ### 34. Structural duplication in `order.ts` fulfillment builders
 
