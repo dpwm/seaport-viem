@@ -586,3 +586,161 @@ fulfillments (via `aggregateOfferItems` / `aggregateConsiderationItems` or
 manual `FulfillmentComponent[][]` literals), so the empty-default path is
 never exercised. The gap only affects callers who rely on the defaults —
 which is the natural "first try" for a developer integrating the library.
+
+---
+
+## Uncovered lines (coverage gaps)
+
+These lines are reported as uncovered by `bun test --coverage` (100% funcs,
+99.23% lines). Each entry explains why the line is uncovered and how to
+cover it.
+
+### 9. `src/order.ts:269-270, 279-280` — Fallback `return null` in `detectBasicOrderRouteType` when consideration is ERC721/ERC1155
+
+Lines 269–270 and 279–280 are the `return null` fallbacks in
+`detectBasicOrderRouteType` when:
+- `offerItem.itemType === ItemType.ERC721` but `primaryConsideration.itemType`
+  is neither `NATIVE` nor `ERC20` (line 269–270).
+- `offerItem.itemType === ItemType.ERC1155` but `primaryConsideration.itemType`
+  is neither `NATIVE` nor `ERC20` (line 279–280).
+
+`isBasicOrderEligible` does filter out `ERC721_WITH_CRITERIA` and
+`ERC1155_WITH_CRITERIA` consideration items, but it does **not** filter out
+plain `ERC721` or `ERC1155` considerations. These represent NFT-to-NFT swaps
+where the offerer receives a different NFT as the primary consideration — a
+valid Seaport order structure that is simply not a basic order.
+
+The existing `detectBasicOrderRouteType` tests only use `NATIVE` and `ERC20`
+considerations (the six canonical routes). No test constructs an order where
+the primary consideration is `ERC721` or `ERC1155`.
+
+**Fix**: Add two tests to `src/order.test.ts` in the
+`detectBasicOrderRouteType` describe block:
+
+```ts
+test("returns null for ERC721 offer with ERC721 consideration (nft swap)", () => {
+  const order = makeOrder({
+    parameters: makeOrderComponents({
+      consideration: [
+        makeConsiderationItem({ itemType: ItemType.ERC721, token: NFT }),
+      ],
+    }),
+  });
+  expect(detectBasicOrderRouteType(order)).toBeNull();
+});
+
+test("returns null for ERC1155 offer with ERC1155 consideration", () => {
+  const order = makeOrder({
+    parameters: makeOrderComponents({
+      offer: [makeOfferItem({ itemType: ItemType.ERC1155 })],
+      consideration: [
+        makeConsiderationItem({ itemType: ItemType.ERC1155, token: NFT }),
+      ],
+    }),
+  });
+  expect(detectBasicOrderRouteType(order)).toBeNull();
+});
+```
+
+Note: `makeConsiderationItem` sets `recipient` to `ALICE` (the default
+offerer in test fixtures), which satisfies `isBasicOrderEligible`'s
+`recipient === offerer` check. The order passes structural eligibility but
+has no matching basic route, so `detectBasicOrderRouteType` correctly
+returns `null`.
+
+### 10. `src/signature.ts:35,37-39,46-48` — Catch block in `verifyOrderSignature` never entered
+
+The entire catch block in `verifyOrderSignature` (lines 35–50) is uncovered
+because `verifyTypedData` from viem never throws in the test suite — it
+returns `true` for valid signatures and `false` for invalid/tampered ones.
+The catch block handles two exceptional cases:
+
+- **Lines 37–39**: Re-throws `BaseError` (viem infrastructure errors such as
+  invalid signature format, bad domain config, or RPC errors).
+- **Lines 46–48**: Returns `false` when `@noble/curves` throws a
+  signature-recovery failure (e.g. `r` or `s` out of range). The regex
+  `/signature (invalid|mismatch)|unrecoverable signature/i` narrow-matches
+  known noble-curves error messages to avoid swallowing unrelated errors.
+- **Line 49**: Fallthrough re-throw for any other unexpected error type.
+
+Neither path is ever triggered because all test signatures are valid-format
+65-byte hex strings and viem handles recovery failures internally (returning
+`false` rather than throwing).
+
+**Fix**: Add tests using `mock.module` from bun:test to mock `verifyTypedData`
+in `src/signature.test.ts`:
+
+```ts
+import { mock } from "bun:test";
+
+// Test BaseError re-throw path (lines 37–39)
+test("re-throws BaseError from viem", async () => {
+  // Mock verifyTypedData to throw a BaseError
+  ...
+  await expect(verifyOrderSignature(ctx, order)).rejects.toThrow();
+});
+
+// Test noble-curves error → false path (lines 46–48)
+test("returns false for noble-curves signature recovery error", async () => {
+  // Mock verifyTypedData to throw Error matching the noble regex
+  ...
+  expect(await verifyOrderSignature(ctx, order)).toBe(false);
+});
+
+// Test fallthrough re-throw for unexpected errors (line 49)
+test("re-throws unexpected errors", async () => {
+  // Mock verifyTypedData to throw an unrelated Error
+  ...
+  await expect(verifyOrderSignature(ctx, order)).rejects.toThrow();
+});
+```
+
+Alternative (no mocking): pass a structurally invalid signature that causes
+viem to throw before reaching noble-curves recovery. A short signature like
+`"0x00"` triggers `InvalidSerializedSignatureError` (a `BaseError` subclass)
+during viem's signature parsing, covering lines 37–39. The noble-curves
+path (lines 46–48) cannot be triggered without mocking because viem catches
+noble errors and returns `false` instead of propagating them.
+
+### 11. `src/validate.ts:56-60` — `chainId` type guard with non-numeric value never exercised
+
+Lines 56–60 are the `return { valid: false }` block when
+`ctx.domain.chainId` is provided but is neither `number` nor `bigint`:
+
+```ts
+if (
+  typeof ctx.domain.chainId !== "number" &&
+  typeof ctx.domain.chainId !== "bigint"
+) {
+  return {
+    valid: false,
+    reason: `ctx.domain.chainId must be a number or bigint, got ${typeof ctx.domain.chainId}`,
+  };
+}
+```
+
+The type system prevents non-numeric values at compile time (the
+`SeaportContext` type declares `chainId` as `number | bigint | undefined`),
+so this branch serves as a runtime safety net. Existing tests cover `number`,
+`bigint`, `undefined`, non-positive, negative, and non-integer — but not
+`string`, `object`, or other non-numeric types.
+
+**Fix**: Add a test with `chainId` cast to `string` via `as any`:
+
+```ts
+test("rejects chainId that is neither number nor bigint", () => {
+  const result = validateSeaportContext({
+    ...ctx,
+    domain: { ...ctx.domain, chainId: "1" as any },
+  });
+  expect(result.valid).toBe(false);
+  if (!result.valid) {
+    expect(result.reason).toContain("must be a number or bigint");
+  }
+});
+```
+
+This exercises the runtime type guard. The `as any` cast is intentional —
+it simulates a consumer passing an untrusted/deserialized value at runtime
+where the compile-time type check was bypassed (e.g. `JSON.parse` without
+validation).

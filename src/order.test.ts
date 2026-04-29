@@ -368,6 +368,29 @@ describe("detectBasicOrderRouteType", () => {
       BasicOrderRouteType.ETH_TO_ERC721,
     );
   });
+
+  test("returns null for ERC721 offer with ERC721 consideration (nft swap)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ itemType: ItemType.ERC721, token: NFT }),
+        ],
+      }),
+    });
+    expect(detectBasicOrderRouteType(order)).toBeNull();
+  });
+
+  test("returns null for ERC1155 offer with ERC1155 consideration", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [makeOfferItem({ itemType: ItemType.ERC1155 })],
+        consideration: [
+          makeConsiderationItem({ itemType: ItemType.ERC1155, token: NFT }),
+        ],
+      }),
+    });
+    expect(detectBasicOrderRouteType(order)).toBeNull();
+  });
 });
 
 // ── toBasicOrderParameters ───────────────────────────────────────

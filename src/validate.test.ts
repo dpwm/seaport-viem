@@ -140,6 +140,17 @@ describe("validateSeaportContext", () => {
       expect(result.reason).toContain("positive integer");
     }
   });
+
+  test("rejects chainId that is neither number nor bigint", () => {
+    const result = validateSeaportContext({
+      ...ctx,
+      domain: { ...ctx.domain, chainId: "1" as any },
+    });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toContain("must be a number or bigint");
+    }
+  });
 });
 
 describe("validateOrderComponents", () => {
