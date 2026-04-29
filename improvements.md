@@ -394,3 +394,52 @@ No behavior changes because context validation already happens in all cases.
 The `requireValidContext` function is lightweight (two `isAddress` calls and
 one type check), so adding it to four more call sites has negligible
 performance impact.
+
+### 6. Advanced order builders don't validate denominator ≠ 0 or numerator ≤ denominator
+
+Six functions accept numerator/denominator for partial fills but only check
+uint120 range bounds — they don't check that the fraction itself is valid:
+
+| Function | File | Lines | Checks `denom ≠ 0`? | Checks `num ≤ denom`? |
+|----------|------|-------|---------------------|-----------------------|
+| `buildFulfillAdvancedOrder` | `src/order.ts` | 477–481 | ❌ | ❌ |
+| `buildFulfillAvailableAdvancedOrders` | `src/order.ts` | 558–560 | ❌ | ❌ |
+| `buildMatchAdvancedOrders` | `src/match.ts` | 60–62 | ❌ | ❌ |
+| `encodeFulfillAdvancedOrder` | `src/encode.ts` | 108–110 | ❌ | ❌ |
+| `encodeFulfillAvailableAdvancedOrders` | `src/encode.ts` | 165–167 | ❌ | ❌ |
+| `encodeMatchAdvancedOrders` | `src/encode.ts` | 242–244 | ❌ | ❌ |
+
+All six call `checkUint120(order.numerator, "numerator")` and
+`checkUint120(order.denominator, "denominator")`, which only checks that
+each value is in the range `[0, 2^120 - 1]`. It does not check:
+
+1. **`denominator === 0`**: The Seaport contract divides by the denominator
+   when computing fill amounts. `denominator = 0` causes a Solidity
+   division-by-zero panic — a raw EVM revert with no helpful message.
+
+2. **`numerator > denominator`**: The Seaport contract explicitly checks
+   this in `_validateOrderAndUpdateStatus` and reverts with `BadFraction()`.
+   The library should catch this early with a descriptive error.
+
+Both checks are inexpensive (two bigint comparisons) and prevent the caller
+from constructing a transaction that will definitely revert on-chain. The
+`checkUint120` function is a range check by design (it's semantically about
+uint120 encoding limits, not arithmetic validity), so the fraction validation
+should be added in the callers.
+
+**Fix**: Add a new validation function (or inline checks) in the three builder
+functions (`buildFulfillAdvancedOrder`, `buildFulfillAvailableAdvancedOrders`,
+`buildMatchAdvancedOrders`) that throws `SeaportValidationError` if:
+- `denominator === 0n` — message: `"denominator must be non-zero"`
+- `numerator > denominator` — message: `"numerator (X) must be ≤ denominator (Y)"`
+
+The encoder functions in `encode.ts` already rely on the builders for
+validation (per the established pattern of builders validating before
+encoding), so adding checks only in the builders is sufficient. But
+belt-and-suspenders checks in the encoders are acceptable too.
+
+**Context**: All test fixtures use `numerator = 1n, denominator = 1n`
+(full-fill), so the gap is never exercised. In practice, partial-fill
+orders always have valid fractions, but library correctness should not
+depend on caller discipline — especially for on-chain transactions where
+a bad fraction wastes gas.
