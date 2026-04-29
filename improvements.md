@@ -744,3 +744,88 @@ This exercises the runtime type guard. The `as any` cast is intentional —
 it simulates a consumer passing an untrusted/deserialized value at runtime
 where the compile-time type check was bypassed (e.g. `JSON.parse` without
 validation).
+
+### 12. `checkUint120` throws `SeaportEncodingError` from builder functions, violating the error-type convention
+
+`checkUint120` in `src/encode.ts` (lines 262–267) throws
+`SeaportEncodingError` when a value exceeds uint120 range:
+
+```ts
+export function checkUint120(value: bigint, name: string): void {
+  if (value < 0n || value > UINT120_MAX) {
+    throw new SeaportEncodingError(
+      `${name} must be a uint120 (0 to ${UINT120_MAX}), got ${value}`,
+    );
+  }
+}
+```
+
+This function is called directly from three builder functions:
+
+| Builder | File | Line |
+|---------|------|------|
+| `buildFulfillAdvancedOrder` | `src/order.ts` | 477 |
+| `buildFulfillAvailableAdvancedOrders` | `src/order.ts` | 558 |
+| `buildMatchAdvancedOrders` | `src/match.ts` | 60 |
+
+All other input validation in these same builder functions throws
+`SeaportValidationError`:
+
+| Validation | Error type |
+|-----------|-----------|
+| `requireValidContext(ctx)` | `SeaportValidationError` |
+| `maximumFulfilled > orders.length` | `SeaportValidationError` |
+| `checkUint120(order.numerator, ...)` | **`SeaportEncodingError`** ← inconsistent |
+
+This violates the pattern documented in `bug-patterns.md`:
+
+> All input validation throws `SeaportValidationError`
+
+The consequence is that a consumer who catches `SeaportValidationError`
+to handle bad builder inputs will **miss** uint120 overflow errors:
+
+```ts
+try {
+  buildFulfillAdvancedOrder(ctx, {
+    ...order,
+    numerator: 1n << 120n,  // out of uint120 range
+  });
+} catch (err) {
+  if (err instanceof SeaportValidationError) {
+    // This block is NOT entered — SeaportEncodingError is thrown instead
+  }
+}
+```
+
+The error type classification itself is defensible (uint120 range is an
+ABI encoding constraint, and `SeaportEncodingError` is documented to cover
+"checkUint120 overflow"), but the inconsistency with other builder
+validations creates a poor developer experience. A caller who reads the
+`@throws` tags and catches the documented error classes will still get
+surprised.
+
+**Fix**: Remove `checkUint120` calls from the three builder functions and
+replace them with equivalent checks that throw `SeaportValidationError`.
+The `checkUint120` calls in encoder functions (`encodeFulfillAdvancedOrder`,
+`encodeFulfillAvailableAdvancedOrders`, `encodeMatchAdvancedOrders`) remain
+unchanged — they serve as encoding-level guardrails and keep their
+`SeaportEncodingError` type.
+
+In each builder, add before the existing `checkUint120` call:
+
+```ts
+// In buildFulfillAdvancedOrder (src/order.ts:477):
+if (advancedOrder.numerator > UINT120_MAX) {
+  throw new SeaportValidationError(`numerator must be ≤ uint120 max (${UINT120_MAX}), got ${advancedOrder.numerator}`);
+}
+// ...same for denominator
+```
+
+And remove the now-redundant `checkUint120` calls from builder bodies
+(they remain in `encodeFulfillAdvancedOrder` etc. for defense-in-depth).
+
+**Context**: The existing tests in `src/order.test.ts` only check
+`.toThrow("uint120")` — they don't verify the specific error class. So
+changing the error type won't break existing tests. The fix aligns these
+builders with the convention that all input validation a consumer might
+want to catch emits `SeaportValidationError`.
