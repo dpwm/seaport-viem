@@ -737,7 +737,10 @@ export const CONSIDERATION_ITEM_COMPONENTS = EIP712_TYPES.ConsiderationItem;
  *
  * @internal This is an internal ABI-encoding helper used by `hashOrderComponentsStruct`.
  *   It is exported from the module for access by `signature.ts` but is not part
- *   of the stable public API. */
+ *   of the stable public API.
+ * @private Intentionally excluded from the barrel export in `src/index.ts`.
+ *   Consumers importing `seaport-viem/constants` will see this in autocomplete
+ *   but should not rely on it — it may change without notice. */
 export const ORDER_COMPONENTS_STRUCT_ABI_TYPES = EIP712_TYPES.OrderComponents.map(
   (field) => ({
     type: field.type.endsWith("[]") ? "bytes32" : field.type,

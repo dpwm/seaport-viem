@@ -121,6 +121,10 @@ an `@internal` annotation but is intentionally excluded from the barrel in
 see it in IDE autocomplete. Consider adding a `@private` note or excluding
 it from the constants subpath module entirely.
 
+**Resolved**: Added `@private` JSDoc tag with an explicit note that the
+barrel exclusion is intentional. Consumers are warned the export may change
+without notice.
+
 ### 28. Minor quality-of-life items
 
 - **Source maps**: tsup config sets `sourcemap: true` but `package.json`
