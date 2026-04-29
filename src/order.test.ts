@@ -6,6 +6,7 @@ import {
   ZERO_ADDRESS,
   ZERO_BYTES32,
   NATIVE_TOKEN,
+  computeNativeValue,
   canFulfillAsBasicOrder,
   detectBasicOrderRouteType,
   toBasicOrderParameters,
@@ -637,6 +638,54 @@ describe("toOrderParameters", () => {
     const params = toOrderParameters(components, 2n);
     expect(params.totalOriginalConsiderationItems).toBe(2n);
     expect(params.consideration).toHaveLength(3);
+  });
+});
+
+// ── computeNativeValue ──────────────────────────────────────
+
+describe("computeNativeValue", () => {
+  test("returns 0n for empty array", () => {
+    expect(computeNativeValue([])).toBe(0n);
+  });
+
+  test("returns endAmount for single NATIVE item", () => {
+    expect(
+      computeNativeValue([{ itemType: ItemType.NATIVE, endAmount: 1000n }]),
+    ).toBe(1000n);
+  });
+
+  test("sums multiple NATIVE items", () => {
+    expect(
+      computeNativeValue([
+        { itemType: ItemType.NATIVE, endAmount: 500n },
+        { itemType: ItemType.NATIVE, endAmount: 1500n },
+      ]),
+    ).toBe(2000n);
+  });
+
+  test("skips ERC20 items when mixed with NATIVE", () => {
+    expect(
+      computeNativeValue([
+        { itemType: ItemType.NATIVE, endAmount: 500n },
+        { itemType: ItemType.ERC20, endAmount: 9999n },
+        { itemType: ItemType.NATIVE, endAmount: 300n },
+      ]),
+    ).toBe(800n);
+  });
+
+  test("returns 0n when all items are ERC20", () => {
+    expect(
+      computeNativeValue([
+        { itemType: ItemType.ERC20, endAmount: 500n },
+        { itemType: ItemType.ERC20, endAmount: 1500n },
+      ]),
+    ).toBe(0n);
+  });
+
+  test("returns 0n for single ERC20 item", () => {
+    expect(
+      computeNativeValue([{ itemType: ItemType.ERC20, endAmount: 100n }]),
+    ).toBe(0n);
   });
 });
 

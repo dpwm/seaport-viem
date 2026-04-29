@@ -82,6 +82,8 @@ without dedicated tests. Key paths uncovered:
 
 ### 24. Missing standalone tests for several functions
 
+**Resolved**: Added standalone `describe("computeNativeValue", ...)` block with 6 edge cases (empty, single, multiple, mixed NATIVE/ERC20, all-ERC20, single-ERC20). Added `getProof` proof-content verification for height-2 (4-leaf) trees, confirming correct sibling hashes at each layer. The other gaps listed below were already addressed in earlier commits (error-path tests for `getProof` and `unpackBulkSignature`, standalone tests for `aggregateOfferItems`/`aggregateConsiderationItems`, and `basicOrderType`/`totalOriginalAdditionalRecipients` tests for `toBasicOrderParameters`) but the entry was never marked Resolved. All 326 tests pass.
+
 | Function | Gap |
 |---|---|
 | `getProof()` | No error-path test (`index out of range`). No verification for a tree with height > 1. |

@@ -339,6 +339,27 @@ describe("getProof", () => {
     expect(proof).toHaveLength(2);
   });
 
+  test("four-leaf tree: proof has correct sibling hashes at each layer", () => {
+    const leaves = padLeaves( [
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 2n })),
+      hashOrderComponentsStruct(makeOrderComponents({ salt: 3n })),
+    ]);
+    const layers = buildBulkOrderTree(leaves);
+
+    // Leaf 0: sibling at layer 0 is leaf 1, sibling at layer 1 is
+    // keccak256(leaf2 || leaf3), i.e., the right node of layers[1]
+    const proof0 = getProof(layers, 0);
+    expect(proof0[0]).toBe(leaves[1]);
+    expect(proof0[1]).toBe(layers[1]![1]);
+
+    // Leaf 3: sibling at layer 0 is leaf 2, sibling at layer 1 is
+    // keccak256(leaf0 || leaf1), i.e., the left node of layers[1]
+    const proof3 = getProof(layers, 3);
+    expect(proof3[0]).toBe(leaves[2]);
+    expect(proof3[1]).toBe(layers[1]![0]);
+  });
+
   test("proof for index 0 has sibling hash at position 0", () => {
     const leaves = [
       hashOrderComponentsStruct(makeOrderComponents({ salt: 1n })),
