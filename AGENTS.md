@@ -134,6 +134,13 @@ only the index module.
 See [`improvements.md`](./improvements.md) for all known issues, action items, and
 recommended fixes. Some items remain open — check it before starting new work.
 
+## Bug patterns
+
+See [`bug-patterns.md`](./bug-patterns.md) for common root causes of bugs
+discovered in this codebase. Reference it during code review and when
+investigating new issues. The [query checklist](./bug-patterns.md#7-query-checklist)
+is a quick reference for reviewing exported functions.
+
 ## Related projects
 
 The canonical Seaport protocol reference (smart contracts) lives at
