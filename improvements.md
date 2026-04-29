@@ -93,3 +93,79 @@ optional fields (`name`, `version`, `chainId`). The provided `SEAPORT_CTX`
 populates all three, so standard usage is unaffected. But the library should
 produce consistent results for any valid `SeaportContext` regardless of
 which hash function is called.
+
+### 2. `computeNativeValue` uses `endAmount` only, undercomputing `msg.value` for Dutch auction orders
+
+`computeNativeValue` in `src/order.ts` (lines 406–415) sums `endAmount` for
+all NATIVE consideration items to compute the `msg.value` sent with a
+fulfillment transaction:
+
+```ts
+export function computeNativeValue(consideration: readonly { itemType: ItemTypeValue; endAmount: bigint }[]): bigint {
+  let value = 0n;
+  for (const item of consideration) {
+    if (item.itemType === ItemType.NATIVE) {
+      value += item.endAmount;
+    }
+  }
+  return value;
+}
+```
+
+The function type signature does not include `startAmount`. For Dutch auction
+orders where the price descends over time (`startAmount > endAmount`), the
+contract transfers the **current** consideration amount — which is between
+`startAmount` and `endAmount`, interpolated from `block.timestamp`. The
+maximum possible consideration is `startAmount` (at the beginning of the
+time window).
+
+By only summing `endAmount`, `computateNativeValue` undercomputes the
+required `msg.value` whenever `startAmount > endAmount` and the order is
+fulfilled before the price has fully decayed. The Seaport contract checks
+`msg.value >= totalNativeConsideration` and reverts if insufficient, so
+this causes a hard failure for Dutch auction listings.
+
+This affects all fulfillment paths, since every `build*` function delegates
+to `computeNativeValue` (directly or via `computeTotalNativeValue`):
+
+| Builder | Value source |
+|---------|-------------|
+| `buildBasicOrderFulfillment` | `computeNativeValue(order.parameters.consideration)` |
+| `buildFulfillOrder` | `computeNativeValue(order.parameters.consideration)` |
+| `buildFulfillAdvancedOrder` | `computeNativeValue(advancedOrder.parameters.consideration)` |
+| `buildFulfillAvailableOrders` | `computeTotalNativeValue(ctx, orders)` → `computeNativeValue` |
+| `buildFulfillAvailableAdvancedOrders` | `computeTotalNativeValue(ctx, advancedOrders)` → `computeNativeValue` |
+| `buildMatchOrders` | `computeTotalNativeValue(ctx, orders)` → `computeNativeValue` |
+| `buildMatchAdvancedOrders` | `computeTotalNativeValue(ctx, advancedOrders)` → `computeNativeValue` |
+
+All test fixtures use `startAmount === endAmount`, so this is never exposed
+in the existing test suite (`src/order.test.ts` lines 646–694).
+
+**Fix**: Change `computeNativeValue` to use `max(startAmount, endAmount)`
+instead of just `endAmount`. This requires adding `startAmount` to the
+function's parameter type:
+
+```ts
+export function computeNativeValue(
+  consideration: readonly { itemType: ItemTypeValue; startAmount: bigint; endAmount: bigint }[],
+): bigint {
+  let value = 0n;
+  for (const item of consideration) {
+    if (item.itemType === ItemType.NATIVE) {
+      value += item.startAmount > item.endAmount ? item.startAmount : item.endAmount;
+    }
+  }
+  return value;
+}
+```
+
+Since `startAmount >= endAmount` for descending auctions (the common case),
+this is equivalent to using `startAmount`. Using `max` also handles the
+unusual ascending case (`endAmount > startAmount`) correctly. For the
+constant-price case (`startAmount === endAmount`), behaviour is unchanged.
+
+**Context**: This only affects orders with different `startAmount` and
+`endAmount` values — i.e., Dutch auction pricing. Constant-price orders
+(by far the most common on OpenSea/Seaport) are unaffected. The fix is
+a one-line change with no breaking API impact (all callers already have
+access to `startAmount` on their consideration items).
