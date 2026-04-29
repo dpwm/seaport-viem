@@ -169,3 +169,57 @@ constant-price case (`startAmount === endAmount`), behaviour is unchanged.
 (by far the most common on OpenSea/Seaport) are unaffected. The fix is
 a one-line change with no breaking API impact (all callers already have
 access to `startAmount` on their consideration items).
+
+### 3. `buildMatchOrders` and `buildMatchAdvancedOrders` lack input validation for empty arrays
+
+`buildMatchOrders` in `src/match.ts` (lines 22–31) and
+`buildMatchAdvancedOrders` (lines 43–67) accept orders and fulfillments
+arrays but do not validate that they are non-empty before encoding the
+calldata:
+
+```ts
+// buildMatchOrders — no validation for orders.length or fulfillments.length
+export function buildMatchOrders(
+  ctx: SeaportContext,
+  orders: { parameters: OrderParameters; signature: `0x${string}` }[],
+  fulfillments: Fulfillment[],
+): FulfillmentData {
+  const value = computeTotalNativeValue(ctx, orders);
+  return {
+    to: ctx.address,
+    data: encodeMatchOrders(orders, fulfillments),
+    value,
+  };
+}
+```
+
+Other build functions in the same codebase **do** validate their array
+arguments:
+
+| Function | Validation |
+|----------|-----------|
+| `buildCancel` (`src/cancel.ts:20`) | `orders.length === 0` → throws `SeaportValidationError` |
+| `buildValidate` (`src/validate.ts:194`) | `orders.length === 0` → throws `SeaportValidationError` |
+| `buildFulfillAvailableOrders` (`src/order.ts:529`) | `maximumFulfilled > orders.length` → throws `SeaportValidationError` |
+| `buildFulfillAvailableAdvancedOrders` (`src/order.ts:568`) | `maximumFulfilled > orders.length` → throws `SeaportValidationError` |
+
+Both `buildMatchOrders` and `buildMatchAdvancedOrders` silently encode
+and return calldata for empty arrays. The Seaport contract will revert
+with `NoSpecifiedOrdersAvailable` or
+`OfferAndConsiderationRequiredOnFulfillment` — cryptic errors that give
+the consumer no indication of what went wrong. A `SeaportValidationError`
+with a descriptive message (e.g. `"At least one order must be provided"`)
+would be immediately clear.
+
+**Fix**: Add validation at the top of both functions:
+
+- `buildMatchOrders`: throw if `orders.length === 0` or
+  `fulfillments.length === 0`.
+- `buildMatchAdvancedOrders`: throw if `advancedOrders.length === 0`.
+
+**Context**: This is a consistency and UX polish issue. The functions
+work correctly when given valid inputs. The gap only affects callers who
+pass empty arrays — which is unlikely in production but happens during
+development and integration testing. The fix aligns these builders with
+the validation patterns already established by `buildCancel` and
+`buildValidate`.
