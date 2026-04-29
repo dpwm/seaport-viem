@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { BaseError, type PublicClient } from "viem";
-import { seaportCall } from "./index";
+import { SeaportCallError, seaportCall } from "./index";
 
 type MockCall = (params: {
   to: `0x${string}`;
@@ -95,9 +95,9 @@ describe("seaportCall", () => {
     ).rejects.toThrow("Failed to test action details: string error");
   });
 
-  test("re-throws already-enriched no-data error without double wrapping", async () => {
+  test("re-throws already-enriched SeaportCallError without double wrapping", async () => {
     const client = mockClient(async () => {
-      throw new Error("testFn returned no data details");
+      throw new SeaportCallError("testFn returned no data details");
     });
     await expect(
       seaportCall(

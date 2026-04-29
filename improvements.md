@@ -127,13 +127,21 @@ without notice.
 
 ### 28. Minor quality-of-life items
 
-- **Source maps**: tsup config sets `sourcemap: true` but `package.json`
-  `files` only includes `dist` (which would contain `.js.map` files).
-  Confirm source maps are intentionally shipped.
-- **`seaportCall` re-throw guard**: The catch block checks
+- **Source maps**: tsdown config sets `sourcemap: true` and `package.json`
+  `files` includes `dist` (which contains `.mjs.map` files). Source maps
+  are intentionally shipped — they help consumers debug issues in their
+  own code that uses the library.
+- **`seaportCall` re-throw guard**: The catch block checked
   `error.message.startsWith(...)` with an interpolated `fnLabel` string.
   A sentinel property (e.g., a error code or `cause` field) would be more
   robust than `message` prefix matching.
+
+**Resolved**: Replaced the string-prefix check with `error instanceof
+SeaportCallError`. Since `SeaportCallError` is already a custom error
+class used by `seaportCall`, this is type-safe and not brittle against
+message format changes. Updated the re-throw test to throw
+`SeaportCallError` instead of a plain `Error`. Source maps confirmed as
+intentionally shipped — no change needed.
 
 ---
 

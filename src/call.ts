@@ -45,8 +45,8 @@ export async function seaportCall(
     }
     return result.data;
   } catch (error: unknown) {
-    // Re-throw errors we already enriched so they aren't wrapped again.
-    if (error instanceof Error && error.message.startsWith(`${fnLabel} returned no data`)) {
+    // Re-throw SeaportCallError instances we already enriched so they aren't wrapped again.
+    if (error instanceof SeaportCallError) {
       throw error;
     }
     if (error instanceof BaseError) {
