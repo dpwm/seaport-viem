@@ -503,3 +503,86 @@ against regressions in the normal case; a noble message format change
 would likely cause `verifyOrderSignature` to throw (failing the test
 suite), alerting maintainers. But the coupling to internal error text
 is an unnecessary fragility that could be eliminated.
+
+### 8. `buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders` default to empty fulfillments, producing silent no-ops
+
+Both functions accept `offerFulfillments` and `considerationFulfillments`
+parameters that default to `[]` (`src/order.ts`, lines 500–501 and 542–543):
+
+```ts
+// buildFulfillAvailableOrders (lines 500–501)
+export function buildFulfillAvailableOrders(
+  ctx: SeaportContext,
+  orders: { parameters: OrderParameters; signature: `0x${string}` }[],
+  offerFulfillments: FulfillmentComponent[][] = [],           // ❌ defaults to []
+  considerationFulfillments: FulfillmentComponent[][] = [],    // ❌ defaults to []
+  fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
+  maximumFulfilled: bigint = BigInt(orders.length),
+): FulfillmentData {
+
+// buildFulfillAvailableAdvancedOrders (lines 542–543) — same pattern
+  offerFulfillments: FulfillmentComponent[][] = [],            // ❌ defaults to []
+  considerationFulfillments: FulfillmentComponent[][] = [],    // ❌ defaults to []
+```
+
+A caller who writes `buildFulfillAvailableOrders(ctx, orders)` without
+explicitly passing fulfillments gets a `FulfillmentData` where the encoded
+calldata has zero fulfillment components. The Seaport contract processes
+this as a no-op — no items are transferred and no orders are fulfilled.
+The transaction succeeds on-chain but accomplishes nothing, silently
+wasting gas.
+
+The library provides `aggregateOfferItems()` and `aggregateConsiderationItems()`
+helpers that create default 1-to-1 fulfillments, but neither function calls
+them automatically. The caller must know to pass them explicitly:
+
+```ts
+// What the caller must do (but might not know):
+buildFulfillAvailableOrders(
+  ctx,
+  orders,
+  aggregateOfferItems(orders),
+  aggregateConsiderationItems(orders),
+);
+
+// What silently produces a no-op:
+buildFulfillAvailableOrders(ctx, orders);
+```
+
+The same gap applies to `buildFulfillAvailableAdvancedOrders`. Both
+functions also do not validate that at least one of `offerFulfillments`
+or `considerationFulfillments` is non-empty, which would catch the
+empty-default case.
+
+Other builders in the same codebase establish a contrasting pattern
+of validating their inputs before encoding:
+
+| Function | Input validation |
+|----------|-----------------|
+| `buildCancel` (`src/cancel.ts:20`) | `orders.length === 0` → throws |
+| `buildValidate` (`src/validate.ts:194`) | `orders.length === 0` → throws |
+| `buildBasicOrderFulfillment` (`src/order.ts:104`) | `offer.length !== 1` → throws |
+
+**Fix**: One of two approaches:
+
+1. **Validate explicitly**: throw `SeaportValidationError` if both
+   `offerFulfillments.length === 0` and `considerationFulfillments.length === 0`
+   (at least one side must have fulfillments).
+
+2. **Auto-generate defaults**: compute `offerFulfillments` and
+   `considerationFulfillments` from `aggregateOfferItems(orders)` and
+   `aggregateConsiderationItems(orders)` when the caller does not
+   provide explicit fulfillments. This is the safer DX choice — the
+   common case (independent orders with 1-to-1 fulfillments) works
+   without ceremony.
+
+Approach (2) is preferred because it matches the intent of a caller who
+passes orders without fulfillment components: "just fulfill these orders
+independently." The explicit-fulfillment path remains available for callers
+who need cross-order aggregation.
+
+**Context**: All existing tests for these functions pass explicit
+fulfillments (via `aggregateOfferItems` / `aggregateConsiderationItems` or
+manual `FulfillmentComponent[][]` literals), so the empty-default path is
+never exercised. The gap only affects callers who rely on the defaults —
+which is the natural "first try" for a developer integrating the library.
