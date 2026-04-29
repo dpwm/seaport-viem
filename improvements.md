@@ -225,8 +225,15 @@ function makeEncoder<T extends readonly unknown[]>(
 }
 ```
 
-This would reduce `encode.ts` from ~280 to ~100 lines. Tradeoff: the current
-explicit-export-per-function approach aids discoverability and tree-shaking.
+**Resolved**: Added a private `encodeCall(abiItem, functionName, args)` helper
+that each exported function delegates to, rather than inverting the call stack
+with a factory. Keeps explicit per-function exports, JSDoc, and type safety
+while eliminating the repetitive `encodeFunctionData({ abi: [...], functionName:
+"...", args: [...] })` pattern. The three functions with uint120 validation
+(`encodeFulfillAdvancedOrder`, `encodeFulfillAvailableAdvancedOrders`,
+`encodeMatchAdvancedOrders`) use the same helper after their validation logic.
+`encode.ts` reduced from 299 to 281 lines. All 311 tests pass; `tsc --noEmit`
+passes.
 
 ### 33. `hashBulkOrder` lacks `requireValidContext`
 
@@ -257,9 +264,9 @@ property would be more robust. Minimal code change (~3 lines).
 |------|-------------|---------------------|
 | 30 — Replace encodeDomainSeparator | ~30 (delegated to viem) | Medium — removes hand-rolled encoding |
 | 31 — Single source of event definitions | ~20 | Medium — eliminates drift risk |
-| 32 — Encoder factory | ~180 | Medium — discoverability tradeoff |
+| 32 — `encodeCall` helper | ~18 | Small — preserves discoverability and tree-shaking |
 | 33 — hashBulkOrder validation | 0 (add 1) | Small — consistency |
 | 34 — order.ts deduplication | ~40 | Small — structural cleanup |
 | 35 — seaportCall string-matching guard | ~3 | Small — robustness |
 
-Total potential: ~273 lines eliminated.
+Total potential: ~111 lines eliminated.
