@@ -304,3 +304,93 @@ with defaults), so this gap is never exercised. The fix aligns the fulfill
 builders with the validation conventions already established by
 `buildCancel`, `buildValidate`, and `buildBasicOrderFulfillment` in the same
 codebase.
+
+### 5. `requireValidContext(ctx)` is not called at the top of four builder functions
+
+Six out of ten builder functions explicitly call `requireValidContext(ctx)` as
+the first statement in their function body, establishing a clear pattern:
+
+| Builder | File | Line | `requireValidContext` at top? |
+|---------|------|------|------------------------------|
+| `buildBasicOrderFulfillment` | `src/order.ts` | 122 | ✅ First statement |
+| `buildFulfillOrder` | `src/order.ts` | 451 | ✅ First statement |
+| `buildFulfillAdvancedOrder` | `src/order.ts` | 477 | ✅ First statement |
+| `buildCancel` | `src/cancel.ts` | 18 | ✅ First statement |
+| `buildValidate` | `src/validate.ts` | 192 | ✅ First statement |
+| `buildIncrementCounter` | `src/increment_counter.ts` | 15 | ✅ First statement |
+| `buildFulfillAvailableOrders` | `src/order.ts` | 505 | ❌ Validates `maximumFulfilled` first |
+| `buildFulfillAvailableAdvancedOrders` | `src/order.ts` | 547 | ❌ Validates uint120/`maximumFulfilled` first |
+| `buildMatchOrders` | `src/match.ts` | 27 | ❌ Relies on `computeTotalNativeValue` |
+| `buildMatchAdvancedOrders` | `src/match.ts` | 52 | ❌ Validates uint120 first |
+
+All four non-conforming builders eventually validate the context through
+`computeTotalNativeValue` (which calls `requireValidContext` internally), so
+this gap does **not** cause incorrect behavior. But the delegation is implicit,
+and the validation order differs from the established pattern:
+
+```ts
+// Conforming pattern: context first, then params
+// src/order.ts:470–478 (buildFulfillAdvancedOrder)
+export function buildFulfillAdvancedOrder(...): FulfillmentData {
+  requireValidContext(ctx);  // always first
+  checkUint120(...);
+  ...
+}
+
+// Non-conforming: params checked before context
+// src/order.ts:547–567 (buildFulfillAvailableAdvancedOrders)
+export function buildFulfillAvailableAdvancedOrders(...): FulfillmentData {
+  for (const order of advancedOrders) {
+    checkUint120(order.numerator, "numerator");  // runs first
+    checkUint120(order.denominator, "denominator");
+  }
+  if (maximumFulfilled > BigInt(advancedOrders.length)) { ... }  // runs second
+  const value = computeTotalNativeValue(ctx, advancedOrders);  // context validated here
+  ...
+}
+
+// Non-conforming: context validation is implicit
+// src/match.ts:27–36 (buildMatchOrders)
+export function buildMatchOrders(...): FulfillmentData {
+  const value = computeTotalNativeValue(ctx, orders);  // context validated inside
+  ...
+}
+```
+
+This creates three concrete concerns:
+
+1. **Error message priority**: In `buildFulfillAvailableAdvancedOrders` and
+   `buildMatchAdvancedOrders`, if both the context is invalid AND numeric
+   parameters exceed uint120 bounds, the error the caller sees is about
+   uint120 overflow rather than the misconfigured context. Following the
+   established pattern, context validation should have priority.
+
+2. **Implicit dependency**: `computeTotalNativeValue` acts as a transitive
+   context validator, but this dependency is not obvious to readers. A future
+   refactor of `computeTotalNativeValue` (or the call order) could silently
+   disable context validation in these four functions.
+
+3. **Pattern inconsistency**: New contributors who look at the minority
+   pattern (4/10 builders) might conclude context validation is optional,
+   leading to new builders that also skip it.
+
+**Fix**: Add `requireValidContext(ctx)` as the first statement in each of the
+four non-conforming function bodies:
+
+- `buildFulfillAvailableOrders` (`src/order.ts:505`): insert before the
+  `maximumFulfilled` check.
+- `buildFulfillAvailableAdvancedOrders` (`src/order.ts:547`): insert before
+  the `checkUint120` loop.
+- `buildMatchOrders` (`src/match.ts:27`): insert before the
+  `computeTotalNativeValue` call. (Note: this makes the existing context
+  validation inside `computeTotalNativeValue` redundant but harmless —
+  no double-error risk because `requireValidContext` is idempotent at the
+  validation level: the second check passes immediately.)
+- `buildMatchAdvancedOrders` (`src/match.ts:52`): insert before the
+  `checkUint120` loop.
+
+**Context**: The fix is purely about code consistency and maintainability.
+No behavior changes because context validation already happens in all cases.
+The `requireValidContext` function is lightweight (two `isAddress` calls and
+one type check), so adding it to four more call sites has negligible
+performance impact.
