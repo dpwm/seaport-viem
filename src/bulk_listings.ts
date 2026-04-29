@@ -7,6 +7,7 @@ import {
   hexToNumber,
   toBytes,
   toHex,
+  hashDomain,
 } from "viem";
 import type { TypedDataDomain } from "viem";
 import type { SeaportContext } from "./types";
@@ -295,6 +296,8 @@ export function unpackBulkSignature(packed: `0x${string}`): {
 /**
  * Encode an EIP-712 domain separator as bytes32.
  *
+ * Delegates to viem's `hashDomain` for a correct, validated implementation.
+ *
  * @internal This is an internal utility used by `hashBulkOrder`. It is exported
  *   for advanced use cases but is not part of the stable public API.
  *
@@ -302,26 +305,22 @@ export function unpackBulkSignature(packed: `0x${string}`): {
  * @returns The domain separator hash (bytes32).
  */
 export function encodeDomainSeparator(domain: TypedDataDomain): `0x${string}` {
-  return keccak256(
-    encodeAbiParameters(
-      [
-        { type: "bytes32" },
-        { type: "bytes32" },
-        { type: "bytes32" },
-        { type: "uint256" },
-        { type: "address" },
+  return hashDomain({
+    domain: {
+      name: domain.name ?? "",
+      version: domain.version ?? "",
+      chainId: BigInt(domain.chainId ?? 0),
+      // Caller (hashBulkOrder) validates via requireValidContext before calling;
+      // this cast matches the runtime guarantee established by that check.
+      verifyingContract: domain.verifyingContract as `0x${string}`,
+    },
+    types: {
+      EIP712Domain: [
+        { name: "name", type: "string" },
+        { name: "version", type: "string" },
+        { name: "chainId", type: "uint256" },
+        { name: "verifyingContract", type: "address" },
       ],
-      [
-        keccak256(
-          stringToHex(
-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
-          ),
-        ),
-        keccak256(stringToHex(domain.name ?? "")),
-        keccak256(stringToHex(domain.version ?? "")),
-        BigInt(domain.chainId ?? 0),
-        domain.verifyingContract as `0x${string}`,
-      ],
-    ),
-  );
+    },
+  });
 }

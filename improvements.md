@@ -56,8 +56,12 @@ domain.verifyingContract as `0x${string}`
 - Missing `name` / `version` / `chainId` default to empty/zero strings or
   `0n`, producing a domain separator that will not match any real deployment.
 
-**Fix**: Add validation before encoding (or rely on `requireValidContext`
-added per item 20). Consider replacing with viem's `hashDomain` utility.
+**Resolved**: Replaced the hand-rolled `encodeDomainSeparator` with a
+wrapper around viem's `hashDomain` (public export in viem 2.48.4). The
+wrapper provides explicit defaults for `name`/`version`/`chainId` before
+passing to `hashDomain`. The remaining type assertion on `verifyingContract`
+is backed by the `requireValidContext` check already called in `hashBulkOrder`.
+All 319 tests pass; `tsc --noEmit` passes.
 
 ### 23. `buildFulfillAvailableOrders` / `buildFulfillAvailableAdvancedOrders` untested
 
@@ -95,9 +99,11 @@ export function encodeDomainSeparator(domain: TypedDataDomain): `0x${string}` {
   return hashDomain(domain);
 }
 ```
-(Note: `hashDomain` is not part of viem's documented public API — it lives
-in `viem/utils`. Verify it is available in the minimum supported viem
-version before switching.)
+
+**Resolved**: `hashDomain` is a public export from viem 2.48.4
+(confirmed in `viem/index.ts` and `viem/_types/index.d.ts`). The
+replacement was applied as part of item 21/30 — `encodeDomainSeparator`
+now delegates to `hashDomain`.
 
 ### 26. `ORDER_COMPONENTS_STRUCT_ABI_TYPES` barrel omission undocumented
 
@@ -133,10 +139,11 @@ that does the same thing as viem's `hashDomain`. It also uses an unsafe type
 assertion (`domain.verifyingContract as \`0x${string}\``) without validation
 (previously noted as item 21).
 
-**Fix**: Replace with `import { hashDomain } from "viem"` and delete
-`encodeDomainSeparator`. This removes the unsafe type assertion and ~30 lines
-of hand-rolled encoding. (Verify `hashDomain` is available in the minimum
-supported viem version before switching, per item 25.)
+**Resolved**: Replaced the hand-rolled encoding with a wrapper around
+viem's `hashDomain`. The function is kept (it's exported from the barrel)
+but now delegates to viem. This removes ~30 lines of manually crafted
+encoding and relies on viem's battle-tested implementation. Applied
+together with item 21.
 
 ### 31. Event definitions live in three places (drift risk)
 
@@ -217,7 +224,7 @@ property would be more robust. Minimal code change (~3 lines).
 
 | Item | Lines saved | Complexity reduction |
 |------|-------------|---------------------|
-| 30 — Replace encodeDomainSeparator | ~30 | Medium — removes unsafe type assertion |
+| 30 — Replace encodeDomainSeparator | ~30 (delegated to viem) | Medium — removes hand-rolled encoding |
 | 31 — Single source of event definitions | ~20 | Medium — eliminates drift risk |
 | 32 — Encoder factory | ~180 | Medium — discoverability tradeoff |
 | 33 — hashBulkOrder validation | 0 (add 1) | Small — consistency |
