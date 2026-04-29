@@ -406,7 +406,7 @@ export function aggregateConsiderationItems<T extends { parameters: { considerat
 /**
  * Sum all NATIVE consideration items to compute msg.value.
  */
-export function computeNativeValue(consideration: { itemType: ItemTypeValue; endAmount: bigint }[]): bigint {
+export function computeNativeValue(consideration: readonly { itemType: ItemTypeValue; endAmount: bigint }[]): bigint {
   let value = 0n;
   for (const item of consideration) {
     if (item.itemType === ItemType.NATIVE) {
@@ -414,6 +414,25 @@ export function computeNativeValue(consideration: { itemType: ItemTypeValue; end
     }
   }
   return value;
+}
+
+/**
+ * Validate the Seaport context and compute the total native value across
+ * all orders' consideration items.
+ *
+ * @private This is an internal helper shared by fulfillment builders in this
+ *   module and in `match.ts`. It is not part of the stable public API.
+ */
+export function computeTotalNativeValue(
+  ctx: SeaportContext,
+  orders: readonly { parameters: { consideration: readonly ConsiderationItem[] } }[],
+): bigint {
+  requireValidContext(ctx);
+  let total = 0n;
+  for (const order of orders) {
+    total += computeNativeValue(order.parameters.consideration);
+  }
+  return total;
 }
 
 /**
@@ -491,18 +510,13 @@ export function buildFulfillAvailableOrders(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   maximumFulfilled: bigint = BigInt(orders.length),
 ): FulfillmentData {
-  requireValidContext(ctx);
-
   if (maximumFulfilled > BigInt(orders.length)) {
     throw new SeaportValidationError(
       `maximumFulfilled (${maximumFulfilled}) exceeds orders length (${orders.length})`,
     );
   }
 
-  let value = 0n;
-  for (const order of orders) {
-    value += computeNativeValue(order.parameters.consideration);
-  }
+  const value = computeTotalNativeValue(ctx, orders);
   return {
     to: ctx.address,
     data: encodeFulfillAvailableOrders(
@@ -540,8 +554,6 @@ export function buildFulfillAvailableAdvancedOrders(
   recipient: `0x${string}` = ZERO_ADDRESS,
   maximumFulfilled: bigint = BigInt(advancedOrders.length),
 ): FulfillmentData {
-  requireValidContext(ctx);
-
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");
     checkUint120(order.denominator, "denominator");
@@ -553,10 +565,7 @@ export function buildFulfillAvailableAdvancedOrders(
     );
   }
 
-  let value = 0n;
-  for (const order of advancedOrders) {
-    value += computeNativeValue(order.parameters.consideration);
-  }
+  const value = computeTotalNativeValue(ctx, advancedOrders);
   return {
     to: ctx.address,
     data: encodeFulfillAvailableAdvancedOrders(

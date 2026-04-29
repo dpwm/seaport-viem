@@ -12,8 +12,7 @@ import {
   encodeMatchAdvancedOrders,
   checkUint120,
 } from "./encode";
-import { requireValidContext } from "./validate";
-import { computeNativeValue } from "./order";
+import { computeTotalNativeValue } from "./order";
 
 /**
  * Build a transaction for matchOrders.
@@ -30,13 +29,7 @@ export function buildMatchOrders(
   orders: { parameters: OrderParameters; signature: `0x${string}` }[],
   fulfillments: Fulfillment[],
 ): FulfillmentData {
-  requireValidContext(ctx);
-
-  let value = 0n;
-  for (const order of orders) {
-    value += computeNativeValue(order.parameters.consideration);
-  }
-
+  const value = computeTotalNativeValue(ctx, orders);
   return {
     to: ctx.address,
     data: encodeMatchOrders(orders, fulfillments),
@@ -63,18 +56,12 @@ export function buildMatchAdvancedOrders(
   fulfillments: Fulfillment[] = [],
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
-  requireValidContext(ctx);
-
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");
     checkUint120(order.denominator, "denominator");
   }
 
-  let value = 0n;
-  for (const order of advancedOrders) {
-    value += computeNativeValue(order.parameters.consideration);
-  }
-
+  const value = computeTotalNativeValue(ctx, advancedOrders);
   return {
     to: ctx.address,
     data: encodeMatchAdvancedOrders(

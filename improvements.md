@@ -248,6 +248,14 @@ native value across orders, build return object). `buildMatchOrders` and
 `buildMatchAdvancedOrders` follow the same pattern. A private helper could
 reduce ~40 lines.
 
+**Resolved**: Extracted the shared `requireValidContext` + value-sum loop
+into an exported `computeTotalNativeValue` helper in `order.ts`. The helper
+is exported (for use by `match.ts`) but excluded from the barrel — it is
+not part of the stable public API. All 4 builders (`buildFulfillAvailableOrders`,
+`buildFulfillAvailableAdvancedOrders`, `buildMatchOrders`,
+`buildMatchAdvancedOrders`) now delegate to it. ~24 net lines saved across
+both files. All tests pass; `tsc --noEmit` passes.
+
 ### 35. `seaportCall` re-throw guard uses fragile string matching
 
 The catch block in `src/call.ts` checks
