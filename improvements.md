@@ -184,6 +184,17 @@ truth is better.
 `if (topic === ...)` branches. Remove the `*_TOPIC` constants (or compute
 them from the ABI items).
 
+**Resolved**: Eliminated all three sources of drift. Removed the five
+`*_TOPIC` hardcoded hex constants and the five `*Event` `parseAbiItem`
+constants from `events.ts`. Topic hashes are now computed at module scope
+from the canonical `seaportEventAbi` (the sole JSON ABI definition in
+`constants.ts`) using `encodeEventTopics`. The `decodeSeaportEvent` function
+iterates over `seaportEventAbi` entries, matching topics against the
+pre-computed map. The barrel (`index.ts`) no longer re-exports the removed
+constants. Existing tests were simplified to remove cross-checks (no longer
+needed) and updated to reference `seaportEventAbi` directly. All 311 tests
+pass; `tsc --noEmit` passes.
+
 ### 32. `encode.ts` functions are mechanically repetitive
 
 All 13 encoder functions follow the identical pattern:

@@ -157,16 +157,6 @@ export {
 // Event parsing
 export {
   decodeSeaportEvent,
-  OrderFulfilledEvent,
-  OrderCancelledEvent,
-  OrderValidatedEvent,
-  OrdersMatchedEvent,
-  CounterIncrementedEvent,
-  ORDER_FULFILLED_TOPIC,
-  ORDER_CANCELLED_TOPIC,
-  ORDER_VALIDATED_TOPIC,
-  ORDERS_MATCHED_TOPIC,
-  COUNTER_INCREMENTED_TOPIC,
 } from "./events";
 export type {
   OrderFulfilledEventArgs,

@@ -1,19 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Log } from "viem";
 import { encodeEventTopics, encodeAbiParameters, parseAbiParameters } from "viem";
-import {
-  decodeSeaportEvent,
-  ORDER_FULFILLED_TOPIC,
-  ORDER_CANCELLED_TOPIC,
-  ORDER_VALIDATED_TOPIC,
-  ORDERS_MATCHED_TOPIC,
-  COUNTER_INCREMENTED_TOPIC,
-  OrderFulfilledEvent,
-  OrderCancelledEvent,
-  OrderValidatedEvent,
-  OrdersMatchedEvent,
-  CounterIncrementedEvent,
-} from "./events";
+import { decodeSeaportEvent } from "./events";
 import type {
   OrderFulfilledEventArgs,
   OrderCancelledEventArgs,
@@ -23,6 +11,16 @@ import type {
 } from "./events";
 import { seaportEventAbi, ItemType, OrderType, ZERO_ADDRESS, ZERO_BYTES32 } from "./index";
 import { ALICE, NFT } from "./test-fixtures";
+
+/**
+ * Look up an event ABI item from seaportEventAbi by name.
+ * Returns the ABI item so tests can use it with encodeEventTopics.
+ */
+function eventAbi(name: string) {
+  const item = seaportEventAbi.find((e) => e.name === name);
+  if (!item) throw new Error(`Event "${name}" not found in seaportEventAbi`);
+  return item;
+}
 
 describe("seaportEventAbi", () => {
   test("has 5 events", () => {
@@ -36,109 +34,6 @@ describe("seaportEventAbi", () => {
     expect(names).toContain("OrderValidated");
     expect(names).toContain("OrdersMatched");
     expect(names).toContain("CounterIncremented");
-  });
-});
-
-describe("event ABI cross-check", () => {
-  // Verify that the JSON ABI (seaportEventAbi) and the parseAbiItem() strings
-  // produce identical topic hashes. If either definition is changed without
-  // updating the other, at least one of these tests will fail.
-
-  const eventNames = [
-    "OrderFulfilled",
-    "OrderCancelled",
-    "OrderValidated",
-    "OrdersMatched",
-    "CounterIncremented",
-  ] as const;
-
-  // Map from JSON ABI event name to corresponding parseAbiItem export
-  const parsedEvents: Record<string, unknown> = {
-    OrderFulfilled: OrderFulfilledEvent,
-    OrderCancelled: OrderCancelledEvent,
-    OrderValidated: OrderValidatedEvent,
-    OrdersMatched: OrdersMatchedEvent,
-    CounterIncremented: CounterIncrementedEvent,
-  };
-
-  for (const name of eventNames) {
-    test(`${name} topic hash matches between JSON ABI and parseAbiItem`, () => {
-      const jsonAbiItem = seaportEventAbi.find((e) => e.name === name);
-      expect(jsonAbiItem).toBeDefined();
-
-      const fromJson = encodeEventTopics({
-        abi: [jsonAbiItem!],
-        eventName: name,
-      })[0]!;
-
-      const fromParsed = encodeEventTopics({
-        abi: [parsedEvents[name]] as any,
-        eventName: name,
-      })[0]!;
-
-      expect(String(fromJson)).toBe(String(fromParsed));
-    });
-  }
-
-  // Also verify that both definitions match the hardcoded topic constants
-  const topicConstants: Record<string, string> = {
-    OrderFulfilled: ORDER_FULFILLED_TOPIC,
-    OrderCancelled: ORDER_CANCELLED_TOPIC,
-    OrderValidated: ORDER_VALIDATED_TOPIC,
-    OrdersMatched: ORDERS_MATCHED_TOPIC,
-    CounterIncremented: COUNTER_INCREMENTED_TOPIC,
-  };
-
-  for (const name of eventNames) {
-    test(`${name} hardcoded topic constant matches ABI definitions`, () => {
-      const fromJson = encodeEventTopics({
-        abi: [seaportEventAbi.find((e) => e.name === name)!],
-        eventName: name,
-      })[0]!;
-      expect(String(fromJson)).toBe(String(topicConstants[name]));
-    });
-  }
-});
-
-describe("topic hashes", () => {
-  test("ORDER_FULFILLED_TOPIC matches parsed event", () => {
-    const computed = encodeEventTopics({
-      abi: [OrderFulfilledEvent],
-      eventName: "OrderFulfilled",
-    })[0]!;
-    expect(String(ORDER_FULFILLED_TOPIC)).toBe(String(computed));
-  });
-
-  test("ORDER_CANCELLED_TOPIC matches parsed event", () => {
-    const computed = encodeEventTopics({
-      abi: [OrderCancelledEvent],
-      eventName: "OrderCancelled",
-    })[0]!;
-    expect(String(ORDER_CANCELLED_TOPIC)).toBe(String(computed));
-  });
-
-  test("ORDER_VALIDATED_TOPIC matches parsed event", () => {
-    const computed = encodeEventTopics({
-      abi: [OrderValidatedEvent],
-      eventName: "OrderValidated",
-    })[0]!;
-    expect(String(ORDER_VALIDATED_TOPIC)).toBe(String(computed));
-  });
-
-  test("ORDERS_MATCHED_TOPIC matches parsed event", () => {
-    const computed = encodeEventTopics({
-      abi: [OrdersMatchedEvent],
-      eventName: "OrdersMatched",
-    })[0]!;
-    expect(String(ORDERS_MATCHED_TOPIC)).toBe(String(computed));
-  });
-
-  test("COUNTER_INCREMENTED_TOPIC matches parsed event", () => {
-    const computed = encodeEventTopics({
-      abi: [CounterIncrementedEvent],
-      eventName: "CounterIncremented",
-    })[0]!;
-    expect(String(COUNTER_INCREMENTED_TOPIC)).toBe(String(computed));
   });
 });
 
@@ -182,7 +77,7 @@ describe("decodeSeaportEvent", () => {
     );
 
     const topics = encodeEventTopics({
-      abi: [OrderFulfilledEvent],
+      abi: [eventAbi("OrderFulfilled")],
       eventName: "OrderFulfilled",
       args: { offerer: ALICE, zone: ZERO_ADDRESS },
     }) as `0x${string}`[];
@@ -198,7 +93,7 @@ describe("decodeSeaportEvent", () => {
     ]);
 
     const topics = encodeEventTopics({
-      abi: [OrderCancelledEvent],
+      abi: [eventAbi("OrderCancelled")],
       eventName: "OrderCancelled",
       args: { offerer: ALICE, zone: ZERO_ADDRESS },
     }) as `0x${string}`[];
@@ -214,7 +109,7 @@ describe("decodeSeaportEvent", () => {
     const data = encodeAbiParameters(parseAbiParameters("uint256"), [42n]);
 
     const topics = encodeEventTopics({
-      abi: [CounterIncrementedEvent],
+      abi: [eventAbi("CounterIncremented")],
       eventName: "CounterIncremented",
       args: { offerer: ALICE },
     }) as `0x${string}`[];
@@ -265,7 +160,7 @@ describe("decodeSeaportEvent", () => {
     );
 
     const topics = encodeEventTopics({
-      abi: [OrderValidatedEvent],
+      abi: [eventAbi("OrderValidated")],
       eventName: "OrderValidated",
     }) as `0x${string}`[];
 
@@ -297,7 +192,7 @@ describe("decodeSeaportEvent", () => {
     );
 
     const topics = encodeEventTopics({
-      abi: [OrdersMatchedEvent],
+      abi: [eventAbi("OrdersMatched")],
       eventName: "OrdersMatched",
     }) as `0x${string}`[];
 

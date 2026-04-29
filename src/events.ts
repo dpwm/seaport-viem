@@ -1,11 +1,12 @@
+import { decodeEventLog, encodeEventTopics } from "viem";
 import type { Log } from "viem";
-import { decodeEventLog, parseAbiItem } from "viem";
 import type {
   SpentItem,
   ReceivedItem,
   OrderParameters,
 } from "./types";
 import { SeaportValidationError } from "./errors";
+import { seaportEventAbi } from "./constants";
 
 // ── Event argument types ────────────────────────────────────
 
@@ -51,54 +52,19 @@ export type SeaportEventArgs =
   | ({ eventName: "OrdersMatched" } & OrdersMatchedEventArgs)
   | ({ eventName: "CounterIncremented" } & CounterIncrementedEventArgs);
 
-// ── Event topic hashes ──────────────────────────────────────
+// ── Event topic hashes (computed from canonical seaportEventAbi) ──
 
-/** keccak256 of the OrderFulfilled event signature. */
-export const ORDER_FULFILLED_TOPIC =
-  "0x9d9af8e38d66c62e2c12f0225249fd9d721c54b83f48d9352c97c6cacdcb6f31" as const;
-
-/** keccak256 of the OrderCancelled event signature. */
-export const ORDER_CANCELLED_TOPIC =
-  "0x6bacc01dbe442496068f7d234edd811f1a5f833243e0aec824f86ab861f3c90d" as const;
-
-/** keccak256 of the OrderValidated event signature. */
-export const ORDER_VALIDATED_TOPIC =
-  "0xf280791efe782edcf06ce15c8f4dff17601db3b88eb3805a0db7d77faf757f04" as const;
-
-/** keccak256 of the OrdersMatched event signature. */
-export const ORDERS_MATCHED_TOPIC =
-  "0x4b9f2d36e1b4c93de62cc077b00b1a91d84b6c31b4a14e012718dcca230689e7" as const;
-
-/** keccak256 of the CounterIncremented event signature. */
-export const COUNTER_INCREMENTED_TOPIC =
-  "0x721c20121297512b72821b97f5326877ea8ecf4bb9948fea5bfcb6453074d37f" as const;
-
-// ── Parsed AbiEvent references (for use with viem helpers) ──
-
-/** Parsed ABI for the OrderFulfilled event. */
-export const OrderFulfilledEvent = parseAbiItem(
-  "event OrderFulfilled(bytes32 orderHash, address indexed offerer, address indexed zone, address recipient, (uint8 itemType, address token, uint256 identifier, uint256 amount)[] offer, (uint8 itemType, address token, uint256 identifier, uint256 amount, address recipient)[] consideration)",
-);
-
-/** Parsed ABI for the OrderCancelled event. */
-export const OrderCancelledEvent = parseAbiItem(
-  "event OrderCancelled(bytes32 orderHash, address indexed offerer, address indexed zone)",
-);
-
-/** Parsed ABI for the OrderValidated event. */
-export const OrderValidatedEvent = parseAbiItem(
-  "event OrderValidated(bytes32 orderHash, (address offerer, address zone, (uint8 itemType, address token, uint256 identifierOrCriteria, uint256 startAmount, uint256 endAmount)[] offer, (uint8 itemType, address token, uint256 identifierOrCriteria, uint256 startAmount, uint256 endAmount, address recipient)[] consideration, uint8 orderType, uint256 startTime, uint256 endTime, bytes32 zoneHash, uint256 salt, bytes32 conduitKey, uint256 totalOriginalConsiderationItems) orderParameters)",
-);
-
-/** Parsed ABI for the OrdersMatched event. */
-export const OrdersMatchedEvent = parseAbiItem(
-  "event OrdersMatched(bytes32[] orderHashes)",
-);
-
-/** Parsed ABI for the CounterIncremented event. */
-export const CounterIncrementedEvent = parseAbiItem(
-  "event CounterIncremented(uint256 newCounter, address indexed offerer)",
-);
+/**
+ * Map of Seaport event names to their keccak256 topic hashes.
+ * Derived automatically from {@link seaportEventAbi} in constants.ts,
+ * which is the single source of truth for event definitions.
+ */
+const EVENT_TOPIC_MAP = Object.fromEntries(
+  seaportEventAbi.map((abi) => [
+    abi.name,
+    encodeEventTopics({ abi: [abi], eventName: abi.name })[0],
+  ]),
+) as Record<string, `0x${string}`>;
 
 // ── Event decoders ──────────────────────────────────────────
 
@@ -106,8 +72,8 @@ export const CounterIncrementedEvent = parseAbiItem(
  * Decode a Seaport event log into typed event arguments.
  *
  * Matches the log topic against known Seaport event signatures,
- * then uses viem's `decodeEventLog` with the corresponding parsed
- * event ABI to produce type-safe arguments.
+ * then uses viem's `decodeEventLog` with the corresponding event
+ * ABI from the canonical {@link seaportEventAbi}.
  *
  * @param log - A viem Log object with `topics` and `data`.
  * @returns Decoded event arguments with `eventName`.
@@ -116,54 +82,15 @@ export const CounterIncrementedEvent = parseAbiItem(
 export function decodeSeaportEvent(log: Log): SeaportEventArgs {
   const topic = log.topics[0];
 
-  if (topic === ORDER_FULFILLED_TOPIC) {
-    const decoded = decodeEventLog({
-      abi: [OrderFulfilledEvent],
-      data: log.data,
-      topics: log.topics,
-    });
-    const args = decoded.args as OrderFulfilledEventArgs;
-    return { eventName: "OrderFulfilled" as const, ...args };
-  }
-
-  if (topic === ORDER_CANCELLED_TOPIC) {
-    const decoded = decodeEventLog({
-      abi: [OrderCancelledEvent],
-      data: log.data,
-      topics: log.topics,
-    });
-    const args = decoded.args as OrderCancelledEventArgs;
-    return { eventName: "OrderCancelled" as const, ...args };
-  }
-
-  if (topic === ORDER_VALIDATED_TOPIC) {
-    const decoded = decodeEventLog({
-      abi: [OrderValidatedEvent],
-      data: log.data,
-      topics: log.topics,
-    });
-    const args = decoded.args as OrderValidatedEventArgs;
-    return { eventName: "OrderValidated" as const, ...args };
-  }
-
-  if (topic === ORDERS_MATCHED_TOPIC) {
-    const decoded = decodeEventLog({
-      abi: [OrdersMatchedEvent],
-      data: log.data,
-      topics: log.topics,
-    });
-    const args = decoded.args as OrdersMatchedEventArgs;
-    return { eventName: "OrdersMatched" as const, ...args };
-  }
-
-  if (topic === COUNTER_INCREMENTED_TOPIC) {
-    const decoded = decodeEventLog({
-      abi: [CounterIncrementedEvent],
-      data: log.data,
-      topics: log.topics,
-    });
-    const args = decoded.args as CounterIncrementedEventArgs;
-    return { eventName: "CounterIncremented" as const, ...args };
+  for (const abi of seaportEventAbi) {
+    if (topic === EVENT_TOPIC_MAP[abi.name]) {
+      const decoded = decodeEventLog({
+        abi: [abi],
+        data: log.data,
+        topics: log.topics,
+      });
+      return { eventName: abi.name, ...decoded.args } as SeaportEventArgs;
+    }
   }
 
   throw new SeaportValidationError(`Unknown Seaport event topic: ${topic}`);
