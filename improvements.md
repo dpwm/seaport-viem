@@ -258,11 +258,12 @@ both files. All tests pass; `tsc --noEmit` passes.
 
 ### 35. `seaportCall` re-throw guard uses fragile string matching
 
-The catch block in `src/call.ts` checks
-`error.message.startsWith(\`${fnLabel} returned no data\`)` to avoid
-re-wrapping already-enriched errors. This breaks if the message format ever
-changes (previously noted as item 28). A custom error class or sentinel
-property would be more robust. Minimal code change (~3 lines).
+**Resolved**: Fixed as part of item 28. The catch block now uses
+`error instanceof SeaportCallError` instead of string prefix matching.
+`SeaportCallError` is a custom error class thrown by `seaportCall` itself,
+making the re-throw guard type-safe and not brittle against message format
+changes. The fix was already applied in `src/call.ts`; this entry was simply
+never marked resolved.
 
 ---
 
