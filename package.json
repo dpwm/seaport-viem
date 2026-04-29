@@ -4,110 +4,110 @@
   "description": "Lightweight viem-based toolkit for Seaport NFT marketplace orders",
   "license": "MIT",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
       }
     },
     "./types": {
       "import": {
-        "types": "./dist/types.d.ts",
-        "default": "./dist/types.js"
+        "types": "./dist/types.d.mts",
+        "default": "./dist/types.mjs"
       }
     },
     "./constants": {
       "import": {
-        "types": "./dist/constants.d.ts",
-        "default": "./dist/constants.js"
+        "types": "./dist/constants.d.mts",
+        "default": "./dist/constants.mjs"
       }
     },
     "./encode": {
       "import": {
-        "types": "./dist/encode.d.ts",
-        "default": "./dist/encode.js"
+        "types": "./dist/encode.d.mts",
+        "default": "./dist/encode.mjs"
       }
     },
     "./signature": {
       "import": {
-        "types": "./dist/signature.d.ts",
-        "default": "./dist/signature.js"
+        "types": "./dist/signature.d.mts",
+        "default": "./dist/signature.mjs"
       }
     },
     "./counter": {
       "import": {
-        "types": "./dist/counter.d.ts",
-        "default": "./dist/counter.js"
+        "types": "./dist/counter.d.mts",
+        "default": "./dist/counter.mjs"
       }
     },
     "./validate": {
       "import": {
-        "types": "./dist/validate.d.ts",
-        "default": "./dist/validate.js"
+        "types": "./dist/validate.d.mts",
+        "default": "./dist/validate.mjs"
       }
     },
     "./order": {
       "import": {
-        "types": "./dist/order.d.ts",
-        "default": "./dist/order.js"
+        "types": "./dist/order.d.mts",
+        "default": "./dist/order.mjs"
       }
     },
     "./bulk-listings": {
       "import": {
-        "types": "./dist/bulk_listings.d.ts",
-        "default": "./dist/bulk_listings.js"
+        "types": "./dist/bulk_listings.d.mts",
+        "default": "./dist/bulk_listings.mjs"
       }
     },
     "./cancel": {
       "import": {
-        "types": "./dist/cancel.d.ts",
-        "default": "./dist/cancel.js"
+        "types": "./dist/cancel.d.mts",
+        "default": "./dist/cancel.mjs"
       }
     },
     "./order-status": {
       "import": {
-        "types": "./dist/order_status.d.ts",
-        "default": "./dist/order_status.js"
+        "types": "./dist/order_status.d.mts",
+        "default": "./dist/order_status.mjs"
       }
     },
     "./order-hash": {
       "import": {
-        "types": "./dist/order_hash.d.ts",
-        "default": "./dist/order_hash.js"
+        "types": "./dist/order_hash.d.mts",
+        "default": "./dist/order_hash.mjs"
       }
     },
     "./match": {
       "import": {
-        "types": "./dist/match.d.ts",
-        "default": "./dist/match.js"
+        "types": "./dist/match.d.mts",
+        "default": "./dist/match.mjs"
       }
     },
     "./increment-counter": {
       "import": {
-        "types": "./dist/increment_counter.d.ts",
-        "default": "./dist/increment_counter.js"
+        "types": "./dist/increment_counter.d.mts",
+        "default": "./dist/increment_counter.mjs"
       }
     },
     "./call": {
       "import": {
-        "types": "./dist/call.d.ts",
-        "default": "./dist/call.js"
+        "types": "./dist/call.d.mts",
+        "default": "./dist/call.mjs"
       }
     },
     "./criteria": {
       "import": {
-        "types": "./dist/criteria.d.ts",
-        "default": "./dist/criteria.js"
+        "types": "./dist/criteria.d.mts",
+        "default": "./dist/criteria.mjs"
       }
     },
     "./events": {
       "import": {
-        "types": "./dist/events.d.ts",
-        "default": "./dist/events.js"
+        "types": "./dist/events.d.mts",
+        "default": "./dist/events.mjs"
       }
     }
   },
@@ -117,14 +117,14 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run build"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.5.1"
+    "tsdown": "^0.21.10"
   },
   "peerDependencies": {
     "typescript": "^5",

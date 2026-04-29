@@ -18,16 +18,14 @@ bun run typecheck     # tsc --noEmit must pass
 
 ## Bugs
 
-### 18. tsup `splitting: true` — intentional, documented
+### 18. tsup `splitting: true` — rendered moot by bundler switch
 
-**Resolved**: After review we opted to keep `splitting: true`. The shared
-chunks are an intentional optimization for ESM-only output: tsup code-splits
-shared dependencies (ABI, constants, types) into reusable chunks rather than
-duplicating them across 17 entry points. Modern bundlers (Vite, webpack,
-Rollup, esbuild) handle ESM code splitting natively.
+**Resolved**: We replaced tsup with tsdown (Rolldown-based), which does not
+produce shared chunk files. Each entry point bundles its dependencies
+independently, producing a simpler `dist/` structure. The code-splitting
+concern that motivated this item is no longer applicable.
 
-The tradeoff is documented in `README.md` and `AGENTS.md` so consumers are
-aware of the shared chunk files in `dist/`.
+See `tsdown.config.ts` and `package.json` for the current build setup.
 
 ### 20. `hashBulkOrder` skips context validation (inconsistency)
 

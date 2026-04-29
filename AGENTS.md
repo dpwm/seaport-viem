@@ -72,7 +72,7 @@ Subpath imports work for all 16 entry points: `seaport-viem`, `seaport-viem/type
 ## TypeScript quirks
 
 - `noUncheckedIndexedAccess` is enabled — array index access returns `T | undefined`. Use `!` non-null assertions after length guards, with `// biome-ignore lint/style/noNonNullAssertion:` comments.
-- `allowImportingTsExtensions` + `noEmit` means `.ts` import extensions are required in source but `tsc` cannot emit. tsup handles the build.
+- `allowImportingTsExtensions` + `noEmit` means `.ts` import extensions are required in source but `tsc` cannot emit. tsdown handles the build.
 - The ABI in `constants.ts` uses **JSON format** (`satisfies Abi`), not human-readable `parseAbi()` strings. This is because `abitype`'s parser doesn't support nested tuples.
 
 ## Testing
@@ -104,18 +104,19 @@ the specific token being sold.
 
 ## Build output
 
-tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS. The `exports`
-map in package.json defines 16 subpath entry points, one per source module.
+tsdown builds ESM only (`format: ["esm"]`) to `dist/` via Rolldown
+(Rust-based bundler). Output uses `.mjs` and `.d.mts` extensions. No CJS.
+The `exports` map in package.json defines 17 subpath entry points, one per
+source module.
 
 ### Code splitting
 
-The tsup config enables `splitting: true`, which produces shared chunk files
-(e.g., `chunk-*.js`) alongside each entry point. Shared dependencies (ABI
-constants, EIP-712 types, etc.) are extracted into these chunks rather than
-being duplicated across every entry point. This is an intentional
-optimization — modern bundlers (Vite, webpack, Rollup, esbuild) handle ESM
-code splitting natively. If a consumer reports issues with older bundlers,
-`import "seaport-viem"` (the barrel) can be used instead of deep imports.
+tsdown does not emit shared chunk files — each entry point bundles its
+dependencies independently. This produces a simpler output structure
+(no `chunk-*.js` files) while avoiding code-duplication concerns for
+consumers with unusual bundler setups. If you must minimize total bytes
+across all entry points, `import "seaport-viem"` (the barrel) loads
+only the index module.
 
 ## Guides
 

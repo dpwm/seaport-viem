@@ -281,19 +281,15 @@ import { buildCriteriaTree, getCriteriaProof } from "seaport-viem/criteria";
 
 ## Build output
 
-tsup emits ESM only (`format: ["esm"]`) to `dist/`. No CJS bundle is produced.
+tsdown builds ESM only (`format: ["esm"]`) to `dist/` via Rolldown
+(Rust-based bundler). Output uses `.mjs` and `.d.mts` extensions. No CJS.
 The `exports` map in `package.json` defines subpath entries for all 17
 modules — see [AGENTS.md](./AGENTS.md#build-output) for the full list.
 
-### Code splitting
-
-The build uses `splitting: true` in tsup. Shared code (ABI constants,
-EIP-712 types, etc.) is extracted into `chunk-*.js` files rather than
-duplicated across every entry point. This is an intentional optimization for
-an ESM-only library — modern bundlers (Vite, webpack, Rollup, esbuild)
-handle ESM code splitting natively. If you encounter issues with an older
-bundler, prefer importing from the barrel (`"seaport-viem"`) over deep
-subpath imports.
+Each entry point bundles its dependencies independently; there are no shared
+chunk files. This simplifies the output structure and avoids the
+code-splitting edge cases that ESM shared chunks can trigger in unusual
+bundler setups.
 
 ## Guides
 
