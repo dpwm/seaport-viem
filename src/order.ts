@@ -30,7 +30,7 @@ import {
   encodeFulfillAdvancedOrder,
   encodeFulfillAvailableOrders,
   encodeFulfillAvailableAdvancedOrders,
-  checkUint120,
+  UINT120_MAX,
 } from "./encode";
 import { requireValidContext } from "./validate";
 import { SeaportValidationError } from "./errors";
@@ -497,8 +497,16 @@ export function buildFulfillAdvancedOrder(
     throw new SeaportValidationError("Order must have at least one consideration item");
   }
 
-  checkUint120(advancedOrder.numerator, "numerator");
-  checkUint120(advancedOrder.denominator, "denominator");
+  if (advancedOrder.numerator > UINT120_MAX) {
+    throw new SeaportValidationError(
+      `numerator must be a uint120 (0 to ${UINT120_MAX}), got ${advancedOrder.numerator}`,
+    );
+  }
+  if (advancedOrder.denominator > UINT120_MAX) {
+    throw new SeaportValidationError(
+      `denominator must be a uint120 (0 to ${UINT120_MAX}), got ${advancedOrder.denominator}`,
+    );
+  }
   if (advancedOrder.denominator === 0n) {
     throw new SeaportValidationError("denominator must be non-zero");
   }
@@ -614,8 +622,16 @@ export function buildFulfillAvailableAdvancedOrders(
   }
 
   for (const order of advancedOrders) {
-    checkUint120(order.numerator, "numerator");
-    checkUint120(order.denominator, "denominator");
+    if (order.numerator > UINT120_MAX) {
+      throw new SeaportValidationError(
+        `numerator must be a uint120 (0 to ${UINT120_MAX}), got ${order.numerator}`,
+      );
+    }
+    if (order.denominator > UINT120_MAX) {
+      throw new SeaportValidationError(
+        `denominator must be a uint120 (0 to ${UINT120_MAX}), got ${order.denominator}`,
+      );
+    }
     if (order.denominator === 0n) {
       throw new SeaportValidationError("denominator must be non-zero");
     }

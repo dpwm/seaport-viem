@@ -678,7 +678,7 @@ so this branch serves as a runtime safety net. Existing tests cover `number`,
 `bigint`, `undefined`, non-positive, negative, and non-integer — but not
 `string`, `object`, or other non-numeric types.
 
-**Fix**: Add a test with `chainId` cast to `string` via `as any`:
+**Resolved**: Added a test with `chainId` cast to `string` via `as any`:
 
 ```ts
 test("rejects chainId that is neither number nor bigint", () => {
@@ -782,6 +782,16 @@ And remove the now-redundant `checkUint120` calls from builder bodies
 changing the error type won't break existing tests. The fix aligns these
 builders with the convention that all input validation a consumer might
 want to catch emits `SeaportValidationError`.
+
+**Resolved**: Removed `checkUint120` calls from the three builder functions
+(`buildFulfillAdvancedOrder`, `buildFulfillAvailableAdvancedOrders`,
+`buildMatchAdvancedOrders`) and replaced them with inline checks that throw
+`SeaportValidationError`. The `checkUint120` calls in the corresponding encoder
+functions remain unchanged as encoding-level guardrails (throwing
+`SeaportEncodingError`). Exported `UINT120_MAX` from `src/encode.ts` so the
+builders can reference the constant directly. All 345 existing tests pass
+unchanged — they match on the `"uint120"` message substring, which the new
+inline checks preserve.
 
 ---
 

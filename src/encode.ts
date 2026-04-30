@@ -25,7 +25,7 @@ import {
   validateAbiItem,
 } from "./constants";
 
-const UINT120_MAX = (1n << 120n) - 1n;
+export const UINT120_MAX = (1n << 120n) - 1n;
 
 /**
  * Internal helper to encode a Seaport function call.

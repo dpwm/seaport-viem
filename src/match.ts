@@ -10,7 +10,7 @@ import { ZERO_ADDRESS } from "./constants";
 import {
   encodeMatchOrders,
   encodeMatchAdvancedOrders,
-  checkUint120,
+  UINT120_MAX,
 } from "./encode";
 import { computeTotalNativeValue } from "./order";
 import { requireValidContext } from "./validate";
@@ -75,8 +75,16 @@ export function buildMatchAdvancedOrders(
   }
 
   for (const order of advancedOrders) {
-    checkUint120(order.numerator, "numerator");
-    checkUint120(order.denominator, "denominator");
+    if (order.numerator > UINT120_MAX) {
+      throw new SeaportValidationError(
+        `numerator must be a uint120 (0 to ${UINT120_MAX}), got ${order.numerator}`,
+      );
+    }
+    if (order.denominator > UINT120_MAX) {
+      throw new SeaportValidationError(
+        `denominator must be a uint120 (0 to ${UINT120_MAX}), got ${order.denominator}`,
+      );
+    }
     if (order.denominator === 0n) {
       throw new SeaportValidationError("denominator must be non-zero");
     }
