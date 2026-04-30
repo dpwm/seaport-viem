@@ -607,6 +607,110 @@ describe("domain separator cross-check", () => {
     expect(computedDigest).toBe(viemDigest);
   });
 
+  test("encodeDomainSeparator matches hashTypedData domain separator with name omitted", () => {
+    // Domain without `name` — both should produce the same domain separator.
+    const partialDomain = {
+      version: "1.6",
+      chainId: 1,
+      verifyingContract: ctx.domain.verifyingContract,
+    };
+    const manualSeparator = encodeDomainSeparator(partialDomain);
+
+    const emptyTypeHash = keccak256(stringToHex("Empty()"));
+    const structHash = keccak256(
+      encodeAbiParameters([{ type: "bytes32" }], [emptyTypeHash]),
+    );
+    const computedDigest = keccak256(
+      concat(["0x1901", manualSeparator, structHash]),
+    );
+
+    const viemDigest = hashTypedData({
+      domain: partialDomain,
+      types: { Empty: [] },
+      primaryType: "Empty",
+      message: {},
+    });
+
+    expect(computedDigest).toBe(viemDigest);
+  });
+
+  test("encodeDomainSeparator matches hashTypedData domain separator with version omitted", () => {
+    const partialDomain = {
+      name: "Seaport",
+      chainId: 1,
+      verifyingContract: ctx.domain.verifyingContract,
+    };
+    const manualSeparator = encodeDomainSeparator(partialDomain);
+
+    const emptyTypeHash = keccak256(stringToHex("Empty()"));
+    const structHash = keccak256(
+      encodeAbiParameters([{ type: "bytes32" }], [emptyTypeHash]),
+    );
+    const computedDigest = keccak256(
+      concat(["0x1901", manualSeparator, structHash]),
+    );
+
+    const viemDigest = hashTypedData({
+      domain: partialDomain,
+      types: { Empty: [] },
+      primaryType: "Empty",
+      message: {},
+    });
+
+    expect(computedDigest).toBe(viemDigest);
+  });
+
+  test("encodeDomainSeparator matches hashTypedData domain separator with chainId omitted", () => {
+    const partialDomain = {
+      name: "Seaport",
+      version: "1.6",
+      verifyingContract: ctx.domain.verifyingContract,
+    };
+    const manualSeparator = encodeDomainSeparator(partialDomain);
+
+    const emptyTypeHash = keccak256(stringToHex("Empty()"));
+    const structHash = keccak256(
+      encodeAbiParameters([{ type: "bytes32" }], [emptyTypeHash]),
+    );
+    const computedDigest = keccak256(
+      concat(["0x1901", manualSeparator, structHash]),
+    );
+
+    const viemDigest = hashTypedData({
+      domain: partialDomain,
+      types: { Empty: [] },
+      primaryType: "Empty",
+      message: {},
+    });
+
+    expect(computedDigest).toBe(viemDigest);
+  });
+
+  test("encodeDomainSeparator matches hashTypedData domain separator with salt present", () => {
+    const saltDomain = {
+      ...ctx.domain,
+      salt: "0x" + "ee".repeat(32) as `0x${string}`,
+    };
+    const manualSeparator = encodeDomainSeparator(saltDomain);
+
+    const emptyTypeHash = keccak256(stringToHex("Empty()"));
+    const structHash = keccak256(
+      encodeAbiParameters([{ type: "bytes32" }], [emptyTypeHash]),
+    );
+    const computedDigest = keccak256(
+      concat(["0x1901", manualSeparator, structHash]),
+    );
+
+    const viemDigest = hashTypedData({
+      domain: saltDomain,
+      types: { Empty: [] },
+      primaryType: "Empty",
+      message: {},
+    });
+
+    expect(computedDigest).toBe(viemDigest);
+  });
+
   test("hashBulkOrder uses same domain separator as hashTypedData", () => {
     // Build a minimal tree and hash it
     const leaf = hashOrderComponentsStruct(makeOrderComponents());

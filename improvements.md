@@ -94,6 +94,13 @@ populates all three, so standard usage is unaffected. But the library should
 produce consistent results for any valid `SeaportContext` regardless of
 which hash function is called.
 
+**Resolved**: Replaced `encodeDomainSeparator`'s hardcoded type array +
+default-filled domain with a delegation to viem's exported `domainSeparator`
+function. This guarantees the same domain separator as `hashTypedData` and
+`recoverTypedDataAddress` for any valid domain (including partial domains
+where `name`, `version`, or `chainId` is omitted). Added four cross-check
+tests verifying domain separator consistency with partial domains.
+
 ### 2. `computeNativeValue` uses `endAmount` only, undercomputing `msg.value` for Dutch auction orders
 
 `computeNativeValue` in `src/order.ts` (lines 406–415) sums `endAmount` for
