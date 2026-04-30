@@ -110,9 +110,17 @@ export function toBasicOrderParameters(
  *
  * @param ctx - Seaport deployment context (address and EIP-712 domain).
  * @param order - The order to fulfill.
- * @param options - Optional route type, conduit key, and tips.
+ * @param options - Optional route type, conduit key, and tips. Tips inherit
+ *   the primary consideration's token type (enforced by Seaport's
+ *   `fulfillBasicOrder` ABI). For NATIVE considerations, tip amounts are
+ *   included in `msg.value` automatically. For non-NATIVE considerations
+ *   (ERC20, ERC721, ERC1155), the fulfiller must handle token approval
+ *   separately — the library encodes the calldata but does not manage
+ *   allowances.
  * @returns Transaction data ({@link FulfillmentData}) for wallet_sendTransaction.
- * @throws If the order cannot be fulfilled as a basic order and no explicit routeType is given.
+ * @throws {SeaportValidationError} If the order cannot be fulfilled as a basic
+ *   order and no explicit routeType is given, or if any tip has a zero or
+ *   negative amount.
  */
 export function buildBasicOrderFulfillment(
   ctx: SeaportContext,
@@ -120,6 +128,20 @@ export function buildBasicOrderFulfillment(
   options: FulfillmentOptions = {},
 ): FulfillmentData {
   requireValidContext(ctx);
+
+  // Validate tips before encoding. Tips are appended to additionalRecipients
+  // and inherit the primary consideration's token type (per the Seaport
+  // contract's fulfillBasicOrder ABI). Validate amounts to catch zero-value
+  // tips early, matching the pattern in validateOrderComponents.
+  if (options.tips) {
+    for (const tip of options.tips) {
+      if (tip.amount <= 0n) {
+        throw new SeaportValidationError(
+          `Tip amount must be greater than 0, got ${tip.amount}`,
+        );
+      }
+    }
+  }
 
   const routeType = options.routeType ?? detectBasicOrderRouteType(order);
   if (routeType === null) {

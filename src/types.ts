@@ -328,6 +328,19 @@ export type FulfillmentData = {
 export type FulfillmentOptions = {
   routeType?: BasicOrderRouteTypeValue;
   fulfillerConduitKey?: `0x${string}`;
+
+  /**
+   * Additional tip recipients to append at fulfillment time.
+   *
+   * **Important**: Tips inherit the primary consideration's token type
+   * (the first item in `order.parameters.consideration`). This is enforced
+   * by Seaport's `fulfillBasicOrder` ABI, which encodes a single
+   * `considerationToken` for all recipients. For NATIVE considerations,
+   * tip amounts are automatically included in `msg.value`. For non-NATIVE
+   * considerations (ERC20, ERC721, ERC1155), the fulfiller must handle token
+   * approval separately — the library encodes the calldata but does not
+   * manage allowances.
+   */
   tips?: AdditionalRecipient[];
 };
 

@@ -726,6 +726,43 @@ describe("buildBasicOrderFulfillment", () => {
     });
     expect(result.to).toBe(ctx.address);
   });
+
+  test("rejects tips with zero or negative amounts", () => {
+    const order = makeOrder();
+    const tipRecipient =
+      "0xeeee000000000000000000000000000000000005" as `0x${string}`;
+    expect(() =>
+      buildBasicOrderFulfillment(ctx, order, {
+        tips: [{ amount: 0n, recipient: tipRecipient }],
+      }),
+    ).toThrow("Tip amount must be greater than 0");
+  });
+
+  test("encodes tips for ERC20 consideration without inflating msg.value", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({
+            itemType: ItemType.ERC20,
+            token: TOKEN,
+            startAmount: 1000n,
+            endAmount: 1000n,
+          }),
+        ],
+      }),
+    });
+    const tipRecipient =
+      "0xeeee000000000000000000000000000000000005" as `0x${string}`;
+    const result = buildBasicOrderFulfillment(ctx, order, {
+      routeType: BasicOrderRouteType.ERC20_TO_ERC721,
+      tips: [{ amount: 300n, recipient: tipRecipient }],
+    });
+    // msg.value must not include ERC20 tip amounts — the fulfiller handles
+    // ERC20 approval separately.
+    expect(result.value).toBe(0n);
+    // The tip should still be encoded into the calldata as an additional recipient.
+    expect(result.data).toBeTruthy();
+  });
 });
 
 // ── toOrderParameters ────────────────────────────────────────

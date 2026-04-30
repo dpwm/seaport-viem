@@ -917,6 +917,17 @@ order structure at detection time, but tips are a runtime option appended
 after detection. The detection function can't know about tips, and the
 builder function assumes the detection already covered everything.
 
+**Resolved**: Added JSDoc to `FulfillmentOptions.tips` and
+`buildBasicOrderFulfillment` documenting that tips inherit the primary
+consideration's token type (enforced by Seaport's `fulfillBasicOrder` ABI),
+and that for non-NATIVE considerations the fulfiller must handle token
+approval separately. Added validation that tip amounts are positive (> 0),
+matching the pattern in `validateOrderComponents`. Non-NATIVE tips remain
+allowed — the encoding is correct and the contract supports them — but the
+constraint is now explicit in docs and validated at build time. Added 2 new
+tests: one for zero-amount tip rejection, one for ERC20 tips being encoded
+without inflating `msg.value`.
+
 ### 15. `toOrderParameters` doesn't validate the relationship between `totalOriginalConsiderationItems` and `consideration.length`
 
 `toOrderParameters` in `src/order.ts` (lines 307–322) converts
