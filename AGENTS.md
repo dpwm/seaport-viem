@@ -4,6 +4,13 @@
 
 Lightweight viem-based toolkit for Seaport NFT marketplace orders. Single runtime dependency: `viem`.
 
+## Breaking changes
+
+Breaking changes are **encouraged**. This library is pre-1.0 — correctness,
+consistency, and clean APIs take priority over backwards compatibility. If a
+change improves the design, go ahead. Document the break in the commit
+message with `BREAKING:`.
+
 ## Design constraint: backend → client
 
 This library is **backend-first by design**. Every `build*` function returns
@@ -46,8 +53,8 @@ All source files live in `src/`.
 | `src/increment_counter.ts` | `buildIncrementCounter` — build transaction data for `incrementCounter` |
 | `src/match.ts` | Two-sided matching: `buildMatchOrders`, `buildMatchAdvancedOrders` |
 | `src/events.ts` | Event parsing: `decodeSeaportEvent`, event type exports, topic constants |
-| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `getEmptyOrderComponents`, `aggregateOfferItems`, `aggregateConsiderationItems`, `computeNativeValue`, `buildFulfillOrder`, `buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders` |
-| `src/bulk_listings.ts` | Bulk order signing: `computeHeight`, `padLeaves`, `buildBulkOrderTree`, `getBulkOrderTypeString`, `hashBulkOrder`, `getProof`, `packBulkSignature`, `unpackBulkSignature`, `encodeDomainSeparator` |
+| `src/order.ts` | Core fulfillment: `toBasicOrderParameters`, `buildBasicOrderFulfillment`, `canFulfillAsBasicOrder`, `detectBasicOrderRouteType`, `toOrderParameters`, `aggregateOfferItems`, `aggregateConsiderationItems`, `computeNativeValue`, `buildFulfillOrder`, `buildFulfillAdvancedOrder`, `buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders` |
+| `src/bulk_listings.ts` | Bulk order signing: `computeHeight`, `padLeaves`, `buildBulkOrderTree`, `getBulkOrderTypeString`, `hashBulkOrder`, `getProof`, `packBulkSignature`, `unpackBulkSignature`, `encodeDomainSeparator`, `getBulkOrderPaddingHash` |
 | `src/criteria.ts` | Criteria merkle trees for trait/collection offers: `hashCriteriaLeaf`, `buildCriteriaTree`, `getCriteriaRoot`, `getCriteriaProof`, `verifyCriteriaProof` |
 | `src/index.ts` | Barrel re-export only — no logic lives here |
 | `src/test-fixtures.ts` | Shared test fixtures (`makeOrder`, `makeOrderComponents`, etc.) |
