@@ -37,8 +37,6 @@ All source files live in `src/`.
 
 | File | Purpose |
 |------|---------|
-| File | Purpose |
-|------|---------|
 | `src/types.ts` | All TypeScript types + enum const objects (`ItemType`, `OrderType`, `BasicOrderRouteType`, `Side`) |
 | `src/constants.ts` | ABI (JSON format), EIP-712 types, address constants, bulk order height limits |
 | `src/errors.ts` | Custom error classes (`SeaportError`, `SeaportValidationError`, `SeaportEncodingError`, `SeaportCallError`) |
@@ -74,7 +72,7 @@ All source files live in `src/`.
 | `src/events.test.ts` | Tests for event decoding, ABI cross-checks |
 | `src/criteria.test.ts` | Tests for criteria tree building, proofs, verification, edge cases |
 
-Subpath imports work for all 16 entry points: `seaport-viem`, `seaport-viem/types`, `seaport-viem/constants`, `seaport-viem/encode`, `seaport-viem/signature`, `seaport-viem/counter`, `seaport-viem/validate`, `seaport-viem/order`, `seaport-viem/bulk-listings`, `seaport-viem/criteria`, `seaport-viem/cancel`, `seaport-viem/order-status`, `seaport-viem/order-hash`, `seaport-viem/match`, `seaport-viem/increment-counter`, `seaport-viem/call`, `seaport-viem/events`. See the `exports` map in `package.json`.
+Subpath imports work for all 17 entry points: `seaport-viem`, `seaport-viem/types`, `seaport-viem/constants`, `seaport-viem/encode`, `seaport-viem/signature`, `seaport-viem/counter`, `seaport-viem/validate`, `seaport-viem/order`, `seaport-viem/bulk-listings`, `seaport-viem/criteria`, `seaport-viem/cancel`, `seaport-viem/order-status`, `seaport-viem/order-hash`, `seaport-viem/match`, `seaport-viem/increment-counter`, `seaport-viem/call`, `seaport-viem/events`. See the `exports` map in `package.json`.
 
 ## TypeScript quirks
 

@@ -110,7 +110,13 @@ describe("buildMatchAdvancedOrders", () => {
         extraData: "0x",
       },
     ];
-    const tx = buildMatchAdvancedOrders(ctx, advancedOrders);
+    const fulfillments: Fulfillment[] = [
+      {
+        offerComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+        considerationComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+      },
+    ];
+    const tx = buildMatchAdvancedOrders(ctx, advancedOrders, [], fulfillments);
     expect(tx.to).toBe(ctx.address);
     expect(tx.data).toMatch(/^0x[0-9a-f]+$/);
     expect(tx.data.length).toBeGreaterThan(2);
@@ -223,7 +229,7 @@ describe("buildMatchAdvancedOrders", () => {
     );
   });
 
-  test("accepts optional criteriaResolvers, fulfillments, recipient", () => {
+  test("accepts optional criteriaResolvers and recipient with explicit fulfillments", () => {
     const order = makeOrder();
     const params = toOrderParameters(
       order.parameters,
@@ -239,7 +245,12 @@ describe("buildMatchAdvancedOrders", () => {
       },
     ];
     const criteriaResolvers: CriteriaResolver[] = [];
-    const fulfillments: Fulfillment[] = [];
+    const fulfillments: Fulfillment[] = [
+      {
+        offerComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+        considerationComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+      },
+    ];
     const tx = buildMatchAdvancedOrders(
       ctx,
       advancedOrders,
@@ -248,5 +259,28 @@ describe("buildMatchAdvancedOrders", () => {
       ZERO_ADDRESS,
     );
     expect(tx.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("throws SeaportValidationError for empty fulfillments array", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const advancedOrders: AdvancedOrder[] = [
+      {
+        parameters: params,
+        numerator: 1n,
+        denominator: 1n,
+        signature: order.signature,
+        extraData: "0x",
+      },
+    ];
+    expect(() =>
+      buildMatchAdvancedOrders(ctx, advancedOrders, [], [], ZERO_ADDRESS),
+    ).toThrow(SeaportValidationError);
+    expect(() =>
+      buildMatchAdvancedOrders(ctx, advancedOrders, [], [], ZERO_ADDRESS),
+    ).toThrow("At least one fulfillment must be provided");
   });
 });

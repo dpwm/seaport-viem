@@ -99,6 +99,10 @@ export function buildMatchAdvancedOrders(
     }
   }
 
+  if (fulfillments.length === 0) {
+    throw new SeaportValidationError("At least one fulfillment must be provided");
+  }
+
   const value = computeTotalNativeValue(advancedOrders);
   return {
     to: ctx.address,

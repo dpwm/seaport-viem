@@ -69,14 +69,14 @@ without checking semantic validity. These bugs are hard to detect because:
 | Type consistency | All consideration items same `itemType` for basic order path |
 
 **Historical examples:**
-- `computeNativeValue` only sums `endAmount` — undercomputes `msg.value` for
-  Dutch auctions where `startAmount > endAmount` (still open, issue #2).
+- `computeNativeValue` only summed `endAmount` — undercomputed `msg.value` for
+  Dutch auctions where `startAmount > endAmount` (fixed).
 - Basic order path accepted mixed-type consideration items, inflating
   `msg.value` with ERC20 amounts (fixed, commit `e6d759a`).
 - `computeHeight` silently returned `1` for `orderCount < 1` instead of
   throwing (fixed).
-- Empty `offerFulfillments`/`considerationFulfillments` defaults produce
-  silent on-chain no-ops that waste gas (still open, issue #8).
+- Empty `offerFulfillments`/`considerationFulfillments` defaults produced
+  silent on-chain no-ops that wasted gas (fixed — builders now throw).
 
 **How to spot it:**
 - A builder function that accepts user input but has fewer validation lines
@@ -125,8 +125,8 @@ if (error instanceof SeaportCallError) {
 **Historical examples:**
 - `seaportCall` re-throw guard used `error.message.startsWith(...)` →
   replaced with `instanceof SeaportCallError` (fixed, commit `c241a94`).
-- `verifyOrderSignature` regex depends on `@noble/curves` error message
-  text (still open, issue #7).
+- `verifyOrderSignature` regex depended on `@noble/curves` error message
+  text (fixed — catch-all after `requireValidContext`).
 
 **How to spot it:**
 - Any `catch` block that calls `.startsWith()`, `.includes()`, `.match()`,
@@ -159,14 +159,15 @@ or different default behavior.
 | Domain handling | All functions that compute EIP-712 digests should handle domain fields identically |
 
 **Historical examples:**
-- 4 of 10 builders don't call `requireValidContext` at the top — they rely
-  on `computeTotalNativeValue` doing it transitively (still open, issue #5).
-- `buildCancel` and `buildValidate` validate empty arrays, but
-  `buildMatchOrders` and `buildMatchAdvancedOrders` don't (still open,
-  issue #3).
-- `encodeDomainSeparator` provides defaults for optional domain fields,
-  but `hashOrderComponents` (via `hashTypedData`) omits them — different
-  domain separators for the same `SeaportContext` (still open, issue #1).
+- 4 of 10 builders did not call `requireValidContext` at the top (fixed —
+  all builders now validate context; `computeTotalNativeValue` no longer
+  takes `ctx`).
+- `buildCancel` and `buildValidate` validated empty arrays, but
+  `buildMatchOrders` and `buildMatchAdvancedOrders` did not (fixed —
+  both now validate empty orders and empty fulfillments).
+- `encodeDomainSeparator` provided defaults for optional domain fields,
+  but `hashOrderComponents` (via `hashTypedData`) omitted them (fixed —
+  both now delegate to viem's `domainSeparator` / `hashTypedData`).
 
 **How to spot it:**
 - Select any two builder functions and compare line-by-line. Does one
