@@ -13,6 +13,7 @@ import {
   checkUint120,
 } from "./encode";
 import { computeTotalNativeValue } from "./order";
+import { SeaportValidationError } from "./errors";
 
 /**
  * Build a transaction for matchOrders.
@@ -29,6 +30,14 @@ export function buildMatchOrders(
   orders: { parameters: OrderParameters; signature: `0x${string}` }[],
   fulfillments: Fulfillment[],
 ): FulfillmentData {
+  if (orders.length === 0) {
+    throw new SeaportValidationError("At least one order must be provided to match");
+  }
+
+  if (fulfillments.length === 0) {
+    throw new SeaportValidationError("At least one fulfillment must be provided");
+  }
+
   const value = computeTotalNativeValue(ctx, orders);
   return {
     to: ctx.address,
@@ -56,6 +65,10 @@ export function buildMatchAdvancedOrders(
   fulfillments: Fulfillment[] = [],
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
+  if (advancedOrders.length === 0) {
+    throw new SeaportValidationError("At least one advanced order must be provided to match");
+  }
+
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");
     checkUint120(order.denominator, "denominator");

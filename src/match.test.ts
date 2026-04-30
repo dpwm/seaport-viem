@@ -4,6 +4,7 @@ import {
   buildMatchAdvancedOrders,
   toOrderParameters,
   ZERO_ADDRESS,
+  SeaportValidationError,
 } from "./index";
 import type { Fulfillment, AdvancedOrder, CriteriaResolver } from "./index";
 import { ctx, makeOrder } from "./test-fixtures";
@@ -35,7 +36,12 @@ describe("buildMatchOrders", () => {
       BigInt(order.parameters.consideration.length),
     );
     const orders = [{ parameters: params, signature: order.signature }];
-    const fulfillments: Fulfillment[] = [];
+    const fulfillments: Fulfillment[] = [
+      {
+        offerComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+        considerationComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+      },
+    ];
     const tx = buildMatchOrders(ctx, orders, fulfillments);
     // Default consideration is NATIVE with 1 ETH
     expect(tx.value).toBe(1000000000000000000n);
@@ -48,13 +54,43 @@ describe("buildMatchOrders", () => {
       BigInt(order.parameters.consideration.length),
     );
     const orders = [{ parameters: params, signature: order.signature }];
+    const fulfillments: Fulfillment[] = [
+      {
+        offerComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+        considerationComponents: [{ orderIndex: 0n, itemIndex: 0n }],
+      },
+    ];
     expect(() =>
       buildMatchOrders(
         { address: "0xinvalid" as `0x${string}`, domain: {} },
         orders,
-        [],
+        fulfillments,
       ),
     ).toThrow();
+  });
+
+  test("throws SeaportValidationError for empty orders array", () => {
+    expect(() =>
+      buildMatchOrders(ctx, [], []),
+    ).toThrow(SeaportValidationError);
+    expect(() =>
+      buildMatchOrders(ctx, [], []),
+    ).toThrow("At least one order must be provided to match");
+  });
+
+  test("throws SeaportValidationError for empty fulfillments array", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const orders = [{ parameters: params, signature: order.signature }];
+    expect(() =>
+      buildMatchOrders(ctx, orders, []),
+    ).toThrow(SeaportValidationError);
+    expect(() =>
+      buildMatchOrders(ctx, orders, []),
+    ).toThrow("At least one fulfillment must be provided");
   });
 });
 
@@ -101,12 +137,35 @@ describe("buildMatchAdvancedOrders", () => {
   });
 
   test("throws for invalid context", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const advancedOrders: AdvancedOrder[] = [
+      {
+        parameters: params,
+        numerator: 1n,
+        denominator: 1n,
+        signature: order.signature,
+        extraData: "0x",
+      },
+    ];
     expect(() =>
       buildMatchAdvancedOrders(
         { address: "0xinvalid" as `0x${string}`, domain: {} },
-        [],
+        advancedOrders,
       ),
     ).toThrow();
+  });
+
+  test("throws SeaportValidationError for empty advanced orders array", () => {
+    expect(() =>
+      buildMatchAdvancedOrders(ctx, []),
+    ).toThrow(SeaportValidationError);
+    expect(() =>
+      buildMatchAdvancedOrders(ctx, []),
+    ).toThrow("At least one advanced order must be provided to match");
   });
 
   test("accepts optional criteriaResolvers, fulfillments, recipient", () => {

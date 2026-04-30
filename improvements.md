@@ -240,6 +240,14 @@ development and integration testing. The fix aligns these builders with
 the validation patterns already established by `buildCancel` and
 `buildValidate`.
 
+**Resolved**: Added `SeaportValidationError` throws for empty `orders`
+and empty `fulfillments` in `buildMatchOrders`, and for empty
+`advancedOrders` in `buildMatchAdvancedOrders`. Error messages follow
+the `buildCancel`/`buildValidate` convention ("At least one order must be
+provided to match", etc.). Extended the test suite with 3 new tests
+covering both empty-array cases, and updated 2 existing tests that
+passed empty arrays to now provide valid fulfillments/orders.
+
 ### 4. Fulfillment builders lack structural input validation consistent with other builders
 
 Four fulfillment builders in `src/order.ts` accept orders without validating
