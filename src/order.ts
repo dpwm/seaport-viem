@@ -168,6 +168,10 @@ export function buildBasicOrderFulfillment(
  * - Zone must be zero address
  * - No criteria-based items (ERC721_WITH_CRITERIA or ERC1155_WITH_CRITERIA)
  *   in the offer or any consideration item
+ * - All items must have static amounts (`startAmount === endAmount`). The
+ *   basic order ABI encodes `endAmount` as a flat scalar with no
+ *   interpolation logic, so Dutch auction orders (descending `startAmount`)
+ *   or ascending-price orders must use the standard `fulfillOrder` path.
  * - Primary consideration recipient must be the offerer
  * - All consideration items must have the same itemType (basic order path treats
  *   all additional recipients as the same token type as the primary consideration)
@@ -210,6 +214,21 @@ function isBasicOrderEligible(
       item.itemType === ItemType.ERC721_WITH_CRITERIA ||
       item.itemType === ItemType.ERC1155_WITH_CRITERIA
     ) {
+      return null;
+    }
+  }
+
+  // The basic order ABI encodes `endAmount` as a flat scalar with no
+  // interpolation logic. Dutch auction orders (where `startAmount` >
+  // `endAmount`) and ascending-price orders must use the standard
+  // `fulfillOrder` path, which supports time-based interpolation.
+  for (const item of order.parameters.offer) {
+    if (item.startAmount !== item.endAmount) {
+      return null;
+    }
+  }
+  for (const item of order.parameters.consideration) {
+    if (item.startAmount !== item.endAmount) {
       return null;
     }
   }

@@ -180,8 +180,8 @@ describe("canFulfillAsBasicOrder", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         consideration: [
-          makeConsiderationItem({ endAmount: 1000n }),
-          makeConsiderationItem({ recipient: BOB, endAmount: 200n }),
+          makeConsiderationItem({ startAmount: 1000n, endAmount: 1000n }),
+          makeConsiderationItem({ recipient: BOB, startAmount: 200n, endAmount: 200n }),
         ],
       }),
     });
@@ -250,6 +250,82 @@ describe("canFulfillAsBasicOrder", () => {
         offer: [makeOfferItem({ itemType: ItemType.ERC20, token: TOKEN })],
         consideration: [
           makeConsiderationItem({ itemType: ItemType.ERC20, token: TOKEN }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("rejects descending Dutch auction offer (startAmount > endAmount)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [
+          makeOfferItem({
+            itemType: ItemType.ERC721,
+            startAmount: 2n,
+            endAmount: 1n,
+          }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("rejects descending Dutch auction consideration (startAmount > endAmount)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({
+            itemType: ItemType.NATIVE,
+            startAmount: 2000000000000000000n,
+            endAmount: 1000000000000000000n,
+          }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("rejects ascending offer (startAmount < endAmount)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [
+          makeOfferItem({
+            itemType: ItemType.ERC721,
+            startAmount: 1n,
+            endAmount: 2n,
+          }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("rejects ascending consideration (startAmount < endAmount)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({
+            itemType: ItemType.NATIVE,
+            startAmount: 1000000000000000000n,
+            endAmount: 2000000000000000000n,
+          }),
+        ],
+      }),
+    });
+    expect(canFulfillAsBasicOrder(order)).toBe(false);
+  });
+
+  test("rejects when only extra consideration item has non-static amount", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [
+          makeConsiderationItem({ endAmount: 1000n }),
+          makeConsiderationItem({
+            recipient: BOB,
+            startAmount: 300n,
+            endAmount: 200n,
+          }),
         ],
       }),
     });
@@ -557,6 +633,7 @@ describe("buildBasicOrderFulfillment", () => {
           makeConsiderationItem({
             itemType: ItemType.ERC20,
             token: TOKEN,
+            startAmount: 1000n,
             endAmount: 1000n,
           }),
         ],

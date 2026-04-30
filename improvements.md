@@ -848,6 +848,18 @@ public-facing entry point) rather than the internal `isBasicOrderEligible`.
 is never exercised. seaport-js's equivalent function explicitly guards this
 case; the omission here is likely an oversight from building at speed.
 
+**Resolved**: Added checks in `isBasicOrderEligible` that reject any order
+where `startAmount !== endAmount` for any offer or consideration item. This
+prevents Dutch auction orders (descending `startAmount`) and ascending-price
+orders from being routed through the basic order path, which encodes
+`endAmount` as a flat scalar with no interpolation logic. Such orders now
+correctly fall through to the standard `fulfillOrder` path which supports
+time-based interpolation. Added 5 new tests covering descending Dutch
+auction offer, descending Dutch auction consideration, ascending offer,
+ascending consideration, and non-static extra consideration item. Updated
+2 existing tests that provided only `endAmount` without matching `startAmount`
+to include both fields, preserving constant-price semantics.
+
 ### 14. Tips in `buildBasicOrderFulfillment` bypass token-type homogeneity validation
 
 `isBasicOrderEligible` (called via `detectBasicOrderRouteType`) validates
