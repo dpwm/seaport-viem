@@ -427,6 +427,13 @@ The `requireValidContext` function is lightweight (two `isAddress` calls and
 one type check), so adding it to four more call sites has negligible
 performance impact.
 
+**Resolved**: Added `requireValidContext(ctx)` as the first statement in
+`buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders`,
+`buildMatchOrders`, and `buildMatchAdvancedOrders`. Removed the now-redundant
+`requireValidContext` call from `computeTotalNativeValue` and updated its JSDoc
+to document that callers are responsible for context validation. All 10 builder
+functions now follow the same pattern: context validated first, then params.
+
 ### 6. Advanced order builders don't validate denominator ≠ 0 or numerator ≤ denominator
 
 Six functions accept numerator/denominator for partial fills but only check

@@ -423,17 +423,18 @@ export function computeNativeValue(
 }
 
 /**
- * Validate the Seaport context and compute the total native value across
- * all orders' consideration items.
+ * Compute the total native value across all orders' consideration items.
  *
- * @private This is an internal helper shared by fulfillment builders in this
+ * Callers are responsible for validating the Seaport context before calling
+ * this function (see {@link requireValidContext}).
+ *
+ * @internal This is an internal helper shared by fulfillment builders in this
  *   module and in `match.ts`. It is not part of the stable public API.
  */
 export function computeTotalNativeValue(
   ctx: SeaportContext,
   orders: readonly { parameters: { consideration: readonly ConsiderationItem[] } }[],
 ): bigint {
-  requireValidContext(ctx);
   let total = 0n;
   for (const order of orders) {
     total += computeNativeValue(order.parameters.consideration);
@@ -530,6 +531,8 @@ export function buildFulfillAvailableOrders(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   maximumFulfilled: bigint = BigInt(orders.length),
 ): FulfillmentData {
+  requireValidContext(ctx);
+
   if (orders.length === 0) {
     throw new SeaportValidationError("At least one order must be provided");
   }
@@ -578,6 +581,8 @@ export function buildFulfillAvailableAdvancedOrders(
   recipient: `0x${string}` = ZERO_ADDRESS,
   maximumFulfilled: bigint = BigInt(advancedOrders.length),
 ): FulfillmentData {
+  requireValidContext(ctx);
+
   if (advancedOrders.length === 0) {
     throw new SeaportValidationError("At least one advanced order must be provided");
   }

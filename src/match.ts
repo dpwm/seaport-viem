@@ -13,6 +13,7 @@ import {
   checkUint120,
 } from "./encode";
 import { computeTotalNativeValue } from "./order";
+import { requireValidContext } from "./validate";
 import { SeaportValidationError } from "./errors";
 
 /**
@@ -30,6 +31,8 @@ export function buildMatchOrders(
   orders: { parameters: OrderParameters; signature: `0x${string}` }[],
   fulfillments: Fulfillment[],
 ): FulfillmentData {
+  requireValidContext(ctx);
+
   if (orders.length === 0) {
     throw new SeaportValidationError("At least one order must be provided to match");
   }
@@ -65,6 +68,8 @@ export function buildMatchAdvancedOrders(
   fulfillments: Fulfillment[] = [],
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
+  requireValidContext(ctx);
+
   if (advancedOrders.length === 0) {
     throw new SeaportValidationError("At least one advanced order must be provided to match");
   }
