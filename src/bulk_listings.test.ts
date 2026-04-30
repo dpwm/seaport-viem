@@ -10,7 +10,7 @@ import {
   packBulkSignature,
   unpackBulkSignature,
   hashOrderComponentsStruct,
-  getEmptyOrderComponents,
+  getBulkOrderPaddingHash,
   encodeDomainSeparator,
   BULK_ORDER_HEIGHT_MAX,
 } from "./index";
@@ -239,7 +239,7 @@ describe("padLeaves", () => {
   test("padded leaves use the empty order hash", () => {
     const leaf = hashOrderComponentsStruct(makeOrderComponents());
     const padded = padLeaves([leaf]);
-    const emptyHash = hashOrderComponentsStruct(getEmptyOrderComponents());
+    const emptyHash = getBulkOrderPaddingHash();
     expect(padded[1]).toBe(emptyHash);
   });
 });

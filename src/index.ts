@@ -108,7 +108,6 @@ export {
   canFulfillAsBasicOrder,
   detectBasicOrderRouteType,
   toOrderParameters,
-  getEmptyOrderComponents,
   aggregateOfferItems,
   aggregateConsiderationItems,
   buildFulfillOrder,
@@ -128,6 +127,7 @@ export {
   packBulkSignature,
   unpackBulkSignature,
   encodeDomainSeparator,
+  getBulkOrderPaddingHash,
 } from "./bulk_listings";
 
 // Cancel

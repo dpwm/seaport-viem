@@ -372,29 +372,7 @@ export function toOrderParameters(
   };
 }
 
-/**
- * Return a canonical empty OrderComponents struct used to pad bulk order
- * merkle trees to the required capacity.
- *
- * The returned struct is not intended to be validated or submitted on-chain.
- * It is only used as a padding leaf in bulk order merkle trees, where its
- * EIP-712 hash fills unused leaf slots.
- */
-export function getEmptyOrderComponents(): OrderComponents {
-  return {
-    offerer: ZERO_ADDRESS,
-    zone: ZERO_ADDRESS,
-    offer: [],
-    consideration: [],
-    orderType: OrderType.FULL_OPEN,
-    startTime: 1n,
-    endTime: 2n,
-    zoneHash: ZERO_BYTES32,
-    salt: 0n,
-    conduitKey: ZERO_BYTES32,
-    counter: 0n,
-  };
-}
+
 
 // ── Fulfillment component helpers ───────────────────────────
 

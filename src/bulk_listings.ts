@@ -21,8 +21,10 @@ import {
   OFFER_ITEM_TYPE_STRING,
 } from "./constants";
 import { hashOrderComponentsStruct } from "./signature";
-import { getEmptyOrderComponents } from "./order";
 import { SeaportValidationError } from "./errors";
+import type { OrderComponents } from "./types";
+import { OrderType } from "./types";
+import { ZERO_ADDRESS, ZERO_BYTES32 } from "./constants";
 
 /**
  * Compute the merkle tree height for a given number of orders.
@@ -49,6 +51,34 @@ export function computeHeight(orderCount: number): number {
 }
 
 /**
+ * Return the hash used to pad bulk order Merkle tree leaves to capacity.
+ *
+ * The padding leaf is a canonical empty `OrderComponents` struct whose
+ * EIP-712 struct hash fills unused leaf slots. The underlying
+ * `OrderComponents` is deliberately not exposed — it is not a valid
+ * order and should never be validated or submitted on-chain.
+ *
+ * @internal This is a low-level utility used internally by {@link padLeaves}.
+ *   It is not part of the stable public API.
+ */
+export function getBulkOrderPaddingHash(): `0x${string}` {
+  const empty: OrderComponents = {
+    offerer: ZERO_ADDRESS,
+    zone: ZERO_ADDRESS,
+    offer: [],
+    consideration: [],
+    orderType: OrderType.FULL_OPEN,
+    startTime: 1n,
+    endTime: 2n,
+    zoneHash: ZERO_BYTES32,
+    salt: 0n,
+    conduitKey: ZERO_BYTES32,
+    counter: 0n,
+  };
+  return hashOrderComponentsStruct(empty);
+}
+
+/**
  * Pad an array of leaf hashes to the next power of 2 using the hash of an
  * empty OrderComponents struct.
  *
@@ -62,7 +92,7 @@ export function padLeaves(
     throw new SeaportValidationError("Cannot pad an empty leaf array");
   }
   const padded = [...leaves];
-  const emptyHash = hashOrderComponentsStruct(getEmptyOrderComponents());
+  const emptyHash = getBulkOrderPaddingHash();
   const height = computeHeight(padded.length);
   const capacity = 2 ** height;
   while (padded.length < capacity) {

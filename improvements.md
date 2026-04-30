@@ -1045,6 +1045,14 @@ for tree construction and never submitted. But the inconsistency between
 "here's an OrderComponents" and "that's not valid" is a papercut that
 violates the library's otherwise strong "validate before you build" stance.
 
+**Resolved**: Removed `getEmptyOrderComponents` from the public API entirely.
+Added `getBulkOrderPaddingHash` in `src/bulk_listings.ts` that returns the
+padding hash directly rather than exposing a structurally-invalid
+`OrderComponents`. The old function was a breaking removal (encouraged per
+project policy). `padLeaves` now calls `getBulkOrderPaddingHash()` internally.
+The test "padded leaves use the empty order hash" was updated to use the new
+function.
+
 ### 17. `aggregateOfferItems` and `aggregateConsiderationItems` use overly permissive generic types
 
 Both functions in `src/order.ts` accept a loose generic constraint:
