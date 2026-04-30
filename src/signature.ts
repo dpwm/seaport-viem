@@ -1,5 +1,5 @@
-import { BaseError, verifyTypedData, hashTypedData, keccak256, encodeAbiParameters, concat, stringToHex } from "viem";
-import type { SeaportContext, Order, OrderComponents } from "./types";
+import { recoverTypedDataAddress, hashTypedData, keccak256, encodeAbiParameters, concat, stringToHex } from "viem";
+import type { SeaportContext, Order, OrderComponents, OrderVerificationResult } from "./types";
 import {
   EIP712_TYPES,
   ORDER_COMPONENTS_TYPE_STRING,
@@ -13,41 +13,45 @@ import { requireValidContext } from "./validate";
 
 /**
  * Verify an order's EIP-712 signature against the offerer's address.
- * Returns `true` if valid, `false` if the signature is malformed or was
- * signed by a different address. Throws on infrastructure errors (bad
- * domain config, invalid address, etc.).
+ *
+ * Uses viem's `recoverTypedDataAddress` — the same underlying crypto as
+ * {@link verifyTypedData} — but returns a structured result instead of a
+ * boolean so callers can distinguish a structurally invalid signature from
+ * a valid signature signed by a different address.
+ *
+ * @returns {@link OrderVerificationResult} — a discriminated union with
+ *   `valid: true` on success, or a specific `reason` on failure.
+ * @throws {SeaportValidationError} If `ctx` fails {@link requireValidContext}.
  */
 export async function verifyOrderSignature(
   ctx: SeaportContext,
   order: Order,
-): Promise<boolean> {
+): Promise<OrderVerificationResult> {
   requireValidContext(ctx);
 
+  let recovered: `0x${string}`;
   try {
-    return await verifyTypedData({
+    recovered = await recoverTypedDataAddress({
       domain: ctx.domain,
       types: EIP712_TYPES,
       primaryType: "OrderComponents",
       message: order.parameters,
       signature: order.signature,
-      address: order.parameters.offerer,
     });
-  } catch (error: unknown) {
-    // Re-throw viem infrastructure errors (bad address, bad domain, etc.)
-    if (error instanceof BaseError) {
-      throw error;
-    }
-    // Signature recovery failures from @noble/curves produce Error instances
-    // with messages indicating an invalid/unrecoverable signature.
-    // Only swallow signature-related errors; rethrow everything else.
-    // Narrow match to known signature-recovery failure messages from
-    // @noble/curves; avoid swallowing infrastructure errors that happen
-    // to contain the word "signature" (e.g., invalid curve points).
-    if (error instanceof Error && /signature (invalid|mismatch)|unrecoverable signature/i.test(error.message)) {
-      return false;
-    }
-    throw error;
+  } catch {
+    // Any throw from recoverTypedDataAddress after context validation
+    // means the signature is structurally invalid (bad length, bad v,
+    // r/s out of range, unrecoverable public key from @noble/curves).
+    // No regex needed — the domain is already validated by requireValidContext,
+    // so the only thing left that can fail is the signature itself.
+    return { valid: false, reason: "invalid-signature" };
   }
+
+  if (recovered.toLowerCase() !== order.parameters.offerer.toLowerCase()) {
+    return { valid: false, reason: "offerer-mismatch", recovered };
+  }
+
+  return { valid: true };
 }
 
 /**

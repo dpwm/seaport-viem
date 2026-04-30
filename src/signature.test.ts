@@ -214,48 +214,94 @@ describe("verifyOrderSignature", () => {
     return { components, signature, account };
   }
 
-  test("returns true for a valid signature", async () => {
+  test("returns valid for a valid signature", async () => {
     const { components, signature } = await makeSignedOrder();
     const result = await verifyOrderSignature(ctx, {
       parameters: components,
       signature,
     });
-    expect(result).toBe(true);
+    expect(result).toEqual({ valid: true });
   });
 
-  test("returns false for a tampered signature", async () => {
+  test("returns offerer-mismatch for a tampered signature", async () => {
     const { components, signature } = await makeSignedOrder();
-    // Corrupt the s component (bytes 32-63) but keep the recovery byte (byte 64)
-    // intact so viem can parse the signature format before the crypto check fails
-    // and returns false via the /signature (invalid|mismatch)/ catch.
+    // Corrupt the s component (bytes 32-63) but keep the recovery byte intact.
+    // The corrupted s may or may not cause noble to throw depending on whether
+    // it's a valid secp256k1 field element. Either way, the signature won't
+    // recover to the offerer — we get offerer-mismatch (not invalid-signature)
+    // because the length and v byte are still valid.
     // signature is "0x" + r(64 hex) + s(64 hex) + v(2 hex) = 132 chars
     const corrupted = (signature.slice(0, 66) + "ab".repeat(32) + signature.slice(130)) as `0x${string}`;
     const result = await verifyOrderSignature(ctx, {
       parameters: components,
       signature: corrupted,
     });
-    expect(result).toBe(false);
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toBe("offerer-mismatch");
+      if (result.reason === "offerer-mismatch") {
+        expect(result.recovered.toLowerCase()).not.toBe(components.offerer.toLowerCase());
+      }
+    }
   });
 
-  test("returns false for a signature from a different offerer", async () => {
+  test("returns invalid-signature for a structurally malformed signature", async () => {
+    const { components } = await makeSignedOrder();
+    // Too short — viem throws "invalid signature length" before reaching noble
+    const result = await verifyOrderSignature(ctx, {
+      parameters: components,
+      signature: "0x00",
+    });
+    expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+  });
+
+  test("returns invalid-signature for a bad v value", async () => {
     const { components, signature } = await makeSignedOrder();
-    // Use a different offerer than who signed
-    const modified = { ...components, offerer: "0xbbbb000000000000000000000000000000000002" as `0x${string}` };
+    // Replace the recovery byte with an invalid value (e.g., 99)
+    const badV = (signature.slice(0, 130) + "63") as `0x${string}`;
+    const result = await verifyOrderSignature(ctx, {
+      parameters: components,
+      signature: badV,
+    });
+    expect(result).toEqual({ valid: false, reason: "invalid-signature" });
+  });
+
+  test("returns offerer-mismatch for a signature from a different offerer", async () => {
+    const { components, signature } = await makeSignedOrder();
+    const differentOfferer = "0xbbbb000000000000000000000000000000000002" as `0x${string}`;
+    const modified = { ...components, offerer: differentOfferer };
     const result = await verifyOrderSignature(ctx, {
       parameters: modified,
       signature,
     });
-    expect(result).toBe(false);
+    // Signature recovers to an address that doesn't match the modified offerer.
+    // The recovered address is arbitrary (hash doesn't match the signature),
+    // so we only assert it's not the modified offerer.
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toBe("offerer-mismatch");
+      if (result.reason === "offerer-mismatch") {
+        expect(result.recovered.toLowerCase()).not.toBe(differentOfferer.toLowerCase());
+      }
+    }
   });
 
-  test("returns false when order data differs from signed data", async () => {
+  test("returns offerer-mismatch when order data differs from signed data", async () => {
     const { components, signature } = await makeSignedOrder();
     const modified = { ...components, salt: 999n };
     const result = await verifyOrderSignature(ctx, {
       parameters: modified,
       signature,
     });
-    expect(result).toBe(false);
+    // Different typed data hash → different recovery → mismatched offerer.
+    // The recovered address is arbitrary (hash doesn't match the signature).
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reason).toBe("offerer-mismatch");
+      if (result.reason === "offerer-mismatch") {
+        expect(result.recovered.toLowerCase()).not.toBe(modified.offerer.toLowerCase());
+      }
+    }
   });
 
   test("throws for invalid context", async () => {

@@ -300,6 +300,23 @@ export type ValidationResult =
   | { valid: true }
   | { valid: false; reason: string };
 
+/**
+ * Result of order signature verification.
+ *
+ * - `valid: true` — signature cryptographically verifies and recovers
+ *   to `order.parameters.offerer`.
+ * - `reason: 'invalid-signature'` — the signature is structurally
+ *   malformed or cryptographically invalid (bad length, bad r/s/v,
+ *   unrecoverable public key).
+ * - `reason: 'offerer-mismatch'` — the signature is valid but recovers
+ *   to a different address than the order's `offerer`. The `recovered`
+ *   field contains the actual signer address.
+ */
+export type OrderVerificationResult =
+  | { valid: true }
+  | { valid: false; reason: 'invalid-signature' }
+  | { valid: false; reason: 'offerer-mismatch'; recovered: `0x${string}` };
+
 /** Transaction data ready to be sent on-chain. */
 export type FulfillmentData = {
   to: `0x${string}`;

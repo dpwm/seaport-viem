@@ -22,6 +22,7 @@ export type {
   AdditionalRecipient,
   BasicOrderParameters,
   ValidationResult,
+  OrderVerificationResult,
   FulfillmentData,
   FulfillmentOptions,
   SpentItem,
