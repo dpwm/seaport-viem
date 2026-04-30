@@ -829,3 +829,404 @@ And remove the now-redundant `checkUint120` calls from builder bodies
 changing the error type won't break existing tests. The fix aligns these
 builders with the convention that all input validation a consumer might
 want to catch emits `SeaportValidationError`.
+
+---
+
+## Taste and consistency gaps
+
+These are not bugs or missing validation — the library works correctly in
+all cases. But each represents a place where the implementation is
+inconsistent with the library's stated architectural values: pure functions,
+typed errors, input validation, clean TypeScript, and symmetric API design.
+Addressing them would make the codebase more uniform and predictable.
+
+### 13. `isBasicOrderEligible` doesn't require static amounts — Dutch auction orders can be routed through the basic order path
+
+`isBasicOrderEligible` in `src/order.ts` (lines 167–217) encodes structural
+checks for the basic order path: exactly one offer, zone must be zero
+address, no criteria-based items, primary consideration recipient must be
+the offerer, and all consideration items share the same `itemType`.
+
+But it does **not** check that `startAmount === endAmount` for any item.
+This corresponds to seaport-js's `shouldUseBasicFulfill` condition 6, which
+correctly excludes time-based amount orders from the basic order pathway.
+
+The basic order path (`fulfillBasicOrder`) uses `endAmount` as a flat scalar
+in the encoded calldata — there is no interpolation logic. If a Dutch
+descending auction (e.g., `startAmount = 10 ETH`, `endAmount = 5 ETH`) is
+routed through `fulfillBasicOrder`, the fulfiller pays `endAmount` (5 ETH)
+regardless of when in the auction window the transaction lands. The offerer
+loses the auction premium. Worse, if `startAmount < endAmount` (an ascending
+action, which the basic path doesn't check for), the fulfiller pays the
+higher `endAmount` even at the start of the window — overpaying relative to
+the current auction price.
+
+Both scenarios produce valid on-chain transactions that execute — the
+contract's `fulfillBasicOrder` accepts whatever `considerationAmount` is
+passed. But the economic outcome is wrong.
+
+**Fix**: Add a check at the top of `isBasicOrderEligible` (or in each
+item's loop):
+
+```ts
+// All items must have startAmount === endAmount for basic order eligibility
+for (const item of order.parameters.offer) {
+  if (item.startAmount !== item.endAmount) return null;
+}
+for (const item of order.parameters.consideration) {
+  if (item.startAmount !== item.endAmount) return null;
+}
+```
+
+Alternatively, the check can be placed in `detectBasicOrderRouteType` (the
+public-facing entry point) rather than the internal `isBasicOrderEligible`.
+
+**Context**: All test fixtures use `startAmount === endAmount`, so the gap
+is never exercised. seaport-js's equivalent function explicitly guards this
+case; the omission here is likely an oversight from building at speed.
+
+### 14. Tips in `buildBasicOrderFulfillment` bypass token-type homogeneity validation
+
+`isBasicOrderEligible` (called via `detectBasicOrderRouteType`) validates
+that all consideration items in the order share the same `itemType`. This is
+necessary because the basic order ABI treats all additional recipients as
+the same token type as the primary consideration.
+
+But `buildBasicOrderFulfillment` (`src/order.ts`, lines 117–158) accepts an
+`options.tips` parameter that is **not** validated against the order's
+consideration token type:
+
+```ts
+// Lines 151–157: tips are added to msg.value only if primaryConsideration is NATIVE
+if (primaryConsideration.itemType === ItemType.NATIVE && options.tips) {
+  for (const tip of options.tips) {
+    value += tip.amount;  // blindly assumes tips are NATIVE
+  }
+}
+```
+
+If `primaryConsideration.itemType === ItemType.ERC20` and the caller passes
+tips, the `value` computation silently ignores them — they won't be included
+in `msg.value`. But the tips are still appended to `additionalRecipients` in
+`toBasicOrderParameters` (line 68) and encoded into calldata. The Seaport
+contract will attempt to transfer ERC20 tokens for the tip amounts — funds
+the fulfiller never approved. The transaction reverts with an ERC20 transfer
+failure, wasting gas.
+
+The library validates tip-related constraints through the order structure
+itself (all consideration items must match), but the tips parameter
+sidesteps this validation entirely because it's appended after the check.
+
+**Fix**: Add a tip validation check in `buildBasicOrderFulfillment` that
+throws `SeaportValidationError` if tips are provided for a non-NATIVE
+primary consideration:
+
+```ts
+if (options.tips && options.tips.length > 0) {
+  if (primaryConsideration.itemType !== ItemType.NATIVE) {
+    throw new SeaportValidationError(
+      "Tips are only supported for NATIVE (ETH) primary consideration in basic orders"
+    );
+  }
+}
+```
+
+Or, more permissively, validate that the caller understands the constraint
+and handles ERC20 tips separately. The simplest correct fix is to reject
+non-NATIVE tips at the builder level (the basic order ABI doesn't encode
+separate token types per additional recipient, so mixed-type tips are
+impossible).
+
+**Context**: This gap exists because `isBasicOrderEligible` validates the
+order structure at detection time, but tips are a runtime option appended
+after detection. The detection function can't know about tips, and the
+builder function assumes the detection already covered everything.
+
+### 15. `toOrderParameters` doesn't validate the relationship between `totalOriginalConsiderationItems` and `consideration.length`
+
+`toOrderParameters` in `src/order.ts` (lines 307–322) converts
+`OrderComponents` to `OrderParameters` by replacing the `counter` field
+with `totalOriginalConsiderationItems`:
+
+```ts
+export function toOrderParameters(
+  components: OrderComponents,
+  totalOriginalConsiderationItems: bigint,
+): OrderParameters {
+  return {
+    offerer: components.offerer,
+    zone: components.zone,
+    offer: components.offer,
+    consideration: components.consideration,
+    orderType: components.orderType,
+    startTime: components.startTime,
+    endTime: components.endTime,
+    zoneHash: components.zoneHash,
+    salt: components.salt,
+    conduitKey: components.conduitKey,
+    totalOriginalConsiderationItems,
+  };
+}
+```
+
+The JSDoc says "Usually `components.consideration.length`", but the function
+itself performs no validation. If a caller passes
+`totalOriginalConsiderationItems` that differs from the actual
+`consideration.length`, the on-chain order hash for `OrderParameters` will
+not match the EIP-712 signed hash of `OrderComponents`, and the order won't
+verify. The failure mode is a cryptic on-chain revert with no library-side
+error.
+
+This is the kind of validation the library does everywhere else. The
+omission is inconsistent with the validation-first ethos.
+
+**Fix**: Add a check at the top of the function:
+
+```ts
+if (totalOriginalConsiderationItems !== BigInt(components.consideration.length)) {
+  throw new SeaportValidationError(
+    `totalOriginalConsiderationItems (${totalOriginalConsiderationItems}) must match consideration.length (${components.consideration.length})`
+  );
+}
+```
+
+**Context**: All internal callers pass `BigInt(components.consideration.length)`
+(verified by code review). External callers following the JSDoc guidance are
+safe. But the library shouldn't rely on caller discipline for a constraint
+that is both checkable and critical to correctness.
+
+### 16. `getEmptyOrderComponents` produces data that violates `validateOrderComponents`
+
+`getEmptyOrderComponents` in `src/order.ts` (lines 324–340) returns a
+canonical empty padding leaf for bulk order Merkle trees:
+
+```ts
+export function getEmptyOrderComponents(): OrderComponents {
+  return {
+    offerer: ZERO_ADDRESS,
+    zone: ZERO_ADDRESS,
+    offer: [],
+    consideration: [],
+    orderType: OrderType.FULL_OPEN,
+    startTime: 1n,
+    endTime: 2n,
+    zoneHash: ZERO_BYTES32,
+    salt: 0n,        // ← validateOrderComponents rejects this
+    conduitKey: ZERO_BYTES32,
+    counter: 0n,
+  };
+}
+```
+
+`validateOrderComponents` throws on `salt === 0n` ("salt must not be zero").
+The padding leaf has `salt: 0n`. Further, the empty `offer` and
+`consideration` arrays would fail the "must have at least one offer item"
+and "must have at least one consideration item" checks.
+
+The JSDoc correctly warns: "The returned struct is not intended to be
+validated or submitted on-chain." It's only used internally by
+`hashOrderComponentsStruct` for Merkle tree padding. But shipping a
+function that returns data the library's own validator rejects is an
+invitation for confusion — a developer who calls `validateOrderComponents`
+on the result (for debugging, logging, or defensive checking) gets a
+misleading error.
+
+**Fix**: Two options:
+
+1. **Change the salt to a non-zero sentinel** (e.g., `1n`) to pass
+   validation. The empty arrays still fail, but the salt check is the most
+   surprising failure.
+
+2. **Separate the padding type from `OrderComponents`** — define a narrower
+   `BulkOrderPaddingLeaf` type that doesn't claim to be a full
+   `OrderComponents`. This is the correct long-term fix but requires type
+   changes in `buildBulkOrderTree` and `padLeaves`.
+
+Option (1) is a one-line change with no downstream impact (the empty hash
+changes but the padding invariant — all leaves being identical — is
+preserved). Option (2) is more thorough but higher effort.
+
+**Context**: The empty salt is not a bug — the padding hash is used purely
+for tree construction and never submitted. But the inconsistency between
+"here's an OrderComponents" and "that's not valid" is a papercut that
+violates the library's otherwise strong "validate before you build" stance.
+
+### 17. `aggregateOfferItems` and `aggregateConsiderationItems` use overly permissive generic types
+
+Both functions in `src/order.ts` accept a loose generic constraint:
+
+```ts
+export function aggregateOfferItems<T extends { parameters: { offer: readonly unknown[] } }>(
+  orders: T[],
+): FulfillmentComponent[][] {
+
+export function aggregateConsiderationItems<T extends { parameters: { consideration: readonly unknown[] } }>(
+  orders: T[],
+): FulfillmentComponent[][] {
+```
+
+`readonly unknown[]` accepts any array type. A caller could pass
+`[{ parameters: { offer: ["nonsense", 42] } }]` and the function would
+compile and run, producing `FulfillmentComponent` entries for items that
+aren't OfferItems. The library is otherwise meticulous about `0x${string}`
+address types, `bigint` numeric types, and branded item type discriminators.
+These two functions are the only place where the type system is this
+permissive.
+
+The practical impact is low — these are exported utilities, not internal
+helpers, and the most common callers pass `Order[]` or `AdvancedOrder[]`,
+both of which have correctly typed `offer`/`consideration` arrays. But a
+caller with a looser input type (e.g., `any[]` from a JSON API response)
+gets no compile-time warning.
+
+**Fix**: Tighten the generic constraints to match the actual item types:
+
+```ts
+export function aggregateOfferItems<
+  T extends { parameters: { offer: readonly OfferItem[] } }
+>(orders: T[]): FulfillmentComponent[][] {
+
+export function aggregateConsiderationItems<
+  T extends { parameters: { consideration: readonly ConsiderationItem[] } }
+>(orders: T[]): FulfillmentComponent[][] {
+```
+
+This is a non-breaking change — every existing caller already satisfies
+the tighter constraint.
+
+**Context**: Both `Order` and `AdvancedOrder` will satisfy the new
+constraints without changes. Custom types that extend
+`{ parameters: { offer: readonly OfferItem[] } }` also still work.
+
+### 18. No `requireValidOrderComponents` — asymmetry with `requireValidContext`
+
+The library provides both `validateSeaportContext` (returns
+`ValidationResult`) and `requireValidContext` (throws
+`SeaportValidationError`) for context validation. This is an explicit
+design choice documented in `requireValidContext`'s JSDoc:
+
+> Use this to avoid repeating the 3-line validation pattern at every call site.
+
+The same pattern exists for order components: `validateOrderComponents`
+returns `ValidationResult`. But there is **no** `requireValidOrderComponents`
+counterpart. Every call site that needs to throw on invalid order
+components must write the boilerplate:
+
+```ts
+const result = validateOrderComponents(components);
+if (!result.valid) {
+  throw new SeaportValidationError(result.reason);
+}
+```
+
+This is the exact 3-line pattern `requireValidContext` was designed to
+aliminate. The asymmetry means consumers who adopt the `require*` pattern
+for one validation path can't use it for the other.
+
+Notably, none of the builder functions currently call
+`validateOrderComponents` — they validate structural properties ad-hoc
+(e.g., `offer.length !== 1` in `toBasicOrderParameters`). Adding
+`requireValidOrderComponents` would also create an opportunity to
+standardize validation entry points in the builders.
+
+**Fix**: Add `requireValidOrderComponents` in `src/validate.ts`, mirroring
+the `requireValidContext` pattern:
+
+```ts
+export function requireValidOrderComponents(
+  components: OrderComponents,
+): void {
+  const result = validateOrderComponents(components);
+  if (!result.valid) {
+    throw new SeaportValidationError(result.reason);
+  }
+}
+```
+
+**Context**: This is a pure DX improvement with no behavior change. The
+underlying validation logic already exists; only the throwing wrapper is
+missing.
+
+### 19. `computeTotalNativeValue` is marked `@private` but is exported and used cross-module
+
+`computeTotalNativeValue` in `src/order.ts` (lines 418–432) has a JSDoc
+`@private` tag:
+
+```ts
+/**
+ * Validate the Seaport context and compute the total native value across
+ * all orders' consideration items.
+ *
+ * @private This is an internal helper shared by fulfillment builders in this
+ *   module and in `match.ts`. It is not part of the stable public API.
+ */
+export function computeTotalNativeValue(
+```
+
+The function is imported and called in `src/match.ts` (`buildMatchOrders`
+and `buildMatchAdvancedOrders`), making it cross-module — the opposite of
+`@private`. The JSDoc body correctly describes the usage ("shared by
+fulfillment builders in this module and in `match.ts`"), but the tag is
+wrong.
+
+The library uses two tags for this purpose:
+- `@internal` — used on `checkUint120`, `seaportCall`, `hashOrderComponentsStruct`,
+  and `encodeDomainSeparator`. Means "exported for internal cross-module use,
+  not part of the stable public API."
+- `@private` — used only on `computeTotalNativeValue` and nowhere else.
+
+**Fix**: Replace `@private` with `@internal`:
+
+```ts
+/**
+ * Validate the Seaport context and compute the total native value across
+ * all orders' consideration items.
+ *
+ * @internal This is an internal helper shared by fulfillment builders in this
+ *   module and in `match.ts`. It is not part of the stable public API.
+ */
+```
+
+**Context**: This is a documentation-only fix with zero code impact.
+
+### 20. `@throws` documentation is inconsistent across builder functions
+
+The library is generally good about documenting thrown errors in JSDoc.
+But the `@throws` tag coverage is uneven across the builder functions:
+
+| Function | File | `@throws` in JSDoc? | Throws from... |
+|----------|------|--------------------|----------------|
+| `buildBasicOrderFulfillment` | `src/order.ts` | ✅ | `requireValidContext`, route detection |
+| `toBasicOrderParameters` | `src/order.ts` | ✅ | Length checks |
+| `buildFulfillOrder` | `src/order.ts` | ❌ | `requireValidContext` |
+| `buildFulfillAdvancedOrder` | `src/order.ts` | ❌ | `requireValidContext`, `checkUint120` |
+| `buildFulfillAvailableOrders` | `src/order.ts` | ✅ (partial) | `maximumFulfilled` check, but not `requireValidContext` |
+| `buildFulfillAvailableAdvancedOrders` | `src/order.ts` | ✅ (partial) | `maximumFulfilled` check, but not `requireValidContext` or `checkUint120` |
+| `buildMatchOrders` | `src/match.ts` | ❌ | (indirect) `computeTotalNativeValue` → `requireValidContext` |
+| `buildMatchAdvancedOrders` | `src/match.ts` | ❌ | (indirect) `computeTotalNativeValue` → `requireValidContext`; `checkUint120` |
+| `buildCancel` | `src/cancel.ts` | ❌ | `requireValidContext`, empty array check |
+| `buildValidate` | `src/validate.ts` | ✅ | Empty array check, but not `requireValidContext` |
+| `buildIncrementCounter` | `src/increment_counter.ts` | ❌ | `requireValidContext` |
+
+Six out of eleven builder functions have no `@throws` tag at all, despite
+all of them potentially throwing `SeaportValidationError` from
+`requireValidContext`. Four more have `@throws` that only partially
+cover the actual throw sites.
+
+The practical consequence is that an IDE user hovering over
+`buildFulfillOrder` sees no documented error conditions, while the function
+can throw from context validation.
+
+**Fix**: Add `@throws {SeaportValidationError}` to every builder function
+that calls `requireValidContext` (which is all of them, once item 5 above
+is addressed). For functions that throw additional `SeaportValidationError`
+instances on specific parameter checks, document those separately.
+
+Alternatively, the project could adopt a blanket convention:
+"All `build*` functions throw `SeaportValidationError` on invalid inputs" —
+but the per-function tags are more useful for IDEs and generated docs.
+
+**Context**: The inconsistency is cosmetic — all actual errors are thrown
+correctly. But it violates the library's otherwise careful documentation
+standards (compare the meticulous JSDoc on `OrderComponents` fields or
+`seaportCall` parameter labels).
