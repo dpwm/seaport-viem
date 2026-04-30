@@ -20,7 +20,9 @@ import { ctx, makeOrderComponents } from "./test-fixtures";
 
 describe("computeHeight", () => {
   test("throws for 0 orders", () => {
-    expect(() => computeHeight(0)).toThrow("orderCount must be at least 1");
+    expect(() => computeHeight(0)).toThrow(
+      "orderCount must be a positive finite number",
+    );
   });
 
   test("returns 1 for 1 order", () => {
@@ -65,6 +67,24 @@ describe("computeHeight", () => {
   test("throws for extremely large orderCount", () => {
     expect(() => computeHeight(1_000_000_000)).toThrow(
       /exceeds maximum bulk order capacity/,
+    );
+  });
+
+  test("throws for NaN", () => {
+    expect(() => computeHeight(NaN)).toThrow(
+      "orderCount must be a positive finite number",
+    );
+  });
+
+  test("throws for Infinity", () => {
+    expect(() => computeHeight(Infinity)).toThrow(
+      "orderCount must be a positive finite number",
+    );
+  });
+
+  test("throws for -Infinity", () => {
+    expect(() => computeHeight(-Infinity)).toThrow(
+      "orderCount must be a positive finite number",
     );
   });
 });

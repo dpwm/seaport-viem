@@ -452,14 +452,10 @@ export function computeNativeValue(
 /**
  * Compute the total native value across all orders' consideration items.
  *
- * Callers are responsible for validating the Seaport context before calling
- * this function (see {@link requireValidContext}).
- *
  * @internal This is an internal helper shared by fulfillment builders in this
  *   module and in `match.ts`. It is not part of the stable public API.
  */
 export function computeTotalNativeValue(
-  ctx: SeaportContext,
   orders: readonly { parameters: { consideration: readonly ConsiderationItem[] } }[],
 ): bigint {
   let total = 0n;
@@ -602,7 +598,7 @@ export function buildFulfillAvailableOrders(
     );
   }
 
-  const value = computeTotalNativeValue(ctx, orders);
+  const value = computeTotalNativeValue(orders);
   return {
     to: ctx.address,
     data: encodeFulfillAvailableOrders(
@@ -684,7 +680,7 @@ export function buildFulfillAvailableAdvancedOrders(
     );
   }
 
-  const value = computeTotalNativeValue(ctx, advancedOrders);
+  const value = computeTotalNativeValue(advancedOrders);
   return {
     to: ctx.address,
     data: encodeFulfillAvailableAdvancedOrders(

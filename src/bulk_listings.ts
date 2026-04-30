@@ -33,9 +33,9 @@ import { ZERO_ADDRESS, ZERO_BYTES32 } from "./constants";
  * @throws If orderCount would require a height exceeding BULK_ORDER_HEIGHT_MAX (24).
  */
 export function computeHeight(orderCount: number): number {
-  if (orderCount < 1) {
+  if (!Number.isFinite(orderCount) || orderCount < 1) {
     throw new SeaportValidationError(
-      `orderCount must be at least 1, got ${orderCount}`,
+      `orderCount must be a positive finite number, got ${orderCount}`,
     );
   }
   const height = Math.max(

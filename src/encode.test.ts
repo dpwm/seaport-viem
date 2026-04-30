@@ -113,35 +113,6 @@ describe("encodeFulfillAdvancedOrder", () => {
     expect(data.length).toBeGreaterThan(2);
   });
 
-  test("throws for numerator > uint120", () => {
-    const order = makeOrder();
-    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
-    const advancedOrder: AdvancedOrder = {
-      parameters: params,
-      numerator: 1n << 120n,
-      denominator: 1n,
-      signature: order.signature,
-      extraData: "0x",
-    };
-    expect(() =>
-      encodeFulfillAdvancedOrder(advancedOrder, [], ZERO_BYTES32, ALICE),
-    ).toThrow("uint120");
-  });
-
-  test("throws for denominator > uint120", () => {
-    const order = makeOrder();
-    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
-    const advancedOrder: AdvancedOrder = {
-      parameters: params,
-      numerator: 1n,
-      denominator: 1n << 120n,
-      signature: order.signature,
-      extraData: "0x",
-    };
-    expect(() =>
-      encodeFulfillAdvancedOrder(advancedOrder, [], ZERO_BYTES32, ALICE),
-    ).toThrow("uint120");
-  });
 });
 
 describe("encodeFulfillAvailableOrders", () => {
@@ -284,25 +255,6 @@ describe("encodeMatchAdvancedOrders", () => {
     );
   });
 
-  test("throws for numerator > uint120", () => {
-    const order = makeOrder();
-    const params = toOrderParameters(
-      order.parameters,
-      BigInt(order.parameters.consideration.length),
-    );
-    const advancedOrders: AdvancedOrder[] = [
-      {
-        parameters: params,
-        numerator: 1n << 120n,
-        denominator: 1n,
-        signature: order.signature,
-        extraData: "0x",
-      },
-    ];
-    expect(() =>
-      encodeMatchAdvancedOrders(advancedOrders, [], [], ALICE),
-    ).toThrow("uint120");
-  });
 });
 
 describe("encodeValidate", () => {

@@ -116,6 +116,21 @@ describe("buildMatchAdvancedOrders", () => {
     expect(tx.data.length).toBeGreaterThan(2);
   });
 
+  test("throws for denominator > uint120", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n << 120n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    expect(() =>
+      buildMatchAdvancedOrders(ctx, advancedOrders),
+    ).toThrow("uint120");
+  });
+
   test("throws for numerator > uint120", () => {
     const order = makeOrder();
     const params = toOrderParameters(

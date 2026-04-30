@@ -97,7 +97,6 @@ export function encodeFulfillOrder(
  * @param fulfillerConduitKey - Conduit key for the fulfiller.
  * @param recipient - Address to receive the items (often the fulfiller).
  * @returns ABI-encoded function call data.
- * @throws If numerator or denominator exceed uint120 range.
  */
 export function encodeFulfillAdvancedOrder(
   advancedOrder: AdvancedOrder,
@@ -105,8 +104,6 @@ export function encodeFulfillAdvancedOrder(
   fulfillerConduitKey: `0x${string}`,
   recipient: `0x${string}`,
 ): `0x${string}` {
-  checkUint120(advancedOrder.numerator, "numerator");
-  checkUint120(advancedOrder.denominator, "denominator");
   return encodeCall(fulfillAdvancedOrderAbiItem, "fulfillAdvancedOrder", [
     advancedOrder,
     criteriaResolvers,
@@ -150,7 +147,6 @@ export function encodeFulfillAvailableOrders(
  * @param recipient - Address to receive the items.
  * @param maximumFulfilled - Maximum number of orders to fulfill.
  * @returns ABI-encoded function call data.
- * @throws If any numerator or denominator exceed uint120 range.
  */
 export function encodeFulfillAvailableAdvancedOrders(
   advancedOrders: AdvancedOrder[],
@@ -161,10 +157,6 @@ export function encodeFulfillAvailableAdvancedOrders(
   recipient: `0x${string}`,
   maximumFulfilled: bigint,
 ): `0x${string}` {
-  for (const order of advancedOrders) {
-    checkUint120(order.numerator, "numerator");
-    checkUint120(order.denominator, "denominator");
-  }
   return encodeCall(
     fulfillAvailableAdvancedOrdersAbiItem,
     "fulfillAvailableAdvancedOrders",
@@ -230,7 +222,6 @@ export function encodeMatchOrders(
  * @param fulfillments - Fulfillments allocating offer to consideration components.
  * @param recipient - Address to receive unspent offer items.
  * @returns ABI-encoded function call data.
- * @throws If any numerator or denominator exceed uint120 range.
  */
 export function encodeMatchAdvancedOrders(
   advancedOrders: AdvancedOrder[],
@@ -238,10 +229,6 @@ export function encodeMatchAdvancedOrders(
   fulfillments: Fulfillment[],
   recipient: `0x${string}`,
 ): `0x${string}` {
-  for (const order of advancedOrders) {
-    checkUint120(order.numerator, "numerator");
-    checkUint120(order.denominator, "denominator");
-  }
   return encodeCall(matchAdvancedOrdersAbiItem, "matchAdvancedOrders", [
     advancedOrders,
     criteriaResolvers,

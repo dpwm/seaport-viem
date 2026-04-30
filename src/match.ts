@@ -43,7 +43,7 @@ export function buildMatchOrders(
     throw new SeaportValidationError("At least one fulfillment must be provided");
   }
 
-  const value = computeTotalNativeValue(ctx, orders);
+  const value = computeTotalNativeValue(orders);
   return {
     to: ctx.address,
     data: encodeMatchOrders(orders, fulfillments),
@@ -99,7 +99,7 @@ export function buildMatchAdvancedOrders(
     }
   }
 
-  const value = computeTotalNativeValue(ctx, advancedOrders);
+  const value = computeTotalNativeValue(advancedOrders);
   return {
     to: ctx.address,
     data: encodeMatchAdvancedOrders(
