@@ -518,8 +518,8 @@ describe("buildBasicOrderFulfillment", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         consideration: [
-          makeConsiderationItem({ endAmount: 1000n }),
-          makeConsiderationItem({ recipient: BOB, endAmount: 200n }),
+          makeConsiderationItem({ startAmount: 1000n, endAmount: 1000n }),
+          makeConsiderationItem({ recipient: BOB, startAmount: 200n, endAmount: 200n }),
         ],
       }),
     });
@@ -548,10 +548,11 @@ describe("buildBasicOrderFulfillment", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         consideration: [
-          makeConsiderationItem({ endAmount: 1000n }),
+          makeConsiderationItem({ startAmount: 1000n, endAmount: 1000n }),
           makeConsiderationItem({
             itemType: ItemType.ERC20,
             token: TOKEN,
+            startAmount: 500n,
             endAmount: 500n,
             recipient: BOB,
           }),
@@ -570,7 +571,7 @@ describe("buildBasicOrderFulfillment", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         consideration: [
-          makeConsiderationItem({ token: NATIVE_TOKEN, endAmount: 1000n }),
+          makeConsiderationItem({ token: NATIVE_TOKEN, startAmount: 1000n, endAmount: 1000n }),
         ],
       }),
     });
@@ -582,7 +583,7 @@ describe("buildBasicOrderFulfillment", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         consideration: [
-          makeConsiderationItem({ token: NATIVE_TOKEN, endAmount: 1000n }),
+          makeConsiderationItem({ token: NATIVE_TOKEN, startAmount: 1000n, endAmount: 1000n }),
         ],
       }),
     });
@@ -597,7 +598,7 @@ describe("buildBasicOrderFulfillment", () => {
   test("includes tip amounts in ETH value", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
-        consideration: [makeConsiderationItem({ endAmount: 1000n })],
+        consideration: [makeConsiderationItem({ startAmount: 1000n, endAmount: 1000n })],
       }),
     });
     const tipRecipient =
@@ -671,17 +672,29 @@ describe("computeNativeValue", () => {
     expect(computeNativeValue([])).toBe(0n);
   });
 
-  test("returns endAmount for single NATIVE item", () => {
+  test("uses endAmount when equal to startAmount (constant price)", () => {
     expect(
-      computeNativeValue([{ itemType: ItemType.NATIVE, endAmount: 1000n }]),
+      computeNativeValue([{ itemType: ItemType.NATIVE, startAmount: 1000n, endAmount: 1000n }]),
     ).toBe(1000n);
   });
 
-  test("sums multiple NATIVE items", () => {
+  test("uses startAmount for descending Dutch auction (startAmount > endAmount)", () => {
+    expect(
+      computeNativeValue([{ itemType: ItemType.NATIVE, startAmount: 5000n, endAmount: 1000n }]),
+    ).toBe(5000n);
+  });
+
+  test("uses endAmount for ascending auction (endAmount > startAmount)", () => {
+    expect(
+      computeNativeValue([{ itemType: ItemType.NATIVE, startAmount: 1000n, endAmount: 5000n }]),
+    ).toBe(5000n);
+  });
+
+  test("sums max(startAmount, endAmount) for multiple NATIVE items", () => {
     expect(
       computeNativeValue([
-        { itemType: ItemType.NATIVE, endAmount: 500n },
-        { itemType: ItemType.NATIVE, endAmount: 1500n },
+        { itemType: ItemType.NATIVE, startAmount: 500n, endAmount: 100n },
+        { itemType: ItemType.NATIVE, startAmount: 1500n, endAmount: 1500n },
       ]),
     ).toBe(2000n);
   });
@@ -689,9 +702,9 @@ describe("computeNativeValue", () => {
   test("skips ERC20 items when mixed with NATIVE", () => {
     expect(
       computeNativeValue([
-        { itemType: ItemType.NATIVE, endAmount: 500n },
-        { itemType: ItemType.ERC20, endAmount: 9999n },
-        { itemType: ItemType.NATIVE, endAmount: 300n },
+        { itemType: ItemType.NATIVE, startAmount: 500n, endAmount: 100n },
+        { itemType: ItemType.ERC20, startAmount: 9999n, endAmount: 9999n },
+        { itemType: ItemType.NATIVE, startAmount: 300n, endAmount: 300n },
       ]),
     ).toBe(800n);
   });
@@ -699,15 +712,15 @@ describe("computeNativeValue", () => {
   test("returns 0n when all items are ERC20", () => {
     expect(
       computeNativeValue([
-        { itemType: ItemType.ERC20, endAmount: 500n },
-        { itemType: ItemType.ERC20, endAmount: 1500n },
+        { itemType: ItemType.ERC20, startAmount: 500n, endAmount: 500n },
+        { itemType: ItemType.ERC20, startAmount: 1500n, endAmount: 1500n },
       ]),
     ).toBe(0n);
   });
 
   test("returns 0n for single ERC20 item", () => {
     expect(
-      computeNativeValue([{ itemType: ItemType.ERC20, endAmount: 100n }]),
+      computeNativeValue([{ itemType: ItemType.ERC20, startAmount: 100n, endAmount: 100n }]),
     ).toBe(0n);
   });
 });
@@ -727,8 +740,8 @@ describe("buildFulfillOrder", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
         consideration: [
-          makeConsiderationItem({ endAmount: 1000n }),
-          makeConsiderationItem({ recipient: BOB, endAmount: 200n }),
+          makeConsiderationItem({ startAmount: 1000n, endAmount: 1000n }),
+          makeConsiderationItem({ recipient: BOB, startAmount: 200n, endAmount: 200n }),
         ],
       }),
     });
@@ -772,7 +785,7 @@ describe("buildFulfillAdvancedOrder", () => {
   test("computes ETH value", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
-        consideration: [makeConsiderationItem({ endAmount: 500n })],
+        consideration: [makeConsiderationItem({ startAmount: 500n, endAmount: 500n })],
       }),
     });
     const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
@@ -834,13 +847,13 @@ describe("buildFulfillAvailableOrders", () => {
     const order1 = makeOrder({
       parameters: makeOrderComponents({
         salt: 1n,
-        consideration: [makeConsiderationItem({ endAmount: 300n })],
+        consideration: [makeConsiderationItem({ startAmount: 300n, endAmount: 300n })],
       }),
     });
     const order2 = makeOrder({
       parameters: makeOrderComponents({
         salt: 2n,
-        consideration: [makeConsiderationItem({ endAmount: 700n })],
+        consideration: [makeConsiderationItem({ startAmount: 700n, endAmount: 700n })],
       }),
     });
     const params1 = toOrderParameters(order1.parameters, BigInt(order1.parameters.consideration.length));
@@ -884,7 +897,7 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
   test("computes ETH value", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
-        consideration: [makeConsiderationItem({ endAmount: 800n })],
+        consideration: [makeConsiderationItem({ startAmount: 800n, endAmount: 800n })],
       }),
     });
     const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));

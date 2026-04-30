@@ -405,12 +405,18 @@ export function aggregateConsiderationItems<T extends { parameters: { considerat
 
 /**
  * Sum all NATIVE consideration items to compute msg.value.
+ *
+ * Uses `max(startAmount, endAmount)` for each item to cover the maximum
+ * possible consideration for Dutch auction orders. For constant-price
+ * orders (where `startAmount === endAmount`), behavior is unchanged.
  */
-export function computeNativeValue(consideration: readonly { itemType: ItemTypeValue; endAmount: bigint }[]): bigint {
+export function computeNativeValue(
+  consideration: readonly { itemType: ItemTypeValue; startAmount: bigint; endAmount: bigint }[],
+): bigint {
   let value = 0n;
   for (const item of consideration) {
     if (item.itemType === ItemType.NATIVE) {
-      value += item.endAmount;
+      value += item.startAmount > item.endAmount ? item.startAmount : item.endAmount;
     }
   }
   return value;

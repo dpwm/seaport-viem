@@ -177,6 +177,15 @@ constant-price case (`startAmount === endAmount`), behaviour is unchanged.
 a one-line change with no breaking API impact (all callers already have
 access to `startAmount` on their consideration items).
 
+**Resolved**: Changed `computeNativeValue` to accept `startAmount` in its
+parameter type and use `max(startAmount, endAmount)` for each NATIVE
+consideration item. This correctly computes the maximum possible `msg.value`
+for Dutch auction orders where the price descends from `startAmount` to
+`endAmount` over time. Added 3 new tests covering descending Dutch auction,
+ascending edge case, and mixed multiple items. Updated 9 existing builder
+integration tests to pass explicit `startAmount` alongside `endAmount`,
+keeping their constant-price semantics intact.
+
 ### 3. `buildMatchOrders` and `buildMatchAdvancedOrders` lack input validation for empty arrays
 
 `buildMatchOrders` in `src/match.ts` (lines 22–31) and
