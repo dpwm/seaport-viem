@@ -444,65 +444,34 @@ orders always have valid fractions, but library correctness should not
 depend on caller discipline — especially for on-chain transactions where
 a bad fraction wastes gas.
 
-### 7. `verifyOrderSignature` error classification depends on fragile `@noble/curves` error message regex
+### 7. ~~`verifyOrderSignature` error classification depends on fragile `@noble/curves` error message regex~~ ✅ FIXED
 
-`verifyOrderSignature` in `src/signature.ts` (lines 38–44) catches errors
-thrown by viem's `verifyTypedData` and uses a regex to distinguish
-signature-verification failures from infrastructure errors:
+**Resolved in commit `773664b`.**
 
-```ts
-} catch (error: unknown) {
-  // Re-throw viem infrastructure errors (bad address, bad domain, etc.)
-  if (error instanceof BaseError) {
-    throw error;
-  }
-  // Signature recovery failures from @noble/curves produce Error instances
-  // with messages indicating an invalid/unrecoverable signature.
-  // Only swallow signature-related errors; rethrow everything else.
-  // Narrow match to known signature-recovery failure messages from
-  // @noble/curves; avoid swallowing infrastructure errors that happen
-  // to contain the word "signature" (e.g., invalid curve points).
-  if (error instanceof Error && /signature (invalid|mismatch)|unrecoverable signature/i.test(error.message)) {
-    return false;
-  }
-  throw error;
-}
-```
+`verifyOrderSignature` previously used `verifyTypedData` with a try/catch
+containing a regex (`/signature (invalid|mismatch)|unrecoverable signature/i`)
+to distinguish noble-curves signature failures from infrastructure errors.
 
-This regex matches error message text from `@noble/curves`, a transitive
-dependency of viem used internally for ECDSA recovery. The approach has
-two fragility concerns:
+The fix replaces `verifyTypedData` (boolean return) with
+`recoverTypedDataAddress` (returns the recovered address). The function now:
 
-1. **Transitive dependency coupling**: The library's behavior depends on
-   the exact phrasing of error messages in `@noble/curves`. If viem
-   upgrades to a newer version of noble-curves, switches to a different
-   crypto library, or noble changes its error messages, the regex will
-   stop matching. In the failure case, `verifyOrderSignature` re-throws
-   instead of returning `false` — which is safer than silently swallowing
-   a real error, but breaks the expected `Promise<boolean>` contract for
-   signature validation.
+1. Calls `recoverTypedDataAddress` — any throw means the signature is
+   structurally invalid (bad length, bad v, r/s out of range).
+2. Compares the recovered address to `order.parameters.offerer` — if
+   they differ, returns `offerer-mismatch` with the recovered address.
+3. Returns a closed-set discriminated union instead of `boolean`:
+   `{ valid: true } | { valid: false; reason: 'invalid-signature' }`
+   `| { valid: false; reason: 'offerer-mismatch'; recovered }`
 
-2. **No positive test for error message patterns**: The test suite
-   (`src/signature.test.ts`) tests tampered signatures and mismatched
-   offerers, both of which exercise the `return false` path. But these
-   tests pass because viem's `verifyTypedData` internally handles the
-   failure (returning `false` or throwing). There is no test that
-   verifies the specific noble error messages are matched by the regex —
-   the thrown-error path is implicitly tested but not explicitly
-   validated against known message strings.
+The regex is eliminated entirely. Tests exercise both failure modes
+deterministically against real viem (short `"0x00"` signature for structural
+failure, bad v byte for recovery failure, mismatched offerer for mismatch).
 
-A more robust approach would be to validate the signature format
-(parsing r, s, v components) before calling `verifyTypedData`, or to
-use viem's `recoverTypedDataAddress` and compare addresses, avoiding
-the throw/catch control flow entirely.
-
-**Context**: The function works correctly with the current viem and
-noble versions. This is a maintenance risk — a dependency upgrade could
-silently change behavior. The existing `return false` tests protect
-against regressions in the normal case; a noble message format change
-would likely cause `verifyOrderSignature` to throw (failing the test
-suite), alerting maintainers. But the coupling to internal error text
-is an unnecessary fragility that could be eliminated.
+**What the fix does not change**:
+- `requireValidContext(ctx)` still validates the domain before recovery.
+- `hashOrderComponents` and `hashOrderComponentsStruct` are unchanged.
+- The `OrderVerificationResult` type is exported from `seaport-viem` and
+  `seaport-viem/signature`.
 
 ### 8. `buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders` default to empty fulfillments, producing silent no-ops
 
@@ -648,59 +617,15 @@ offerer in test fixtures), which satisfies `isBasicOrderEligible`'s
 has no matching basic route, so `detectBasicOrderRouteType` correctly
 returns `null`.
 
-### 10. `src/signature.ts:35,37-39,46-48` — Catch block in `verifyOrderSignature` never entered
+### 10. ~~`src/signature.ts:35,37-39,46-48` — Catch block in `verifyOrderSignature` never entered~~ ✅ FIXED
 
-The entire catch block in `verifyOrderSignature` (lines 35–50) is uncovered
-because `verifyTypedData` from viem never throws in the test suite — it
-returns `true` for valid signatures and `false` for invalid/tampered ones.
-The catch block handles two exceptional cases:
+**Resolved alongside item 7 in commit `773664b`.**
 
-- **Lines 37–39**: Re-throws `BaseError` (viem infrastructure errors such as
-  invalid signature format, bad domain config, or RPC errors).
-- **Lines 46–48**: Returns `false` when `@noble/curves` throws a
-  signature-recovery failure (e.g. `r` or `s` out of range). The regex
-  `/signature (invalid|mismatch)|unrecoverable signature/i` narrow-matches
-  known noble-curves error messages to avoid swallowing unrelated errors.
-- **Line 49**: Fallthrough re-throw for any other unexpected error type.
-
-Neither path is ever triggered because all test signatures are valid-format
-65-byte hex strings and viem handles recovery failures internally (returning
-`false` rather than throwing).
-
-**Fix**: Add tests using `mock.module` from bun:test to mock `verifyTypedData`
-in `src/signature.test.ts`:
-
-```ts
-import { mock } from "bun:test";
-
-// Test BaseError re-throw path (lines 37–39)
-test("re-throws BaseError from viem", async () => {
-  // Mock verifyTypedData to throw a BaseError
-  ...
-  await expect(verifyOrderSignature(ctx, order)).rejects.toThrow();
-});
-
-// Test noble-curves error → false path (lines 46–48)
-test("returns false for noble-curves signature recovery error", async () => {
-  // Mock verifyTypedData to throw Error matching the noble regex
-  ...
-  expect(await verifyOrderSignature(ctx, order)).toBe(false);
-});
-
-// Test fallthrough re-throw for unexpected errors (line 49)
-test("re-throws unexpected errors", async () => {
-  // Mock verifyTypedData to throw an unrelated Error
-  ...
-  await expect(verifyOrderSignature(ctx, order)).rejects.toThrow();
-});
-```
-
-Alternative (no mocking): pass a structurally invalid signature that causes
-viem to throw before reaching noble-curves recovery. A short signature like
-`"0x00"` triggers `InvalidSerializedSignatureError` (a `BaseError` subclass)
-during viem's signature parsing, covering lines 37–39. The noble-curves
-path (lines 46–48) cannot be triggered without mocking because viem catches
-noble errors and returns `false` instead of propagating them.
+The catch block was removed entirely. The new implementation uses
+`recoverTypedDataAddress` with a try/catch that returns `invalid-signature`
+on any throw — no regex, no `BaseError` classification, no uncovered paths.
+Both failure modes (`invalid-signature` and `offerer-mismatch`) are tested
+deterministically against real viem.
 
 ### 11. `src/validate.ts:56-60` — `chainId` type guard with non-numeric value never exercised
 
