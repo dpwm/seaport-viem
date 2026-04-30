@@ -391,6 +391,28 @@ describe("detectBasicOrderRouteType", () => {
     });
     expect(detectBasicOrderRouteType(order)).toBeNull();
   });
+
+  test("returns null for ERC20 offer with NATIVE consideration (no basic route)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [makeOfferItem({ itemType: ItemType.ERC20, token: TOKEN })],
+        consideration: [makeConsiderationItem({ itemType: ItemType.NATIVE })],
+      }),
+    });
+    expect(detectBasicOrderRouteType(order)).toBeNull();
+  });
+
+  test("returns null for ERC20 offer with ERC20 consideration (no basic route)", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [makeOfferItem({ itemType: ItemType.ERC20, token: TOKEN })],
+        consideration: [
+          makeConsiderationItem({ itemType: ItemType.ERC20, token: NFT }),
+        ],
+      }),
+    });
+    expect(detectBasicOrderRouteType(order)).toBeNull();
+  });
 });
 
 // ── toBasicOrderParameters ───────────────────────────────────────

@@ -617,58 +617,33 @@ These lines are reported as uncovered by `bun test --coverage` (100% funcs,
 99.23% lines). Each entry explains why the line is uncovered and how to
 cover it.
 
-### 9. `src/order.ts:269-270, 279-280` — Fallback `return null` in `detectBasicOrderRouteType` when consideration is ERC721/ERC1155
+### 9. `src/order.ts:269-270, 279-280, 291` — Fallback `return null` in `detectBasicOrderRouteType` when consideration is ERC721/ERC1155/ERC20
 
-Lines 269–270 and 279–280 are the `return null` fallbacks in
+Lines 269–270, 279–280, and 291 are the `return null` fallbacks in
 `detectBasicOrderRouteType` when:
 - `offerItem.itemType === ItemType.ERC721` but `primaryConsideration.itemType`
   is neither `NATIVE` nor `ERC20` (line 269–270).
 - `offerItem.itemType === ItemType.ERC1155` but `primaryConsideration.itemType`
   is neither `NATIVE` nor `ERC20` (line 279–280).
+- `offerItem.itemType === ItemType.ERC20` but `primaryConsideration.itemType`
+  is neither `ERC721` nor `ERC1155` (line 291, e.g. ERC20→ERC20 or ERC20→NATIVE).
 
 `isBasicOrderEligible` does filter out `ERC721_WITH_CRITERIA` and
 `ERC1155_WITH_CRITERIA` consideration items, but it does **not** filter out
-plain `ERC721` or `ERC1155` considerations. These represent NFT-to-NFT swaps
-where the offerer receives a different NFT as the primary consideration — a
-valid Seaport order structure that is simply not a basic order.
+plain `ERC721`, `ERC1155`, or unmatched `ERC20` considerations. These represent
+NFT-to-NFT swaps or ERC20→ERC20 exchanges where the offerer receives a
+different token as the primary consideration — a valid Seaport order structure
+that is simply not a basic order.
 
 The existing `detectBasicOrderRouteType` tests only use `NATIVE` and `ERC20`
 considerations (the six canonical routes). No test constructs an order where
-the primary consideration is `ERC721` or `ERC1155`.
+the primary consideration is `ERC721`, `ERC1155`, or unmatched `ERC20`.
 
-**Fix**: Add two tests to `src/order.test.ts` in the
-`detectBasicOrderRouteType` describe block:
-
-```ts
-test("returns null for ERC721 offer with ERC721 consideration (nft swap)", () => {
-  const order = makeOrder({
-    parameters: makeOrderComponents({
-      consideration: [
-        makeConsiderationItem({ itemType: ItemType.ERC721, token: NFT }),
-      ],
-    }),
-  });
-  expect(detectBasicOrderRouteType(order)).toBeNull();
-});
-
-test("returns null for ERC1155 offer with ERC1155 consideration", () => {
-  const order = makeOrder({
-    parameters: makeOrderComponents({
-      offer: [makeOfferItem({ itemType: ItemType.ERC1155 })],
-      consideration: [
-        makeConsiderationItem({ itemType: ItemType.ERC1155, token: NFT }),
-      ],
-    }),
-  });
-  expect(detectBasicOrderRouteType(order)).toBeNull();
-});
-```
-
-Note: `makeConsiderationItem` sets `recipient` to `ALICE` (the default
-offerer in test fixtures), which satisfies `isBasicOrderEligible`'s
-`recipient === offerer` check. The order passes structural eligibility but
-has no matching basic route, so `detectBasicOrderRouteType` correctly
-returns `null`.
+**Resolved**: Added four tests to `src/order.test.ts` covering all three
+uncovered `return null` fallbacks: ERC721 offer with ERC721 consideration,
+ERC1155 offer with ERC1155 consideration, ERC20 offer with NATIVE
+consideration, and ERC20 offer with ERC20 consideration. All four validate
+that non-basic-order item type combinations correctly return `null`.
 
 ### 10. ~~`src/signature.ts:35,37-39,46-48` — Catch block in `verifyOrderSignature` never entered~~ ✅ FIXED
 
