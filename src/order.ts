@@ -545,6 +545,15 @@ export function buildFulfillAvailableOrders(
     throw new SeaportValidationError("At least one order must be provided");
   }
 
+  if (
+    offerFulfillments.length === 0 &&
+    considerationFulfillments.length === 0
+  ) {
+    throw new SeaportValidationError(
+      "At least one offer fulfillment or consideration fulfillment must be provided",
+    );
+  }
+
   if (maximumFulfilled > BigInt(orders.length)) {
     throw new SeaportValidationError(
       `maximumFulfilled (${maximumFulfilled}) exceeds orders length (${orders.length})`,
@@ -593,6 +602,15 @@ export function buildFulfillAvailableAdvancedOrders(
 
   if (advancedOrders.length === 0) {
     throw new SeaportValidationError("At least one advanced order must be provided");
+  }
+
+  if (
+    offerFulfillments.length === 0 &&
+    considerationFulfillments.length === 0
+  ) {
+    throw new SeaportValidationError(
+      "At least one offer fulfillment or consideration fulfillment must be provided",
+    );
   }
 
   for (const order of advancedOrders) {

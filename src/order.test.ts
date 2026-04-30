@@ -926,7 +926,12 @@ describe("buildFulfillAvailableOrders", () => {
     const order = makeOrder();
     const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
     const orders = [{ parameters: params, signature: order.signature }];
-    const result = buildFulfillAvailableOrders(ctx, orders);
+    const result = buildFulfillAvailableOrders(
+      ctx,
+      orders,
+      aggregateOfferItems(orders),
+      aggregateConsiderationItems(orders),
+    );
     expect(result.to).toBe(ctx.address);
     expect(result.data).toMatch(/^0x[0-9a-f]+$/);
   });
@@ -950,7 +955,12 @@ describe("buildFulfillAvailableOrders", () => {
       { parameters: params1, signature: order1.signature },
       { parameters: params2, signature: order2.signature },
     ];
-    const result = buildFulfillAvailableOrders(ctx, orders);
+    const result = buildFulfillAvailableOrders(
+      ctx,
+      orders,
+      aggregateOfferItems(orders),
+      aggregateConsiderationItems(orders),
+    );
     expect(result.value).toBe(1000n);
   });
 
@@ -959,13 +969,57 @@ describe("buildFulfillAvailableOrders", () => {
     const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
     const orders = [{ parameters: params, signature: order.signature }];
     expect(() =>
-      buildFulfillAvailableOrders(ctx, orders, [], [], ZERO_BYTES32, 5n),
+      buildFulfillAvailableOrders(
+        ctx,
+        orders,
+        aggregateOfferItems(orders),
+        aggregateConsiderationItems(orders),
+        ZERO_BYTES32,
+        5n,
+      ),
     ).toThrow("maximumFulfilled");
   });
   test("throws for empty orders array", () => {
     expect(() =>
       buildFulfillAvailableOrders(ctx, []),
     ).toThrow("At least one order must be provided");
+  });
+
+  test("throws for empty offer and consideration fulfillments", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const orders = [{ parameters: params, signature: order.signature }];
+    expect(() =>
+      buildFulfillAvailableOrders(ctx, orders, [], []),
+    ).toThrow("At least one offer fulfillment or consideration fulfillment");
+  });
+
+  test("allows only offer fulfillments when consideration is empty", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const orders = [{ parameters: params, signature: order.signature }];
+    const result = buildFulfillAvailableOrders(
+      ctx,
+      orders,
+      aggregateOfferItems(orders),
+      [],
+    );
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("allows only consideration fulfillments when offer is empty", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const orders = [{ parameters: params, signature: order.signature }];
+    const result = buildFulfillAvailableOrders(
+      ctx,
+      orders,
+      [],
+      aggregateConsiderationItems(orders),
+    );
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
   });
 });
 
@@ -982,7 +1036,13 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
       signature: order.signature,
       extraData: "0x",
     }];
-    const result = buildFulfillAvailableAdvancedOrders(ctx, advancedOrders);
+    const result = buildFulfillAvailableAdvancedOrders(
+      ctx,
+      advancedOrders,
+      [],
+      aggregateOfferItems(advancedOrders),
+      aggregateConsiderationItems(advancedOrders),
+    );
     expect(result.to).toBe(ctx.address);
     expect(result.data).toMatch(/^0x[0-9a-f]+$/);
   });
@@ -1001,7 +1061,13 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
       signature: order.signature,
       extraData: "0x",
     }];
-    const result = buildFulfillAvailableAdvancedOrders(ctx, advancedOrders);
+    const result = buildFulfillAvailableAdvancedOrders(
+      ctx,
+      advancedOrders,
+      [],
+      aggregateOfferItems(advancedOrders),
+      aggregateConsiderationItems(advancedOrders),
+    );
     expect(result.value).toBe(800n);
   });
 
@@ -1016,7 +1082,13 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
       extraData: "0x",
     }];
     expect(() =>
-      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+      buildFulfillAvailableAdvancedOrders(
+        ctx,
+        advancedOrders,
+        [],
+        aggregateOfferItems(advancedOrders),
+        aggregateConsiderationItems(advancedOrders),
+      ),
     ).toThrow("uint120");
   });
 
@@ -1031,7 +1103,13 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
       extraData: "0x",
     }];
     expect(() =>
-      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+      buildFulfillAvailableAdvancedOrders(
+        ctx,
+        advancedOrders,
+        [],
+        aggregateOfferItems(advancedOrders),
+        aggregateConsiderationItems(advancedOrders),
+      ),
     ).toThrow("uint120");
   });
 
@@ -1046,7 +1124,13 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
       extraData: "0x",
     }];
     expect(() =>
-      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+      buildFulfillAvailableAdvancedOrders(
+        ctx,
+        advancedOrders,
+        [],
+        aggregateOfferItems(advancedOrders),
+        aggregateConsiderationItems(advancedOrders),
+      ),
     ).toThrow("denominator must be non-zero");
   });
 
@@ -1061,7 +1145,13 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
       extraData: "0x",
     }];
     expect(() =>
-      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+      buildFulfillAvailableAdvancedOrders(
+        ctx,
+        advancedOrders,
+        [],
+        aggregateOfferItems(advancedOrders),
+        aggregateConsiderationItems(advancedOrders),
+      ),
     ).toThrow("numerator (5) must be ≤ denominator (3)");
   });
 
@@ -1076,13 +1166,80 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
       extraData: "0x",
     }];
     expect(() =>
-      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders, [], [], [], ZERO_BYTES32, ZERO_ADDRESS, 5n),
+      buildFulfillAvailableAdvancedOrders(
+        ctx,
+        advancedOrders,
+        [],
+        aggregateOfferItems(advancedOrders),
+        aggregateConsiderationItems(advancedOrders),
+        ZERO_BYTES32,
+        ZERO_ADDRESS,
+        5n,
+      ),
     ).toThrow("maximumFulfilled");
   });
+
   test("throws for empty advancedOrders array", () => {
     expect(() =>
       buildFulfillAvailableAdvancedOrders(ctx, []),
     ).toThrow("At least one advanced order must be provided");
+  });
+
+  test("throws for empty offer and consideration fulfillments", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    expect(() =>
+      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders, [], [], []),
+    ).toThrow("At least one offer fulfillment or consideration fulfillment");
+  });
+
+  test("allows only offer fulfillments when consideration is empty", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    const result = buildFulfillAvailableAdvancedOrders(
+      ctx,
+      advancedOrders,
+      [],
+      aggregateOfferItems(advancedOrders),
+      [],
+    );
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
+  });
+
+  test("allows only consideration fulfillments when offer is empty", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    const result = buildFulfillAvailableAdvancedOrders(
+      ctx,
+      advancedOrders,
+      [],
+      [],
+      aggregateConsiderationItems(advancedOrders),
+    );
+    expect(result.to).toBe(ctx.address);
+    expect(result.data).toMatch(/^0x[0-9a-f]+$/);
   });
 });
 

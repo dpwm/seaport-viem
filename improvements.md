@@ -601,6 +601,14 @@ manual `FulfillmentComponent[][]` literals), so the empty-default path is
 never exercised. The gap only affects callers who rely on the defaults —
 which is the natural "first try" for a developer integrating the library.
 
+**Resolved**: Added `SeaportValidationError` validation in both
+`buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders` that
+throws when both `offerFulfillments` and `considerationFulfillments` are
+empty. Added 6 new tests covering the empty-both error and the
+only-offer/only-consideration edge cases. Updated 8 existing tests that
+previously relied on empty defaults to pass explicit fulfillments via
+`aggregateOfferItems`/`aggregateConsiderationItems`.
+
 ---
 
 ## Uncovered lines (coverage gaps)
