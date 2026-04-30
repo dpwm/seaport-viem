@@ -98,7 +98,7 @@ export { getCounter } from "./counter";
 export { seaportCall } from "./call";
 
 // Validation
-export { validateOrderComponents, validateSeaportContext, requireValidContext, buildValidate } from "./validate";
+export { validateOrderComponents, validateSeaportContext, requireValidContext, requireValidOrderComponents, buildValidate } from "./validate";
 
 // Order fulfillment
 export {

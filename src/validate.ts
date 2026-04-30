@@ -177,6 +177,25 @@ export function validateOrderComponents(
 }
 
 /**
+ * Validate order components and throw immediately if invalid.
+ *
+ * Use this to avoid repeating the 3-line validation pattern at every call site.
+ * The plain {@link validateOrderComponents} function is also exported for consumers
+ * who need to check validity without throwing.
+ *
+ * @param components - The order components to validate.
+ * @throws {SeaportValidationError} If the components are invalid, with the validation reason as the message.
+ */
+export function requireValidOrderComponents(
+  components: OrderComponents,
+): void {
+  const result = validateOrderComponents(components);
+  if (!result.valid) {
+    throw new SeaportValidationError(result.reason);
+  }
+}
+
+/**
  * Build a transaction to validate one or more Seaport orders.
  * Validating an order marks it as approved on-chain so it can be fulfilled
  * or matched without requiring a signature transfer.

@@ -1155,6 +1155,13 @@ export function requireValidOrderComponents(
 underlying validation logic already exists; only the throwing wrapper is
 missing.
 
+**Resolved**: Added `requireValidOrderComponents` to `src/validate.ts` as a
+throwing wrapper around `validateOrderComponents`, mirroring the
+`requireValidContext` pattern. Exported from the barrel. Added 9 tests
+covering all failure modes (empty offer, empty consideration, zero amounts,
+invalid item types, negative counter, zero salt, bad timestamps) plus a
+no-throw case for valid components.
+
 ### 19. `computeTotalNativeValue` is marked `@private` but is exported and used cross-module
 
 `computeTotalNativeValue` in `src/order.ts` (lines 418–432) has a JSDoc

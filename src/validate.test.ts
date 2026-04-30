@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   validateOrderComponents,
   validateSeaportContext,
+  requireValidOrderComponents,
   buildValidate,
   toOrderParameters,
 } from "./index";
@@ -318,6 +319,94 @@ describe("validateOrderComponents", () => {
       makeOrderComponents({ salt: 42n }),
     );
     expect(result.valid).toBe(true);
+  });
+});
+
+describe("requireValidOrderComponents", () => {
+  test("valid order components pass without throwing", () => {
+    expect(() =>
+      requireValidOrderComponents(makeOrderComponents()),
+    ).not.toThrow();
+  });
+
+  test("throws on empty offer", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({ offer: [] }),
+      ),
+    ).toThrow("Order must have at least one offer item");
+  });
+
+  test("throws on empty consideration", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({ consideration: [] }),
+      ),
+    ).toThrow("Order must have at least one consideration item");
+  });
+
+  test("throws on zero offer startAmount", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({
+          offer: [makeOfferItem({ startAmount: 0n })],
+        }),
+      ),
+    ).toThrow("Offer amounts must be greater than 0");
+  });
+
+  test("throws on zero consideration endAmount", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({
+          consideration: [makeConsiderationItem({ endAmount: 0n })],
+        }),
+      ),
+    ).toThrow("Consideration amounts must be greater than 0");
+  });
+
+  test("throws on invalid offer itemType", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({
+          offer: [makeOfferItem({ itemType: 99 } as any)],
+        }),
+      ),
+    ).toThrow("Invalid offer item type");
+  });
+
+  test("throws on invalid consideration itemType", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({
+          consideration: [makeConsiderationItem({ itemType: 42 } as any)],
+        }),
+      ),
+    ).toThrow("Invalid consideration item type");
+  });
+
+  test("throws on negative counter", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({ counter: -1n }),
+      ),
+    ).toThrow("counter must be non-negative");
+  });
+
+  test("throws on zero salt", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({ salt: 0n }),
+      ),
+    ).toThrow("salt must not be zero");
+  });
+
+  test("throws on startTime >= endTime", () => {
+    expect(() =>
+      requireValidOrderComponents(
+        makeOrderComponents({ startTime: 3000n, endTime: 2000n }),
+      ),
+    ).toThrow("Start time must be before end time");
   });
 });
 
