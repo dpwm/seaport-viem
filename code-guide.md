@@ -227,8 +227,8 @@ around `client.call()` with standardised error handling for three failure modes:
 | viem `BaseError` (RPC revert, network) | `SeaportCallError` | `"Failed to fetch counter for offerer 0x… at Seaport 0x…: …"` |
 | Any thrown non-Error | `SeaportCallError` | `"Failed to fetch counter for offerer 0x… at Seaport 0x…: …"` |
 
-The **re-throw guard** (`error.message.startsWith(fnLabel + " returned no data")`)
-prevents double-wrapping if a downstream call to `seaportCall` itself throws
+The **re-throw guard** (`error instanceof SeaportCallError`) prevents
+double-wrapping if a downstream call to `seaportCall` itself throws
 and the caller catches and re-calls `seaportCall`.
 
 Three modules use this: `counter.ts`, `order_status.ts`, `order_hash.ts`.
@@ -261,16 +261,17 @@ The on-chain hash is useful as a cross-check against off-chain hashing
 
 ### `verifyOrderSignature(ctx, order)`
 
-Calls viem's `verifyTypedData` with the Seaport EIP-712 types. Returns
-`boolean`:
-- `true` — signature is valid for the offerer.
-- `false` — signature is malformed or signed by a different address.
-- throws — infrastructure errors (bad domain config, invalid address).
+Calls viem's `recoverTypedDataAddress` with the Seaport EIP-712 types.
+Returns a discriminated union `OrderVerificationResult`:
+- `{ valid: true }` — signature is valid for the offerer.
+- `{ valid: false, reason: 'invalid-signature' }` — signature is
+  structurally malformed or cryptographically invalid.
+- `{ valid: false, reason: 'offerer-mismatch', recovered }` — valid
+  signature but signed by a different address (revealed in `recovered`).
 
-The catch block is careful to only swallow signature-recovery errors from
-`@noble/curves` (which produce `Error` instances with specific messages like
-`"signature invalid"` or `"unrecoverable signature"`). All other errors are
-re-thrown.
+The catch block swallows any throw from `recoverTypedDataAddress` after
+context validation — since the domain is already validated, the only thing
+that can fail is the signature itself. No fragile regex matching needed.
 
 ### `hashOrderComponents(ctx, orderComponents)`
 
@@ -386,10 +387,11 @@ The available-orders builders validate `maximumFulfilled <= orders.length`.
 Converts `OrderComponents` (what you sign) to `OrderParameters` (what the
 contract expects). The only difference: `counter` → `totalOriginalConsiderationItems`.
 
-#### `getEmptyOrderComponents()`
+#### `getBulkOrderPaddingHash()` — `@internal`
 
-Returns a canonical "empty" `OrderComponents` struct used exclusively as
-padding leaves in bulk order merkle trees. Not intended for submission.
+Returns the hash of a canonical empty `OrderComponents` struct used exclusively
+as padding leaves in bulk order merkle trees. Lives in `bulk_listings.ts` since
+it is only needed by that module. Not intended for submission.
 
 #### `aggregateOfferItems(orders)` / `aggregateConsiderationItems(orders)`
 
@@ -554,7 +556,8 @@ items, since the match function itself can receive ETH.
 
 ### Topic constants
 
-Hardcoded `keccak256` of each event signature:
+Computed at module load time from `seaportEventAbi` via viem's
+`encodeEventTopics`. The five topic constants are:
 
 | Constant | Event |
 |---|---|
@@ -564,21 +567,15 @@ Hardcoded `keccak256` of each event signature:
 | `ORDERS_MATCHED_TOPIC` | `OrdersMatched` |
 | `COUNTER_INCREMENTED_TOPIC` | `CounterIncremented` |
 
-These are **cross-checked in tests** against both `seaportEventAbi` (in
-`constants.ts`) and `parseAbiItem` definitions (right here in `events.ts`).
-Any drift between the three definitions causes a test failure.
-
-### Parsed event types
-
-The `OrderFulfilledEvent` etc. exports are `parseAbiItem` results, used by
-`decodeEventLog` in the decoder function.
+These are **derived from a single source of truth** — `seaportEventAbi` in
+`constants.ts`. There is no hardcoding or duplication.
 
 ### `decodeSeaportEvent(log)`
 
 The dispatcher:
 1. Reads `log.topics[0]`.
-2. Matches against the five known topic constants.
-3. Calls `decodeEventLog` with the corresponding parsed ABI.
+2. Matches against the five known topic constants (derived from `seaportEventAbi`).
+3. Calls `decodeEventLog` with the matching event ABI.
 4. Returns typed args with `eventName` discriminant.
 
 If the topic matches none of the five, throws `SeaportValidationError`.
@@ -599,7 +596,7 @@ Consumer pattern: `switch (event.eventName) { case "OrderFulfilled": … }`
 
 ## 15. `index.ts` — The barrel
 
-Re-exports everything public from every module. No logic. The tsup entry
+Re-exports everything public from every module. No logic. The tsdown entry
 point for `seaport-viem` (the default import).
 
 ---
@@ -654,27 +651,20 @@ All reachable from index.ts (the barrel) ──────┘
 
 ## 18. Build system quirks
 
-- **tsup** compiles 16 entry points to ESM in `dist/`.
-- `splitting: true` produces shared chunks — some bundlers may struggle.
+- **tsdown** (Rolldown-based) compiles 17 entry points to ESM in `dist/`.
+- Each entry point bundles its dependencies independently — no shared chunks.
 - `dts: true` emission requires all source-level `.ts` imports.
 - `noUncheckedIndexedAccess` is on: any `array[i]` returns `T | undefined`.
   Non-null assertions after length guards use `// biome-ignore lint/style/noNonNullAssertion:`.
 - `allowImportingTsExtensions` + `noEmit`: source uses `.ts` extensions but
-  `tsc` doesn't emit; tsup handles the build.
+  `tsc` doesn't emit; tsdown handles the build.
 
 ---
 
-## 19. Known issues worth knowing about
+## 19. Known issues
 
-See `improvements.md` for the full list. Highlights:
-
-- **Item 20**: `hashBulkOrder` does not call `requireValidContext` — inconsistently
-  with every other context-accepting function.
-- **Item 21**: `encodeDomainSeparator` has no validation and uses a type assertion
-  on `domain.verifyingContract`.
-- **Item 23**: `buildFulfillAvailableOrders` and `buildFulfillAvailableAdvancedOrders`
-  are untested.
-- **Item 25**: `encodeDomainSeparator` duplicates viem's built-in `hashDomain`.
-- **Item 26**: `ORDER_COMPONENTS_STRUCT_ABI_TYPES` is exported from constants
-  but not in the barrel — consumers importing `seaport-viem/constants` directly
-  will see it in autocomplete despite its `@internal` annotation.
+See `improvements.md` for the current list. All previously documented items
+have been resolved — `hashBulkOrder` validates context, `encodeDomainSeparator`
+delegates to viem's `domainSeparator`, the available-orders builders are tested,
+and `ORDER_COMPONENTS_STRUCT_ABI_TYPES` is marked `@internal` with clear
+documentation.

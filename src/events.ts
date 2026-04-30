@@ -54,17 +54,36 @@ export type SeaportEventArgs =
 
 // ── Event topic hashes (computed from canonical seaportEventAbi) ──
 
+// Compute all event topics at module load time from the single source of truth.
+const _topics = seaportEventAbi.map(
+  (abi) =>
+    [abi.name, encodeEventTopics({ abi: [abi], eventName: abi.name })[0]!] as const,
+);
+
 /**
  * Map of Seaport event names to their keccak256 topic hashes.
  * Derived automatically from {@link seaportEventAbi} in constants.ts,
  * which is the single source of truth for event definitions.
  */
-const EVENT_TOPIC_MAP = Object.fromEntries(
-  seaportEventAbi.map((abi) => [
-    abi.name,
-    encodeEventTopics({ abi: [abi], eventName: abi.name })[0],
-  ]),
-) as Record<string, `0x${string}`>;
+const EVENT_TOPIC_MAP = Object.fromEntries(_topics) as Record<
+  string,
+  `0x${string}`
+>;
+
+/** keccak256 topic hash for the OrderFulfilled event. */
+export const ORDER_FULFILLED_TOPIC = EVENT_TOPIC_MAP.OrderFulfilled!;
+
+/** keccak256 topic hash for the OrderCancelled event. */
+export const ORDER_CANCELLED_TOPIC = EVENT_TOPIC_MAP.OrderCancelled!;
+
+/** keccak256 topic hash for the OrderValidated event. */
+export const ORDER_VALIDATED_TOPIC = EVENT_TOPIC_MAP.OrderValidated!;
+
+/** keccak256 topic hash for the OrdersMatched event. */
+export const ORDERS_MATCHED_TOPIC = EVENT_TOPIC_MAP.OrdersMatched!;
+
+/** keccak256 topic hash for the CounterIncremented event. */
+export const COUNTER_INCREMENTED_TOPIC = EVENT_TOPIC_MAP.CounterIncremented!;
 
 // ── Event decoders ──────────────────────────────────────────
 
