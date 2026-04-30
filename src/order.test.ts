@@ -762,6 +762,29 @@ describe("buildFulfillOrder", () => {
     const result = buildFulfillOrder(ctx, { parameters: params, signature: order.signature });
     expect(result.value).toBe(0n);
   });
+  test("throws for empty offer", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    expect(() =>
+      buildFulfillOrder(ctx, { parameters: params, signature: order.signature }),
+    ).toThrow("Order must have at least one offer item");
+  });
+
+  test("throws for empty consideration", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    expect(() =>
+      buildFulfillOrder(ctx, { parameters: params, signature: order.signature }),
+    ).toThrow("Order must have at least one consideration item");
+  });
 });
 
 // ── buildFulfillAdvancedOrder ─────────────────────────────────
@@ -829,6 +852,43 @@ describe("buildFulfillAdvancedOrder", () => {
       buildFulfillAdvancedOrder(ctx, advancedOrder),
     ).toThrow("uint120");
   });
+  test("throws for empty offer", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        offer: [],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    expect(() =>
+      buildFulfillAdvancedOrder(ctx, advancedOrder),
+    ).toThrow("Order must have at least one offer item");
+  });
+
+  test("throws for empty consideration", () => {
+    const order = makeOrder({
+      parameters: makeOrderComponents({
+        consideration: [],
+      }),
+    });
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 1n,
+      denominator: 1n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    expect(() =>
+      buildFulfillAdvancedOrder(ctx, advancedOrder),
+    ).toThrow("Order must have at least one consideration item");
+  });
 });
 
 // ── buildFulfillAvailableOrders ───────────────────────────────
@@ -873,6 +933,11 @@ describe("buildFulfillAvailableOrders", () => {
     expect(() =>
       buildFulfillAvailableOrders(ctx, orders, [], [], ZERO_BYTES32, 5n),
     ).toThrow("maximumFulfilled");
+  });
+  test("throws for empty orders array", () => {
+    expect(() =>
+      buildFulfillAvailableOrders(ctx, []),
+    ).toThrow("At least one order must be provided");
   });
 });
 
@@ -955,6 +1020,11 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
     expect(() =>
       buildFulfillAvailableAdvancedOrders(ctx, advancedOrders, [], [], [], ZERO_BYTES32, ZERO_ADDRESS, 5n),
     ).toThrow("maximumFulfilled");
+  });
+  test("throws for empty advancedOrders array", () => {
+    expect(() =>
+      buildFulfillAvailableAdvancedOrders(ctx, []),
+    ).toThrow("At least one advanced order must be provided");
   });
 });
 

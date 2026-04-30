@@ -329,6 +329,14 @@ builders with the validation conventions already established by
 `buildCancel`, `buildValidate`, and `buildBasicOrderFulfillment` in the same
 codebase.
 
+**Resolved**: Added `SeaportValidationError` throws in all four fulfillment
+builders: `buildFulfillOrder` and `buildFulfillAdvancedOrder` now validate
+non-empty offer and consideration arrays; `buildFulfillAvailableOrders` and
+`buildFulfillAvailableAdvancedOrders` now validate non-empty orders arrays.
+Added 6 new tests covering all new validation paths (empty offer, empty
+consideration, empty orders array, empty advanced orders array). All existing
+tests continue to pass unchanged.
+
 ### 5. `requireValidContext(ctx)` is not called at the top of four builder functions
 
 Six out of ten builder functions explicitly call `requireValidContext(ctx)` as

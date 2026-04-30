@@ -456,6 +456,13 @@ export function buildFulfillOrder(
 ): FulfillmentData {
   requireValidContext(ctx);
 
+  if (order.parameters.offer.length === 0) {
+    throw new SeaportValidationError("Order must have at least one offer item");
+  }
+  if (order.parameters.consideration.length === 0) {
+    throw new SeaportValidationError("Order must have at least one consideration item");
+  }
+
   return {
     to: ctx.address,
     data: encodeFulfillOrder(order, fulfillerConduitKey),
@@ -481,6 +488,13 @@ export function buildFulfillAdvancedOrder(
   recipient: `0x${string}` = ZERO_ADDRESS,
 ): FulfillmentData {
   requireValidContext(ctx);
+
+  if (advancedOrder.parameters.offer.length === 0) {
+    throw new SeaportValidationError("Order must have at least one offer item");
+  }
+  if (advancedOrder.parameters.consideration.length === 0) {
+    throw new SeaportValidationError("Order must have at least one consideration item");
+  }
 
   checkUint120(advancedOrder.numerator, "numerator");
   checkUint120(advancedOrder.denominator, "denominator");
@@ -516,6 +530,10 @@ export function buildFulfillAvailableOrders(
   fulfillerConduitKey: `0x${string}` = ZERO_BYTES32,
   maximumFulfilled: bigint = BigInt(orders.length),
 ): FulfillmentData {
+  if (orders.length === 0) {
+    throw new SeaportValidationError("At least one order must be provided");
+  }
+
   if (maximumFulfilled > BigInt(orders.length)) {
     throw new SeaportValidationError(
       `maximumFulfilled (${maximumFulfilled}) exceeds orders length (${orders.length})`,
@@ -560,6 +578,10 @@ export function buildFulfillAvailableAdvancedOrders(
   recipient: `0x${string}` = ZERO_ADDRESS,
   maximumFulfilled: bigint = BigInt(advancedOrders.length),
 ): FulfillmentData {
+  if (advancedOrders.length === 0) {
+    throw new SeaportValidationError("At least one advanced order must be provided");
+  }
+
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");
     checkUint120(order.denominator, "denominator");
