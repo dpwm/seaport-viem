@@ -388,7 +388,7 @@ export function toOrderParameters(
  * @returns FulfillmentComponent[][] suitable for
  *   `fulfillAvailableOrders` / `fulfillAvailableAdvancedOrders`.
  */
-export function aggregateOfferItems<T extends { parameters: { offer: readonly unknown[] } }>(
+export function aggregateOfferItems<T extends { parameters: { offer: readonly OfferItem[] } }>(
   orders: T[],
 ): FulfillmentComponent[][] {
   const components: FulfillmentComponent[][] = [];
@@ -414,7 +414,7 @@ export function aggregateOfferItems<T extends { parameters: { offer: readonly un
  * @returns FulfillmentComponent[][] suitable for
  *   `fulfillAvailableOrders` / `fulfillAvailableAdvancedOrders`.
  */
-export function aggregateConsiderationItems<T extends { parameters: { consideration: readonly unknown[] } }>(
+export function aggregateConsiderationItems<T extends { parameters: { consideration: readonly ConsiderationItem[] } }>(
   orders: T[],
 ): FulfillmentComponent[][] {
   const components: FulfillmentComponent[][] = [];

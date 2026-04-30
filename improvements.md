@@ -1100,6 +1100,12 @@ the tighter constraint.
 constraints without changes. Custom types that extend
 `{ parameters: { offer: readonly OfferItem[] } }` also still work.
 
+**Resolved**: Tightened the generic constraints on `aggregateOfferItems`
+from `readonly unknown[]` to `readonly OfferItem[]` and on
+`aggregateConsiderationItems` from `readonly unknown[]` to
+`readonly ConsiderationItem[]`. Both types were already imported. No
+API break — all existing callers already satisfy the tighter constraints.
+
 ### 18. No `requireValidOrderComponents` — asymmetry with `requireValidContext`
 
 The library provides both `validateSeaportContext` (returns
