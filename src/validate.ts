@@ -203,6 +203,8 @@ export function requireValidOrderComponents(
  * @param ctx - Seaport deployment context (address and EIP-712 domain).
  * @param orders - The signed orders to validate.
  * @returns Transaction data ready to send.
+ * @throws {SeaportValidationError} If the context is invalid or if no orders
+ *   are provided.
  */
 export function buildValidate(
   ctx: SeaportContext,

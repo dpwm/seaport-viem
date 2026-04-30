@@ -476,6 +476,8 @@ export function computeTotalNativeValue(
  * @param order - The order with OrderParameters and signature.
  * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
  * @returns Transaction data ready to send.
+ * @throws {SeaportValidationError} If the context is invalid, or if the order
+ *   has no offer or consideration items.
  */
 export function buildFulfillOrder(
   ctx: SeaportContext,
@@ -507,6 +509,9 @@ export function buildFulfillOrder(
  * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
  * @param recipient - Address to receive the items. Defaults to zero (msg.sender).
  * @returns Transaction data ready to send.
+ * @throws {SeaportValidationError} If the context is invalid, if the order has
+ *   no offer or consideration items, if numerator or denominator exceed uint120
+ *   range, or if denominator is zero or numerator exceeds denominator.
  */
 export function buildFulfillAdvancedOrder(
   ctx: SeaportContext,
@@ -564,7 +569,9 @@ export function buildFulfillAdvancedOrder(
  * @param fulfillerConduitKey - Conduit key for the fulfiller. Defaults to zero.
  * @param maximumFulfilled - Maximum number of orders to fulfill. Defaults to all.
  * @returns Transaction data ready to send.
- * @throws If maximumFulfilled exceeds orders.length.
+ * @throws {SeaportValidationError} If the context is invalid, if no orders are
+ *   provided, if both fulfillment arrays are empty, or if maximumFulfilled
+ *   exceeds orders.length.
  */
 export function buildFulfillAvailableOrders(
   ctx: SeaportContext,
@@ -621,7 +628,9 @@ export function buildFulfillAvailableOrders(
  * @param recipient - Address to receive the items. Defaults to zero (msg.sender).
  * @param maximumFulfilled - Maximum number of orders to fulfill. Defaults to all.
  * @returns Transaction data ready to send.
- * @throws If maximumFulfilled exceeds advancedOrders.length.
+ * @throws {SeaportValidationError} If the context is invalid, if no orders are
+ *   provided, if both fulfillment arrays are empty, if numerator or denominator
+ *   are invalid, or if maximumFulfilled exceeds advancedOrders.length.
  */
 export function buildFulfillAvailableAdvancedOrders(
   ctx: SeaportContext,

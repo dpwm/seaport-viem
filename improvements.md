@@ -1202,7 +1202,8 @@ The library uses two tags for this purpose:
  */
 ```
 
-**Context**: This is a documentation-only fix with zero code impact.
+**Resolved**: Replaced `@private` with `@internal` in the JSDoc (the change
+was applied alongside issue #5's refactor of `computeTotalNativeValue`).
 
 ### 20. `@throws` documentation is inconsistent across builder functions
 
@@ -1241,7 +1242,13 @@ Alternatively, the project could adopt a blanket convention:
 "All `build*` functions throw `SeaportValidationError` on invalid inputs" —
 but the per-function tags are more useful for IDEs and generated docs.
 
-**Context**: The inconsistency is cosmetic — all actual errors are thrown
-correctly. But it violates the library's otherwise careful documentation
-standards (compare the meticulous JSDoc on `OrderComponents` fields or
-`seaportCall` parameter labels).
+**Resolved**: Added `@throws {SeaportValidationError}` to all 9 builder
+functions that were missing or partially missing the tag:
+`buildFulfillOrder`, `buildFulfillAdvancedOrder`,
+`buildFulfillAvailableOrders`, `buildFulfillAvailableAdvancedOrders`,
+`buildMatchOrders`, `buildMatchAdvancedOrders`, `buildCancel`,
+`buildValidate`, and `buildIncrementCounter`. Each tag enumerates the
+specific validation conditions the function checks (context validity,
+empty arrays, uint120 bounds, fraction validity as applicable).
+`buildBasicOrderFulfillment` and `toBasicOrderParameters` already had
+complete `@throws` documentation.

@@ -25,6 +25,8 @@ import { SeaportValidationError } from "./errors";
  * @param orders - Array of orders to match.
  * @param fulfillments - Allocations of offer to consideration components.
  * @returns Transaction data ready to send.
+ * @throws {SeaportValidationError} If the context is invalid, if no orders are
+ *   provided, or if no fulfillments are provided.
  */
 export function buildMatchOrders(
   ctx: SeaportContext,
@@ -60,6 +62,8 @@ export function buildMatchOrders(
  * @param fulfillments - Allocations of offer to consideration components.
  * @param recipient - Address to receive unspent offer items (zero = caller).
  * @returns Transaction data ready to send.
+ * @throws {SeaportValidationError} If the context is invalid, if no orders are
+ *   provided, or if numerator or denominator are invalid.
  */
 export function buildMatchAdvancedOrders(
   ctx: SeaportContext,

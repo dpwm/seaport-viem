@@ -10,6 +10,8 @@ import { SeaportValidationError } from "./errors";
  * @param ctx - Seaport deployment context (address and EIP-712 domain).
  * @param orders - The order components to cancel.
  * @returns Transaction data ready to send.
+ * @throws {SeaportValidationError} If the context is invalid or if no orders
+ *   are provided.
  */
 export function buildCancel(
   ctx: SeaportContext,

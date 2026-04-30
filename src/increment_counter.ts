@@ -8,6 +8,7 @@ import { requireValidContext } from "./validate";
  *
  * @param ctx - Seaport deployment context (address and EIP-712 domain).
  * @returns Transaction data ready to send.
+ * @throws {SeaportValidationError} If the context is invalid.
  */
 export function buildIncrementCounter(
   ctx: SeaportContext,
