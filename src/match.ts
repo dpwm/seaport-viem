@@ -77,6 +77,14 @@ export function buildMatchAdvancedOrders(
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");
     checkUint120(order.denominator, "denominator");
+    if (order.denominator === 0n) {
+      throw new SeaportValidationError("denominator must be non-zero");
+    }
+    if (order.numerator > order.denominator) {
+      throw new SeaportValidationError(
+        `numerator (${order.numerator}) must be ≤ denominator (${order.denominator})`,
+      );
+    }
   }
 
   const value = computeTotalNativeValue(ctx, advancedOrders);

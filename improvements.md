@@ -483,6 +483,12 @@ orders always have valid fractions, but library correctness should not
 depend on caller discipline — especially for on-chain transactions where
 a bad fraction wastes gas.
 
+**Resolved**: Added `SeaportValidationError` validation for `denominator === 0`
+and `numerator > denominator` in all three advanced-order builder functions:
+`buildFulfillAdvancedOrder`, `buildFulfillAvailableAdvancedOrders`, and
+`buildMatchAdvancedOrders`. Added 6 new tests (2 per builder) covering zero
+denominator and numerator > denominator cases. All existing tests pass unchanged.
+
 ### 7. ~~`verifyOrderSignature` error classification depends on fragile `@noble/curves` error message regex~~ ✅ FIXED
 
 **Resolved in commit `773664b`.**

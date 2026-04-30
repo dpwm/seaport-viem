@@ -852,6 +852,34 @@ describe("buildFulfillAdvancedOrder", () => {
       buildFulfillAdvancedOrder(ctx, advancedOrder),
     ).toThrow("uint120");
   });
+  test("throws for denominator of zero", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 1n,
+      denominator: 0n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    expect(() =>
+      buildFulfillAdvancedOrder(ctx, advancedOrder),
+    ).toThrow("denominator must be non-zero");
+  });
+  test("throws for numerator > denominator", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrder: AdvancedOrder = {
+      parameters: params,
+      numerator: 3n,
+      denominator: 2n,
+      signature: order.signature,
+      extraData: "0x",
+    };
+    expect(() =>
+      buildFulfillAdvancedOrder(ctx, advancedOrder),
+    ).toThrow("numerator (3) must be ≤ denominator (2)");
+  });
   test("throws for empty offer", () => {
     const order = makeOrder({
       parameters: makeOrderComponents({
@@ -1005,6 +1033,36 @@ describe("buildFulfillAvailableAdvancedOrders", () => {
     expect(() =>
       buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
     ).toThrow("uint120");
+  });
+
+  test("throws for denominator of zero", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 1n,
+      denominator: 0n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    expect(() =>
+      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+    ).toThrow("denominator must be non-zero");
+  });
+
+  test("throws for numerator > denominator", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(order.parameters, BigInt(order.parameters.consideration.length));
+    const advancedOrders: AdvancedOrder[] = [{
+      parameters: params,
+      numerator: 5n,
+      denominator: 3n,
+      signature: order.signature,
+      extraData: "0x",
+    }];
+    expect(() =>
+      buildFulfillAvailableAdvancedOrders(ctx, advancedOrders),
+    ).toThrow("numerator (5) must be ≤ denominator (3)");
   });
 
   test("rejects maximumFulfilled exceeding advanced orders length", () => {

@@ -168,6 +168,46 @@ describe("buildMatchAdvancedOrders", () => {
     ).toThrow("At least one advanced order must be provided to match");
   });
 
+  test("throws for denominator of zero", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const advancedOrders: AdvancedOrder[] = [
+      {
+        parameters: params,
+        numerator: 1n,
+        denominator: 0n,
+        signature: order.signature,
+        extraData: "0x",
+      },
+    ];
+    expect(() => buildMatchAdvancedOrders(ctx, advancedOrders)).toThrow(
+      "denominator must be non-zero",
+    );
+  });
+
+  test("throws for numerator > denominator", () => {
+    const order = makeOrder();
+    const params = toOrderParameters(
+      order.parameters,
+      BigInt(order.parameters.consideration.length),
+    );
+    const advancedOrders: AdvancedOrder[] = [
+      {
+        parameters: params,
+        numerator: 4n,
+        denominator: 3n,
+        signature: order.signature,
+        extraData: "0x",
+      },
+    ];
+    expect(() => buildMatchAdvancedOrders(ctx, advancedOrders)).toThrow(
+      "numerator (4) must be ≤ denominator (3)",
+    );
+  });
+
   test("accepts optional criteriaResolvers, fulfillments, recipient", () => {
     const order = makeOrder();
     const params = toOrderParameters(

@@ -499,6 +499,14 @@ export function buildFulfillAdvancedOrder(
 
   checkUint120(advancedOrder.numerator, "numerator");
   checkUint120(advancedOrder.denominator, "denominator");
+  if (advancedOrder.denominator === 0n) {
+    throw new SeaportValidationError("denominator must be non-zero");
+  }
+  if (advancedOrder.numerator > advancedOrder.denominator) {
+    throw new SeaportValidationError(
+      `numerator (${advancedOrder.numerator}) must be ≤ denominator (${advancedOrder.denominator})`,
+    );
+  }
   return {
     to: ctx.address,
     data: encodeFulfillAdvancedOrder(
@@ -590,6 +598,14 @@ export function buildFulfillAvailableAdvancedOrders(
   for (const order of advancedOrders) {
     checkUint120(order.numerator, "numerator");
     checkUint120(order.denominator, "denominator");
+    if (order.denominator === 0n) {
+      throw new SeaportValidationError("denominator must be non-zero");
+    }
+    if (order.numerator > order.denominator) {
+      throw new SeaportValidationError(
+        `numerator (${order.numerator}) must be ≤ denominator (${order.denominator})`,
+      );
+    }
   }
 
   if (maximumFulfilled > BigInt(advancedOrders.length)) {
