@@ -343,12 +343,20 @@ export function detectBasicOrderRouteType(
  *
  * @param components - The order components (from signing).
  * @param totalOriginalConsiderationItems - The number of original consideration
- *   items (before any tips). Usually `components.consideration.length`.
+ *   items (before any tips). Must equal `components.consideration.length`.
+ * @throws {SeaportValidationError} If `totalOriginalConsiderationItems` does
+ *   not match `components.consideration.length`.
  */
 export function toOrderParameters(
   components: OrderComponents,
   totalOriginalConsiderationItems: bigint,
 ): OrderParameters {
+  if (totalOriginalConsiderationItems !== BigInt(components.consideration.length)) {
+    throw new SeaportValidationError(
+      `totalOriginalConsiderationItems (${totalOriginalConsiderationItems}) must match consideration.length (${components.consideration.length})`,
+    );
+  }
+
   return {
     offerer: components.offerer,
     zone: components.zone,

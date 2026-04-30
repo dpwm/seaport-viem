@@ -981,6 +981,14 @@ if (totalOriginalConsiderationItems !== BigInt(components.consideration.length))
 safe. But the library shouldn't rely on caller discipline for a constraint
 that is both checkable and critical to correctness.
 
+**Resolved**: Added a validation check at the top of `toOrderParameters`
+that throws `SeaportValidationError` when `totalOriginalConsiderationItems`
+does not equal `components.consideration.length`. Updated the JSDoc to
+document the `@throws` tag. Added a new test verifying that mismatched
+values throw, and fixed the existing "single order with multiple
+consideration items" test that previously passed a mismatched value (1n
+for 2 items). All 353 tests pass, typecheck passes.
+
 ### 16. `getEmptyOrderComponents` produces data that violates `validateOrderComponents`
 
 `getEmptyOrderComponents` in `src/order.ts` (lines 324–340) returns a

@@ -6,6 +6,7 @@ import {
   ZERO_ADDRESS,
   ZERO_BYTES32,
   NATIVE_TOKEN,
+  SeaportValidationError,
   computeNativeValue,
   canFulfillAsBasicOrder,
   detectBasicOrderRouteType,
@@ -795,9 +796,24 @@ describe("toOrderParameters", () => {
         makeConsiderationItem({ recipient: BOB, endAmount: 500n }),
       ],
     });
-    const params = toOrderParameters(components, 2n);
-    expect(params.totalOriginalConsiderationItems).toBe(2n);
+    const params = toOrderParameters(components, 3n);
+    expect(params.totalOriginalConsiderationItems).toBe(3n);
     expect(params.consideration).toHaveLength(3);
+  });
+
+  test("throws when totalOriginalConsiderationItems does not match consideration.length", () => {
+    const components = makeOrderComponents({
+      consideration: [
+        makeConsiderationItem(),
+        makeConsiderationItem({ recipient: BOB }),
+      ],
+    });
+    expect(() => toOrderParameters(components, 3n)).toThrow(
+      SeaportValidationError,
+    );
+    expect(() => toOrderParameters(components, 1n)).toThrow(
+      SeaportValidationError,
+    );
   });
 });
 
@@ -1471,7 +1487,7 @@ describe("aggregateConsiderationItems", () => {
         ],
       }),
     });
-    const params = toOrderParameters(order.parameters, 1n);
+    const params = toOrderParameters(order.parameters, 2n);
     const orders = [{ parameters: params, signature: order.signature }];
     const result = aggregateConsiderationItems(orders);
     expect(result).toEqual([
